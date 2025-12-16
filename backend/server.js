@@ -2,9 +2,20 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import https from 'https';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load configuration
+const configPath = path.resolve(__dirname, '../config.json');
+const config = JSON.parse(readFileSync(configPath, 'utf-8'));
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || config.server.port;
+const HOST = process.env.HOST || config.server.host;
 
 // Create an HTTPS agent that accepts self-signed certificates
 const httpsAgent = new https.Agent({
@@ -79,7 +90,7 @@ app.all(/^\/api\/hue\/(.*)/, async (req, res) => {
 app.get('/api/discovery', async (req, res) => {
   try {
     console.log('[PROXY] Discovery request');
-    const response = await axios.get('https://discovery.meethue.com/');
+    const response = await axios.get(config.hue.discoveryEndpoint);
     console.log(`[PROXY] Found ${response.data.length} bridges`);
     res.json(response.data);
   } catch (error) {
@@ -96,14 +107,33 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Proxy server is running' });
 });
 
-app.listen(PORT, () => {
+// Config endpoint - expose configuration to frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    hue: config.hue,
+    // Only expose safe config values to frontend
+  });
+});
+
+// Serve static files from frontend build
+const frontendBuildPath = path.join(__dirname, 'public');
+app.use(express.static(frontendBuildPath));
+
+// SPA fallback: serve index.html for all other routes (Express 5 compatible)
+app.use((req, res) => {
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
+});
+
+app.listen(PORT, HOST, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════╗
-║  Hue Bridge Proxy Server                               ║
-║  Running on http://localhost:${PORT}                      ║
+║  Philips Hue Control Server                            ║
+║  Running on http://${HOST}:${PORT}                        ║
 ║                                                        ║
-║  This proxy will forward requests to your Hue Bridge   ║
-║  and add CORS headers to allow browser access.         ║
+║  Access from other devices using your machine's IP:    ║
+║  http://<your-local-ip>:${PORT}                          ║
+║                                                        ║
+║  API proxy and frontend served on same port            ║
 ╚════════════════════════════════════════════════════════╝
   `);
 });

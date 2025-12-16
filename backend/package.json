@@ -1,0 +1,17 @@
+{
+  "name": "hue-backend",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node scripts/copy-frontend.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "fs-extra": "^11.2.0"
+  }
+}

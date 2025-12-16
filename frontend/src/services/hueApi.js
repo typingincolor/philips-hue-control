@@ -1,4 +1,5 @@
-const PROXY_URL = 'http://localhost:3001';
+// Use relative URLs - works with Vite proxy in dev and same-origin in production
+const PROXY_URL = '';
 
 export const hueApi = {
   /**

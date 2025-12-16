@@ -1,25 +1,22 @@
 {
   "name": "philips-hue-connector",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "proxy": "node proxy-server.js",
-    "start": "concurrently \"npm run proxy\" \"npm run dev\"",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "axios": "^1.13.2",
-    "cors": "^2.8.5",
-    "express": "^5.2.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "start": "npm run start --workspace=backend",
+    "deploy": "npm run build && npm run build:backend && npm run start"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "concurrently": "^9.2.1",
-    "vite": "^6.0.5"
+    "concurrently": "^9.2.1"
   }
 }
