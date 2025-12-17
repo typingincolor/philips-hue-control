@@ -8,6 +8,7 @@ A modern React web application for controlling Philips Hue lights locally using 
 - **Information Dashboard**: At-a-glance summary showing total lights on, room count, and scene count
 - **Brightness Indicators**: Live brightness percentage displayed on each light and room average
 - **Room Status Badges**: See "{X} of {Y} lights on" for each room at a glance
+- **Demo Mode**: Test the UI without a Hue bridge using realistic mock data
 - **Motion Zone Detection**: Real-time display of MotionAware zones with status indicators
 - **Room Organization**: Lights automatically grouped by room with modern card layout
 - **Scene Management**: Select and activate scenes for each room
@@ -90,6 +91,38 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 2. **Press Link Button**: Press the physical button on top of your Hue Bridge
 3. **Authenticate**: Click "Create Username" within 30 seconds
 4. **Control Your Lights**: View and control all your lights organized by room
+
+## Demo Mode (No Bridge Required)
+
+Test the UI without a physical Hue bridge using realistic mock data. Perfect for development, demos, and testing.
+
+### Quick Start with Demo Mode
+
+```bash
+npm run dev
+```
+
+Then open: **http://localhost:5173?demo=true**
+
+### What's Included
+
+- **12 lights** across 3 rooms (Living Room, Kitchen, Bedroom)
+- **Various brightness levels** (10% to 100%)
+- **RGB colors** (red, blue, green, orange, yellow, purple)
+- **White temperatures** (cool, neutral, warm)
+- **Interactive controls** - toggle lights and rooms (changes persist in demo session)
+- **Visual indicator** - "DEMO MODE" badge in header
+
+### Features Available
+
+| Feature | Demo Mode | Real Bridge |
+|---------|-----------|-------------|
+| View lights | ✅ Yes | ✅ Yes |
+| Toggle lights | ✅ Yes (local only) | ✅ Yes (persistent) |
+| Color display | ✅ Yes | ✅ Yes |
+| Room controls | ✅ Yes | ✅ Yes |
+| Scene selector | 🟡 Visual only | ✅ Functional |
+| Auto-refresh | ❌ Disabled | ✅ Every 30s |
 
 ## Architecture
 
