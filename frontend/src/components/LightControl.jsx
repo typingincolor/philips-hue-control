@@ -161,6 +161,109 @@ export const LightControl = ({
     }
   };
 
+  // Convert Hue XY color to CSS RGB
+  const xyToRgb = (x, y, brightness = 100) => {
+    // Convert xy to XYZ
+    const z = 1.0 - x - y;
+    const Y = brightness / 100;
+    const X = (Y / y) * x;
+    const Z = (Y / y) * z;
+
+    // XYZ to RGB (using sRGB D65)
+    let r = X * 1.656492 - Y * 0.354851 - Z * 0.255038;
+    let g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
+    let b = X * 0.051713 - Y * 0.121364 + Z * 1.011530;
+
+    // Apply gamma correction
+    const gammaCorrect = (val) => {
+      if (val <= 0.0031308) return 12.92 * val;
+      return 1.055 * Math.pow(val, 1.0 / 2.4) - 0.055;
+    };
+
+    r = gammaCorrect(r);
+    g = gammaCorrect(g);
+    b = gammaCorrect(b);
+
+    // Normalize if any value is > 1
+    const max = Math.max(r, g, b);
+    if (max > 1) {
+      r /= max;
+      g /= max;
+      b /= max;
+    }
+
+    // Convert to 0-255 range
+    r = Math.max(0, Math.min(255, Math.round(r * 255)));
+    g = Math.max(0, Math.min(255, Math.round(g * 255)));
+    b = Math.max(0, Math.min(255, Math.round(b * 255)));
+
+    return { r, g, b };
+  };
+
+  // Convert color temperature (mirek) to RGB
+  const mirekToRgb = (mirek) => {
+    // Convert mirek to Kelvin (mirek = 1,000,000 / Kelvin)
+    const kelvin = 1000000 / mirek;
+    const temp = kelvin / 100;
+
+    let r, g, b;
+
+    // Calculate red
+    if (temp <= 66) {
+      r = 255;
+    } else {
+      r = temp - 60;
+      r = 329.698727446 * Math.pow(r, -0.1332047592);
+      r = Math.max(0, Math.min(255, r));
+    }
+
+    // Calculate green
+    if (temp <= 66) {
+      g = temp;
+      g = 99.4708025861 * Math.log(g) - 161.1195681661;
+    } else {
+      g = temp - 60;
+      g = 288.1221695283 * Math.pow(g, -0.0755148492);
+    }
+    g = Math.max(0, Math.min(255, g));
+
+    // Calculate blue
+    if (temp >= 66) {
+      b = 255;
+    } else if (temp <= 19) {
+      b = 0;
+    } else {
+      b = temp - 10;
+      b = 138.5177312231 * Math.log(b) - 305.0447927307;
+      b = Math.max(0, Math.min(255, b));
+    }
+
+    return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
+  };
+
+  // Get CSS color for a light
+  const getLightColor = (light) => {
+    if (!light.on?.on) return null;
+
+    const brightness = light.dimming?.brightness || 100;
+
+    // Prefer xy color if available
+    if (light.color?.xy) {
+      const { x, y } = light.color.xy;
+      const { r, g, b } = xyToRgb(x, y, brightness);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Fall back to color temperature
+    if (light.color_temperature?.mirek) {
+      const { r, g, b } = mirekToRgb(light.color_temperature.mirek);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // No color data available, return null (will use default green)
+    return null;
+  };
+
   // Get scenes for a specific room UUID
   const getScenesForRoom = (roomUuid) => {
     if (!scenes?.data) return [];
@@ -233,8 +336,29 @@ export const LightControl = ({
     return roomMap;
   };
 
+  // Calculate room statistics (lights on/off, average brightness)
+  const getRoomLightStats = (roomLights) => {
+    if (!roomLights || roomLights.length === 0) {
+      return { lightsOnCount: 0, totalLights: 0, averageBrightness: 0 };
+    }
+
+    const lightsOnCount = roomLights.filter(light => light.on?.on).length;
+    const totalLights = roomLights.length;
+
+    // Calculate average brightness of lights that are on
+    const lightsOn = roomLights.filter(light => light.on?.on);
+    const averageBrightness = lightsOn.length > 0
+      ? lightsOn.reduce((sum, light) => sum + (light.dimming?.brightness || 0), 0) / lightsOn.length
+      : 0;
+
+    return { lightsOnCount, totalLights, averageBrightness };
+  };
+
   const lightsCount = lights?.data?.length || 0;
   const lightsByRoom = getLightsByRoom();
+
+  // Calculate total lights on across all rooms
+  const totalLightsOn = lights?.data?.filter(light => light.on?.on).length || 0;
 
   return (
     <div className="light-control">
@@ -276,6 +400,22 @@ export const LightControl = ({
         <>
           <MotionZones bridgeIp={bridgeIp} username={username} />
 
+          {/* Summary Statistics */}
+          <div className="lights-summary">
+            <div className="summary-stat">
+              <span className="stat-value">{totalLightsOn}</span>
+              <span className="stat-label">lights on</span>
+            </div>
+            <div className="summary-stat">
+              <span className="stat-value">{lightsByRoom ? Object.keys(lightsByRoom).length : 0}</span>
+              <span className="stat-label">rooms</span>
+            </div>
+            <div className="summary-stat">
+              <span className="stat-value">{scenes?.data?.length || 0}</span>
+              <span className="stat-label">scenes</span>
+            </div>
+          </div>
+
           <div className="lights-control">
           <div className="lights-header">
             <h3>Lights ({lightsCount})</h3>
@@ -291,10 +431,31 @@ export const LightControl = ({
                 const roomScenes = roomData.roomUuid ? getScenesForRoom(roomData.roomUuid) : [];
                 const isActivating = activatingScene && roomScenes.some(s => s.uuid === activatingScene);
 
+                // Get room statistics
+                const { lightsOnCount, totalLights, averageBrightness } = getRoomLightStats(roomData.lights);
+
                 return (
                   <div key={roomName} className="room-group">
                     <div className="room-header">
-                      <h4 className="room-name">{roomName}</h4>
+                      <div className="room-title-row">
+                        <h4 className="room-name">{roomName}</h4>
+                        <span className="room-status-badge">
+                          {lightsOnCount} of {totalLights} on
+                        </span>
+                      </div>
+
+                      {averageBrightness > 0 && (
+                        <div className="room-brightness-indicator">
+                          <div className="brightness-bar">
+                            <div
+                              className="brightness-fill"
+                              style={{ width: `${averageBrightness}%` }}
+                            />
+                          </div>
+                          <span className="brightness-label">{Math.round(averageBrightness)}%</span>
+                        </div>
+                      )}
+
                       <div className="room-controls">
                         {roomScenes.length > 0 && (
                           <div className="scene-control">
@@ -325,26 +486,40 @@ export const LightControl = ({
                       </div>
                     </div>
                     <div className="room-lights-grid">
-                    {roomData.lights.map((light) => (
-                      <div key={light.id} className="light-card">
-                        <button
-                          onClick={() => toggleLight(light.id)}
-                          disabled={togglingLights.has(light.id)}
-                          className={`light-bulb-button ${light.on?.on ? 'on' : 'off'}`}
-                        >
-                          {togglingLights.has(light.id) ? (
-                            <span className="bulb-loading">⏳</span>
-                          ) : (
-                            <svg className="bulb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M9 18h6"></path>
-                              <path d="M10 22h4"></path>
-                              <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z"></path>
-                            </svg>
-                          )}
-                        </button>
-                        <span className="light-label">{light.metadata?.name || 'Unknown Light'}</span>
-                      </div>
-                    ))}
+                    {roomData.lights.map((light) => {
+                      const lightColor = getLightColor(light);
+                      const buttonStyle = lightColor ? {
+                        background: `linear-gradient(135deg, ${lightColor} 0%, ${lightColor} 100%)`,
+                        boxShadow: `0 4px 12px ${lightColor}40, 0 2px 4px rgba(0, 0, 0, 0.1)`
+                      } : {};
+
+                      return (
+                        <div key={light.id} className="light-card">
+                          <button
+                            onClick={() => toggleLight(light.id)}
+                            disabled={togglingLights.has(light.id)}
+                            className={`light-bulb-button ${light.on?.on ? 'on' : 'off'}`}
+                            style={buttonStyle}
+                          >
+                            {togglingLights.has(light.id) ? (
+                              <span className="bulb-loading">⏳</span>
+                            ) : (
+                              <svg className="bulb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 18h6"></path>
+                                <path d="M10 22h4"></path>
+                                <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z"></path>
+                              </svg>
+                            )}
+                            {light.on?.on && light.dimming?.brightness && (
+                              <div className="brightness-overlay">
+                                {Math.round(light.dimming.brightness)}%
+                              </div>
+                            )}
+                          </button>
+                          <span className="light-label">{light.metadata?.name || 'Unknown Light'}</span>
+                        </div>
+                      );
+                    })}
                     </div>
                   </div>
                 );
@@ -353,26 +528,35 @@ export const LightControl = ({
           ) : (
             // Show lights without grouping (fallback)
             <div className="lights-grid-simple">
-              {lights?.data?.map((light) => (
-                <div key={light.id} className="light-card">
-                  <button
-                    onClick={() => toggleLight(light.id)}
-                    disabled={togglingLights.has(light.id)}
-                    className={`light-bulb-button ${light.on?.on ? 'on' : 'off'}`}
-                  >
-                    {togglingLights.has(light.id) ? (
-                      <span className="bulb-loading">⏳</span>
-                    ) : (
-                      <svg className="bulb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M9 18h6"></path>
-                        <path d="M10 22h4"></path>
-                        <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z"></path>
-                      </svg>
-                    )}
-                  </button>
-                  <span className="light-label">{light.metadata?.name || 'Unknown Light'}</span>
-                </div>
-              ))}
+              {lights?.data?.map((light) => {
+                const lightColor = getLightColor(light);
+                const buttonStyle = lightColor ? {
+                  background: `linear-gradient(135deg, ${lightColor} 0%, ${lightColor} 100%)`,
+                  boxShadow: `0 4px 12px ${lightColor}40, 0 2px 4px rgba(0, 0, 0, 0.1)`
+                } : {};
+
+                return (
+                  <div key={light.id} className="light-card">
+                    <button
+                      onClick={() => toggleLight(light.id)}
+                      disabled={togglingLights.has(light.id)}
+                      className={`light-bulb-button ${light.on?.on ? 'on' : 'off'}`}
+                      style={buttonStyle}
+                    >
+                      {togglingLights.has(light.id) ? (
+                        <span className="bulb-loading">⏳</span>
+                      ) : (
+                        <svg className="bulb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M9 18h6"></path>
+                          <path d="M10 22h4"></path>
+                          <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z"></path>
+                        </svg>
+                      )}
+                    </button>
+                    <span className="light-label">{light.metadata?.name || 'Unknown Light'}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

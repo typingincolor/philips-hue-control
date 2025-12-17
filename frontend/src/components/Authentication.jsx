@@ -29,7 +29,7 @@ export const Authentication = ({ bridgeIp, onAuthenticate, loading, error }) => 
       <div className="instructions">
         <div className="link-button-image">
           <div className="bridge-icon">
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+            <svg viewBox="0 0 80 80" fill="none">
               <circle cx="40" cy="40" r="35" fill="#3498db" opacity="0.2"/>
               <circle cx="40" cy="40" r="25" fill="#3498db" opacity="0.3"/>
               <circle cx="40" cy="40" r="15" fill="#3498db"/>
