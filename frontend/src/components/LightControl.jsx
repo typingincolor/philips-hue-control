@@ -162,10 +162,10 @@ export const LightControl = ({
   };
 
   // Convert Hue XY color to CSS RGB
-  const xyToRgb = (x, y, brightness = 100) => {
-    // Convert xy to XYZ
+  const xyToRgb = (x, y) => {
+    // Convert xy to XYZ (using full brightness for pure color)
     const z = 1.0 - x - y;
-    const Y = brightness / 100;
+    const Y = 1.0;
     const X = (Y / y) * x;
     const Z = (Y / y) * z;
 
@@ -241,23 +241,26 @@ export const LightControl = ({
     return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
   };
 
-  // Get CSS color for a light
+  // Get CSS color for a light with opacity based on brightness
   const getLightColor = (light) => {
     if (!light.on?.on) return null;
 
     const brightness = light.dimming?.brightness || 100;
+    // Convert brightness (0-100) to opacity (0.2-1.0)
+    // Minimum opacity of 0.2 ensures dim lights are still visible
+    const opacity = Math.max(0.2, brightness / 100);
 
     // Prefer xy color if available
     if (light.color?.xy) {
       const { x, y } = light.color.xy;
-      const { r, g, b } = xyToRgb(x, y, brightness);
-      return `rgb(${r}, ${g}, ${b})`;
+      const { r, g, b } = xyToRgb(x, y);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
 
     // Fall back to color temperature
     if (light.color_temperature?.mirek) {
       const { r, g, b } = mirekToRgb(light.color_temperature.mirek);
-      return `rgb(${r}, ${g}, ${b})`;
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
 
     // No color data available, return null (will use default green)
@@ -509,11 +512,6 @@ export const LightControl = ({
                                 <path d="M10 22h4"></path>
                                 <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z"></path>
                               </svg>
-                            )}
-                            {light.on?.on && light.dimming?.brightness && (
-                              <div className="brightness-overlay">
-                                {Math.round(light.dimming.brightness)}%
-                              </div>
                             )}
                           </button>
                           <span className="light-label">{light.metadata?.name || 'Unknown Light'}</span>
