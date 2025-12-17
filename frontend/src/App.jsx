@@ -5,6 +5,9 @@ import { LightControl } from './components/LightControl';
 import './App.css';
 
 function App() {
+  // Check for demo mode
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+
   const {
     step,
     bridgeIp,
@@ -18,25 +21,30 @@ function App() {
     reset
   } = useHueBridge();
 
+  // In demo mode, use dummy credentials and skip to connected step
+  const effectiveStep = isDemoMode ? 'connected' : step;
+  const effectiveBridgeIp = isDemoMode ? 'demo-bridge' : bridgeIp;
+  const effectiveUsername = isDemoMode ? 'demo-user' : username;
+
   return (
     <div className="app">
-      {step !== 'connected' && (
+      {effectiveStep !== 'connected' && (
         <header className="app-header">
           <h1>Philips Hue Bridge Connector</h1>
           <p className="subtitle">Verify Local API Connectivity</p>
 
           <div className="progress-indicator">
-            <div className={`step ${step === 'discovery' ? 'active' : step !== 'discovery' ? 'completed' : ''}`}>
+            <div className={`step ${effectiveStep === 'discovery' ? 'active' : effectiveStep !== 'discovery' ? 'completed' : ''}`}>
               <div className="step-number">1</div>
               <div className="step-label">Discovery</div>
             </div>
             <div className="progress-line"></div>
-            <div className={`step ${step === 'authentication' ? 'active' : step === 'connected' ? 'completed' : ''}`}>
+            <div className={`step ${effectiveStep === 'authentication' ? 'active' : effectiveStep === 'connected' ? 'completed' : ''}`}>
               <div className="step-number">2</div>
               <div className="step-label">Authentication</div>
             </div>
             <div className="progress-line"></div>
-            <div className={`step ${step === 'connected' ? 'active' : ''}`}>
+            <div className={`step ${effectiveStep === 'connected' ? 'active' : ''}`}>
               <div className="step-number">3</div>
               <div className="step-label">Connected</div>
             </div>
@@ -45,29 +53,29 @@ function App() {
       )}
 
       <main className="app-main">
-        {step === 'discovery' && (
+        {effectiveStep === 'discovery' && (
           <BridgeDiscovery onBridgeSelected={setBridgeIp} />
         )}
 
-        {step === 'authentication' && (
+        {effectiveStep === 'authentication' && (
           <Authentication
-            bridgeIp={bridgeIp}
+            bridgeIp={effectiveBridgeIp}
             onAuthenticate={authenticate}
             loading={loading}
             error={error}
           />
         )}
 
-        {step === 'connected' && (
+        {effectiveStep === 'connected' && (
           <LightControl
-            bridgeIp={bridgeIp}
-            username={username}
+            bridgeIp={effectiveBridgeIp}
+            username={effectiveUsername}
             onLogout={reset}
           />
         )}
       </main>
 
-      {step !== 'connected' && (
+      {effectiveStep !== 'connected' && (
         <footer className="app-footer">
           <button onClick={reset} className="secondary">
             Start Over

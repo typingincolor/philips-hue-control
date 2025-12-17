@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { hueApi } from '../services/hueApi';
+import { mockApi } from '../services/mockData';
 import { MotionZones } from './MotionZones';
 
 export const LightControl = ({
@@ -7,6 +8,10 @@ export const LightControl = ({
   username,
   onLogout
 }) => {
+  // Check if demo mode is enabled (via URL parameter ?demo=true)
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+  const api = isDemoMode ? mockApi : hueApi;
+
   // API data
   const [lights, setLights] = useState(null);
   const [rooms, setRooms] = useState(null);
@@ -26,9 +31,9 @@ export const LightControl = ({
     }
   }, [bridgeIp, username]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds (disabled in demo mode)
   useEffect(() => {
-    if (!bridgeIp || !username) return;
+    if (!bridgeIp || !username || isDemoMode) return;
 
     const intervalId = setInterval(() => {
       console.log('[Auto-refresh] Refreshing all data...');
@@ -46,10 +51,10 @@ export const LightControl = ({
     try {
       // Fetch all data in parallel
       const [lightsData, roomsData, devicesData, scenesData] = await Promise.all([
-        hueApi.getLights(bridgeIp, username),
-        hueApi.getRooms(bridgeIp, username),
-        hueApi.getResource(bridgeIp, username, 'device'),
-        hueApi.getScenes(bridgeIp, username)
+        api.getLights(bridgeIp, username),
+        api.getRooms(bridgeIp, username),
+        api.getResource(bridgeIp, username, 'device'),
+        api.getScenes(bridgeIp, username)
       ]);
 
       setLights(lightsData);
@@ -86,7 +91,7 @@ export const LightControl = ({
       const currentState = light.on?.on || false;
       const newState = { on: { on: !currentState } };
 
-      await hueApi.setLightState(bridgeIp, username, lightUuid, newState);
+      await api.setLightState(bridgeIp, username, lightUuid, newState);
 
       // Update local state for responsive UI
       setLights(prev => ({
@@ -120,7 +125,7 @@ export const LightControl = ({
       const newState = { on: { on: turnOn } };
 
       await Promise.all(
-        lightUuids.map(uuid => hueApi.setLightState(bridgeIp, username, uuid, newState))
+        lightUuids.map(uuid => api.setLightState(bridgeIp, username, uuid, newState))
       );
 
       // Update local state
@@ -149,7 +154,7 @@ export const LightControl = ({
 
     setActivatingScene(sceneUuid);
     try {
-      await hueApi.activateScene(bridgeIp, username, sceneUuid);
+      await api.activateScene(bridgeIp, username, sceneUuid);
       console.log(`Activated scene ${sceneUuid} for room ${roomName}`);
       // Refresh lights to show updated states
       setTimeout(() => fetchAllData(), 500);
@@ -366,9 +371,12 @@ export const LightControl = ({
   return (
     <div className="light-control">
       <div className="header-with-status">
-        <h2>Light Control</h2>
+        <h2>
+          Light Control
+          {isDemoMode && <span className="demo-badge">DEMO MODE</span>}
+        </h2>
         <div className="header-actions">
-          <div className="status-indicator connected" title="Connected to bridge"></div>
+          <div className="status-indicator connected" title={isDemoMode ? "Demo mode - no real bridge" : "Connected to bridge"}></div>
           {onLogout && (
             <button onClick={onLogout} className="logout-button" title="Logout and disconnect">
               Logout
