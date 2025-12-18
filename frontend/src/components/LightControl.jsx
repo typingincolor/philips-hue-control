@@ -250,7 +250,7 @@ export const LightControl = ({
   const getLightColor = (light) => {
     if (!light.on?.on) return null;
 
-    const brightness = light.dimming?.brightness || 100;
+    const brightness = light.dimming?.brightness ?? 100;
     const DIM_THRESHOLD = 30; // Brightness below 30% shows as pale yellow/beige
 
     // If light is very dim, show pale yellow/beige regardless of color capability
@@ -258,21 +258,17 @@ export const LightControl = ({
       return `rgb(245, 235, 210)`; // Pale yellow/beige
     }
 
-    // Convert brightness (0-100) to opacity (0.2-1.0)
-    // Minimum opacity of 0.2 ensures dim lights are still visible
-    const opacity = Math.max(0.2, brightness / 100);
-
     // Prefer xy color if available
     if (light.color?.xy) {
       const { x, y } = light.color.xy;
-      const { r, g, b } = xyToRgb(x, y);
-      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      const { r, g, b } = xyToRgb(x, y, brightness);
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
     // Fall back to color temperature
     if (light.color_temperature?.mirek) {
       const { r, g, b } = mirekToRgb(light.color_temperature.mirek);
-      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
     // No color data available, return null (will use default green)
