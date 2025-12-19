@@ -104,6 +104,9 @@ philips-hue-connector/
 ├── frontend/                   # React frontend workspace
 │   ├── package.json
 │   ├── vite.config.js         # Vite config (reads config.json)
+│   ├── vitest.config.js       # Test configuration
+│   ├── stryker.conf.json      # Mutation testing config
+│   ├── TESTING.md             # Testing documentation
 │   ├── index.html
 │   ├── dist/                  # Build output (gitignored)
 │   └── src/
@@ -113,12 +116,34 @@ philips-hue-connector/
 │       ├── components/
 │       │   ├── BridgeDiscovery.jsx
 │       │   ├── Authentication.jsx
-│       │   ├── LightControl.jsx
-│       │   └── MotionZones.jsx
+│       │   ├── MotionZones.jsx
+│       │   └── LightControl/
+│       │       ├── index.jsx          # Main container
+│       │       ├── LightButton.jsx    # Individual light button
+│       │       ├── RoomCard.jsx       # Room grouping
+│       │       ├── SceneSelector.jsx  # Scene dropdown
+│       │       └── DashboardSummary.jsx
+│       ├── utils/             # Utility functions (tested)
+│       │   ├── colorConversion.js
+│       │   ├── roomUtils.js
+│       │   ├── validation.js
+│       │   └── motionSensors.js
+│       ├── constants/         # Centralized constants
+│       │   ├── polling.js
+│       │   ├── storage.js
+│       │   ├── colors.js
+│       │   ├── validation.js
+│       │   └── messages.js
 │       ├── services/
-│       │   └── hueApi.js      # API client (v2 native)
-│       └── hooks/
-│           └── useHueBridge.js
+│       │   ├── hueApi.js      # API client (v2 native)
+│       │   └── mockData.js    # Demo mode data
+│       ├── hooks/             # Custom React hooks
+│       │   ├── useHueBridge.js
+│       │   ├── useDemoMode.js
+│       │   ├── useHueApi.js
+│       │   └── usePolling.js
+│       └── test/
+│           └── setup.js       # Test environment setup
 └── backend/                    # Express backend workspace
     ├── package.json
     ├── server.js              # Express server (API + static files)
@@ -186,6 +211,10 @@ The Philips Hue Bridge doesn't send CORS headers and uses self-signed HTTPS cert
 - **CSS Grid & Flexbox** - Responsive card layout
 - **CSS Custom Properties** - Dynamic sizing with clamp()
 - **npm workspaces** - Monorepo management
+- **Vitest 4** - Fast, Vite-native test runner
+- **Testing Library** - React component testing
+- **Stryker Mutator** - Mutation testing for test validation
+- **PropTypes** - Runtime type validation
 
 ## Available Scripts
 
@@ -213,6 +242,99 @@ Starts only the frontend dev server
 
 #### `npm run dev:backend`
 Starts only the backend server
+
+### Testing Scripts
+
+#### `npm run test`
+Runs all unit tests in watch mode (interactive)
+
+#### `npm run test:ui`
+Opens Vitest UI for interactive test exploration
+
+#### `npm run test:run`
+Runs all tests once (useful for CI/CD)
+
+#### `npm run test:coverage`
+Generates code coverage report
+
+#### `npm run test:mutation`
+Runs mutation testing with Stryker (validates test quality)
+
+## Testing
+
+The project includes comprehensive testing infrastructure with mutation testing to ensure code quality.
+
+### Test Coverage
+
+- **127 unit tests** across utilities, hooks, and components
+- **73.25% mutation score** - excellent test effectiveness
+- **Vitest 4.0** - Fast, Vite-native test runner
+- **Testing Library** - React component testing with user-centric approach
+- **Stryker Mutator** - Mutation testing to validate test quality
+
+### Test Organization
+
+```
+frontend/src/
+├── utils/
+│   ├── colorConversion.test.js     # 31 tests - Color space conversions
+│   ├── roomUtils.test.js           # 23 tests - Room hierarchy building
+│   ├── validation.test.js          # 8 tests - IP validation
+│   └── motionSensors.test.js       # 13 tests - Motion data parsing
+├── hooks/
+│   ├── useDemoMode.test.js         # 9 tests - Demo mode detection
+│   ├── useHueApi.test.js           # 4 tests - API selection
+│   └── usePolling.test.js          # 10 tests - Polling intervals
+└── components/LightControl/
+    ├── DashboardSummary.test.jsx   # 5 tests - Summary statistics
+    ├── SceneSelector.test.jsx      # 11 tests - Scene dropdown
+    └── LightButton.test.jsx        # 13 tests - Light button rendering
+```
+
+### Running Tests
+
+**Watch mode** (auto-runs on file changes):
+```bash
+npm run test
+```
+
+**Interactive UI** (visual test explorer):
+```bash
+npm run test:ui
+```
+
+**Coverage report** (see what's tested):
+```bash
+npm run test:coverage
+# Report opens at frontend/coverage/index.html
+```
+
+**Mutation testing** (validate test effectiveness):
+```bash
+npm run test:mutation
+# Report opens at frontend/reports/mutation/index.html
+```
+
+### What Is Mutation Testing?
+
+Mutation testing validates that your tests actually catch bugs by:
+1. **Introducing bugs** (mutants) into your code automatically
+2. **Running your tests** against the mutated code
+3. **Checking if tests fail** - if they do, the mutant is "killed" ✅
+4. **Reporting survived mutants** - bugs your tests didn't catch ⚠️
+
+A **73.25% mutation score** means our tests successfully detect 73% of introduced bugs - considered excellent for code with complex mathematical operations.
+
+### Test Quality Highlights
+
+- ✅ **Mathematical precision**: Color conversion tests verify RGB outputs within valid ranges
+- ✅ **Edge case coverage**: Tests include 0% brightness, missing data, boundary values
+- ✅ **Integration testing**: Room hierarchy tests validate device→light mapping
+- ✅ **User interaction**: Component tests use userEvent for realistic interactions
+- ✅ **Timer testing**: Polling tests use fake timers for controlled time advancement
+- ✅ **Mock isolation**: Hooks tested in isolation with mocked dependencies
+
+For detailed testing documentation, see [frontend/TESTING.md](frontend/TESTING.md).
 
 ## UI Features
 
@@ -389,7 +511,17 @@ PORT=8080 npm run start
 
 ## Version History
 
-### v0.4.2 (Current)
+### v0.5.0 (Current)
+- **Comprehensive testing infrastructure** - Added 127 unit tests with 73.25% mutation score
+- **Code refactoring for testability** - Extracted utilities, hooks, and components into modular, testable units
+- **Mutation testing** - Stryker Mutator integration validates test effectiveness
+- **PropTypes validation** - Runtime type checking for all React components
+- **Test organization** - Utilities (75 tests), hooks (23 tests), components (29 tests)
+- **Documentation** - Added TESTING.md with comprehensive testing guide
+- **Test scripts** - Interactive watch mode, UI explorer, coverage reports, mutation testing
+- **Code quality improvements** - Reduced code duplication, centralized constants, improved maintainability
+
+### v0.4.2
 - **Brightness-aware warm dim blending** - Smooth gradual transition from warm candlelight color (15%) to actual color (50%) using smoothstep curve
 - **Smart shadow system** - Colored glow only appears on bright lights (≥50% brightness), neutral gray shadows for dim lights
 - **Race condition fixes** - Intelligent fallback system prevents green flashing during scene transitions when color data is loading

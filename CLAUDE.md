@@ -26,6 +26,15 @@ npm run dev:frontend
 npm run dev:backend
 ```
 
+### Testing
+```bash
+npm run test               # Run tests in watch mode
+npm run test:ui            # Open Vitest UI
+npm run test:run           # Run tests once (CI mode)
+npm run test:coverage      # Generate coverage report
+npm run test:mutation      # Run mutation testing
+```
+
 ### Production Build & Deploy
 ```bash
 npm run deploy
@@ -148,25 +157,50 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
    - Step 2: Authentication (link button press)
    - Step 3: LightControl (main UI with lights)
 
-2. **LightControl.jsx**: Main control interface
+2. **LightControl/index.jsx**: Main control interface
    - Fetches lights, rooms, devices, scenes on mount using v2 API
-   - 30-second auto-refresh polling for all data
-   - Builds room→device→light hierarchy from v2 data
+   - 30-second auto-refresh polling using `usePolling` hook
+   - Builds room→device→light hierarchy from v2 data using `buildRoomHierarchy` utility
    - Groups lights by room in card layout
    - Integrates MotionZones component
    - Works natively with v2 data structures (no adapters)
 
-3. **MotionZones.jsx**: MotionAware zone display
-   - Polls every 30 seconds (same as lights)
-   - Fetches from **two v2 endpoints** and combines data
+3. **LightControl/RoomCard.jsx**: Room display component
+   - Displays room name, status badges, and controls
+   - Shows "{X} of {Y} on" count and average brightness
+   - Renders SceneSelector and "All On/Off" button
+   - Contains grid of LightButton components
+
+4. **LightControl/LightButton.jsx**: Individual light control
+   - Displays light color using `getLightColor` utility
+   - Shows dynamic shadows using `getLightShadow` utility
+   - Handles click events for toggling
+   - Displays light name and current state
+
+5. **LightControl/SceneSelector.jsx**: Scene dropdown
+   - Renders scene options for the current room
+   - Handles scene activation
+   - Resets to placeholder after selection
+
+6. **LightControl/DashboardSummary.jsx**: Statistics display
+   - Shows total lights on, room count, scene count
+   - Displays demo mode badge when active
+
+7. **MotionZones.jsx**: MotionAware zone display
+   - Polls every 30 seconds using `usePolling` hook
+   - Fetches from **two v2 endpoints** and combines data using `parseMotionSensors` utility
    - Returns `null` if no MotionAware zones configured (auto-hide)
    - Shows green dot 🟢 (no motion) or red dot 🔴 (motion detected)
 
 #### Data Flow
-- **localStorage**: Persists bridgeIp and username across sessions
+- **localStorage**: Persists bridgeIp and username across sessions (keys from `constants/storage.js`)
 - **useHueBridge hook**: Manages bridge connection state
+- **useHueApi hook**: Selects between real and mock API based on demo mode
+- **useDemoMode hook**: Detects demo mode from URL parameters
+- **usePolling hook**: Reusable interval-based polling with cleanup
 - **hueApi service**: All API calls go through this service layer
-- **Polling pattern**: Both lights and motion zones use 30-second `setInterval` with cleanup
+- **Utilities**: Pure functions for data transformation (color, rooms, validation, motion sensors)
+- **Constants**: Centralized configuration values (polling intervals, storage keys, colors, messages)
 
 ### CSS Architecture
 - **Single CSS file**: `frontend/src/App.css` (no CSS modules)
@@ -181,7 +215,7 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
 #### Color Display System
 Light buttons display actual bulb colors using mathematical color space conversions with **brightness-aware warm dim blending** for realistic visualization:
 
-**Color Conversion Functions** (LightControl.jsx):
+**Color Conversion Functions** (`utils/colorConversion.js`):
 ```javascript
 // Convert Hue xy coordinates (CIE 1931) to RGB with brightness scaling
 xyToRgb(x, y, brightness = 100) {
@@ -311,6 +345,149 @@ getRoomLightStats(roomLights) {
 - Light buttons: `repeat(auto-fit, minmax(var(--button-size), 1fr))`
 - Maximum 4 rooms per row via media query
 - 5 light buttons per row when space allows
+
+## Testing Infrastructure
+
+### Test Organization
+
+The project includes comprehensive testing with **127 unit tests** achieving a **73.25% mutation score**:
+
+```
+frontend/src/
+├── utils/
+│   ├── colorConversion.test.js     # 31 tests - xy/mirek to RGB, warm dim blending
+│   ├── roomUtils.test.js           # 23 tests - Room hierarchy, scene filtering
+│   ├── validation.test.js          # 8 tests - IP validation
+│   └── motionSensors.test.js       # 13 tests - Motion data parsing
+├── hooks/
+│   ├── useDemoMode.test.js         # 9 tests - URL parameter parsing
+│   ├── useHueApi.test.js           # 4 tests - API selection (real vs mock)
+│   └── usePolling.test.js          # 10 tests - Interval polling with timers
+└── components/LightControl/
+    ├── DashboardSummary.test.jsx   # 5 tests - Statistics rendering
+    ├── SceneSelector.test.jsx      # 11 tests - Scene dropdown interactions
+    └── LightButton.test.jsx        # 13 tests - Light button rendering
+```
+
+### Testing Stack
+
+- **Vitest 4.0** - Fast, Vite-native test runner with jsdom environment
+- **@testing-library/react** - Component testing with user-centric queries
+- **@testing-library/user-event** - Realistic user interaction simulation
+- **Stryker Mutator 9.4** - Mutation testing to validate test effectiveness
+- **Fake timers** - `vi.useFakeTimers()` for testing polling intervals
+
+### Running Tests
+
+**Watch mode** (auto-runs on changes):
+```bash
+npm run test
+```
+
+**Interactive UI** (visual test explorer):
+```bash
+npm run test:ui
+```
+
+**Coverage report**:
+```bash
+npm run test:coverage
+# Opens frontend/coverage/index.html
+```
+
+**Mutation testing** (validates test quality):
+```bash
+npm run test:mutation
+# Takes ~1 minute, opens frontend/reports/mutation/index.html
+```
+
+### Testing Patterns
+
+#### Testing Utilities (Pure Functions)
+```javascript
+import { describe, it, expect } from 'vitest';
+import { xyToRgb } from './colorConversion';
+
+describe('colorConversion', () => {
+  it('should convert red color correctly', () => {
+    const result = xyToRgb(0.64, 0.33, 100);
+    expect(result.r).toBeGreaterThan(result.b); // Red > Blue
+    expect(result.r).toBeGreaterThan(result.g); // Red > Green
+  });
+});
+```
+
+#### Testing Hooks with Mocks
+```javascript
+import { renderHook } from '@testing-library/react';
+import { vi } from 'vitest';
+
+vi.mock('./useDemoMode', () => ({
+  useDemoMode: vi.fn()
+}));
+
+it('should return hueApi when not in demo mode', () => {
+  useDemoModeMock.mockReturnValue(false);
+  const { result } = renderHook(() => useHueApi());
+  expect(result.current).toBe(hueApi);
+});
+```
+
+#### Testing Components with User Events
+```javascript
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+it('should call onActivate when scene is selected', async () => {
+  const user = userEvent.setup();
+  const onActivate = vi.fn();
+  render(<SceneSelector scenes={mockScenes} onActivate={onActivate} />);
+
+  const select = screen.getByRole('combobox');
+  await user.selectOptions(select, 'scene-2');
+
+  expect(onActivate).toHaveBeenCalledWith('scene-2');
+});
+```
+
+#### Testing Polling with Fake Timers
+```javascript
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+it('should call callback at specified interval', () => {
+  const callback = vi.fn();
+  renderHook(() => usePolling(callback, 1000, true));
+
+  vi.advanceTimersByTime(1000);
+  expect(callback).toHaveBeenCalledTimes(1);
+
+  vi.advanceTimersByTime(1000);
+  expect(callback).toHaveBeenCalledTimes(2);
+});
+```
+
+### Mutation Testing Results
+
+**73.25% mutation score** means tests successfully detect 73% of injected bugs. Key highlights:
+
+- ✅ **Color conversion**: Tests verify RGB outputs, brightness scaling, edge cases
+- ✅ **Room hierarchy**: Tests validate device→light mapping, deduplication, missing data
+- ✅ **Validation**: Tests cover valid IPs, invalid formats, boundary values
+- ✅ **Hooks**: Tests verify polling intervals, enable/disable toggling, cleanup
+- ✅ **Components**: Tests verify rendering, user interactions, conditional logic
+
+**Survived mutants** are primarily in:
+- Complex mathematical operations (matrix transformations, gamma correction)
+- Boundary conditions that don't change observable behavior
+- Precise floating-point calculations
+
+For detailed testing documentation, see `frontend/TESTING.md`.
 
 ## Important Implementation Notes
 
@@ -449,18 +626,43 @@ The MotionAware zones feature is **NOT** available through traditional motion se
 /
 ├── config.json                          # Single source of truth for all config
 ├── frontend/
+│   ├── vitest.config.js                 # Test runner configuration
+│   ├── stryker.conf.json                # Mutation testing configuration
+│   ├── TESTING.md                       # Testing documentation
 │   ├── src/
 │   │   ├── App.jsx                      # 3-step flow controller
 │   │   ├── App.css                      # All styles (single file)
 │   │   ├── components/
 │   │   │   ├── BridgeDiscovery.jsx      # Step 1: Find bridge
 │   │   │   ├── Authentication.jsx       # Step 2: Link button auth
-│   │   │   ├── LightControl.jsx         # Step 3: Main UI with native v2 data
-│   │   │   └── MotionZones.jsx          # MotionAware display
+│   │   │   ├── MotionZones.jsx          # MotionAware display
+│   │   │   └── LightControl/            # Main UI (refactored into components)
+│   │   │       ├── index.jsx            # Main container (~275 lines, down from 636)
+│   │   │       ├── RoomCard.jsx         # Room display with lights
+│   │   │       ├── LightButton.jsx      # Individual light button
+│   │   │       ├── SceneSelector.jsx    # Scene dropdown
+│   │   │       └── DashboardSummary.jsx # Statistics summary
+│   │   ├── utils/                       # Pure utility functions (all tested)
+│   │   │   ├── colorConversion.js       # xy/mirek to RGB, warm dim blending
+│   │   │   ├── roomUtils.js             # Room hierarchy building
+│   │   │   ├── validation.js            # IP validation
+│   │   │   └── motionSensors.js         # Motion data parsing
+│   │   ├── constants/                   # Centralized constants
+│   │   │   ├── polling.js               # Polling intervals
+│   │   │   ├── storage.js               # localStorage keys
+│   │   │   ├── colors.js                # Color configuration
+│   │   │   ├── validation.js            # Validation constants
+│   │   │   └── messages.js              # Error messages
 │   │   ├── services/
-│   │   │   └── hueApi.js                # All API calls (v2 API only)
-│   │   └── hooks/
-│   │       └── useHueBridge.js          # Bridge connection state
+│   │   │   ├── hueApi.js                # All API calls (v2 API only)
+│   │   │   └── mockData.js              # Demo mode mock data
+│   │   ├── hooks/                       # Custom React hooks (all tested)
+│   │   │   ├── useHueBridge.js          # Bridge connection state
+│   │   │   ├── useDemoMode.js           # Demo mode detection
+│   │   │   ├── useHueApi.js             # API selection (real vs mock)
+│   │   │   └── usePolling.js            # Reusable polling hook
+│   │   └── test/
+│   │       └── setup.js                 # Global test setup
 │   └── vite.config.js                   # Reads config.json, sets up proxy
 └── backend/
     ├── server.js                        # Express proxy + static file server
