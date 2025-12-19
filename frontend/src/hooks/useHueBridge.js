@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { hueApi } from '../services/hueApi';
-
-const STORAGE_KEYS = {
-  BRIDGE_IP: 'hue_bridge_ip',
-  USERNAME: 'hue_username'
-};
+import { STORAGE_KEYS } from '../constants/storage';
 
 export const useHueBridge = () => {
   const [state, setState] = useState({

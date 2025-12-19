@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 export const Authentication = ({ bridgeIp, onAuthenticate, loading, error }) => {
   const [isButtonPressed, setIsButtonPressed] = useState(false);
@@ -89,4 +90,11 @@ export const Authentication = ({ bridgeIp, onAuthenticate, loading, error }) => 
       )}
     </div>
   );
+};
+
+Authentication.propTypes = {
+  bridgeIp: PropTypes.string.isRequired,
+  onAuthenticate: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+  error: PropTypes.string
 };

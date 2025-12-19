@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { hueApi } from '../services/hueApi';
+import { validateIp } from '../utils/validation';
+import { ERROR_MESSAGES } from '../constants/messages';
 
 export const BridgeDiscovery = ({ onBridgeSelected }) => {
   const [manualIp, setManualIp] = useState('');
@@ -15,10 +18,10 @@ export const BridgeDiscovery = ({ onBridgeSelected }) => {
       const bridges = await hueApi.discoverBridge();
       setDiscoveredBridges(bridges);
       if (bridges.length === 0) {
-        setError('No bridges found. Please enter IP manually.');
+        setError(ERROR_MESSAGES.BRIDGE_DISCOVERY);
       }
     } catch (err) {
-      setError('Could not discover bridges. Please enter IP manually.');
+      setError(ERROR_MESSAGES.BRIDGE_DISCOVERY);
     } finally {
       setLoading(false);
     }
@@ -29,20 +32,8 @@ export const BridgeDiscovery = ({ onBridgeSelected }) => {
     if (validateIp(manualIp)) {
       onBridgeSelected(manualIp);
     } else {
-      setError('Please enter a valid IP address (e.g., 192.168.1.100)');
+      setError(ERROR_MESSAGES.INVALID_IP);
     }
-  };
-
-  const validateIp = (ip) => {
-    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    if (!ipRegex.test(ip)) return false;
-
-    // Check each octet is 0-255
-    const octets = ip.split('.');
-    return octets.every(octet => {
-      const num = parseInt(octet, 10);
-      return num >= 0 && num <= 255;
-    });
   };
 
   return (
@@ -93,4 +84,8 @@ export const BridgeDiscovery = ({ onBridgeSelected }) => {
       </div>
     </div>
   );
+};
+
+BridgeDiscovery.propTypes = {
+  onBridgeSelected: PropTypes.func.isRequired
 };

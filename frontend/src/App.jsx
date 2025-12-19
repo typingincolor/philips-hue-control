@@ -1,12 +1,12 @@
 import { useHueBridge } from './hooks/useHueBridge';
+import { useDemoMode } from './hooks/useDemoMode';
 import { BridgeDiscovery } from './components/BridgeDiscovery';
 import { Authentication } from './components/Authentication';
 import { LightControl } from './components/LightControl';
 import './App.css';
 
 function App() {
-  // Check for demo mode
-  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+  const isDemoMode = useDemoMode();
 
   const {
     step,

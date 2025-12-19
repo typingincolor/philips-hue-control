@@ -1,54 +1,19 @@
 import { useEffect, useState } from 'react';
-import { hueApi } from '../services/hueApi';
-import { mockApi } from '../services/mockData';
+import PropTypes from 'prop-types';
+import { useHueApi } from '../hooks/useHueApi';
+import { useDemoMode } from '../hooks/useDemoMode';
+import { usePolling } from '../hooks/usePolling';
+import { parseMotionSensors } from '../utils/motionSensors';
+import { POLLING_INTERVALS } from '../constants/polling';
 
 export const MotionZones = ({ bridgeIp, username }) => {
-  // Check if demo mode is enabled
-  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
-  const api = isDemoMode ? mockApi : hueApi;
+  const isDemoMode = useDemoMode();
+  const api = useHueApi();
 
   const [behaviors, setBehaviors] = useState(null);
   const [motionAreas, setMotionAreas] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Parse MotionAware data by combining behaviors (for names) with convenience_area_motion (for status)
-  const getMotionSensors = (behaviorsData, motionAreasData) => {
-    if (!behaviorsData?.data || !motionAreasData?.data) return [];
-
-    // Create a map of motion area IDs to their motion status
-    const motionStatusMap = {};
-    motionAreasData.data.forEach(area => {
-      motionStatusMap[area.id] = {
-        motionDetected: area.motion?.motion || false,
-        motionValid: area.motion?.motion_valid !== false,
-        enabled: area.enabled !== false,
-        lastChanged: area.motion?.motion_report?.changed
-      };
-    });
-
-    // Extract MotionAware zones from behaviors and combine with motion status
-    const motionZones = behaviorsData.data
-      .filter(behavior =>
-        behavior.configuration?.motion?.motion_service?.rtype === 'convenience_area_motion'
-      )
-      .map(behavior => {
-        const motionServiceId = behavior.configuration.motion.motion_service.rid;
-        const status = motionStatusMap[motionServiceId] || {};
-
-        return {
-          id: behavior.id,
-          name: behavior.metadata?.name || 'Unknown Zone',
-          motionDetected: status.motionDetected || false,
-          enabled: behavior.enabled && status.enabled,
-          reachable: status.motionValid !== false,
-          lastChanged: status.lastChanged
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
-
-    return motionZones;
-  };
 
   // Fetch MotionAware data using API
   const fetchSensors = async () => {
@@ -77,21 +42,14 @@ export const MotionZones = ({ bridgeIp, username }) => {
     }
   }, [bridgeIp, username]);
 
-  // Poll every 30 seconds (disabled in demo mode)
-  useEffect(() => {
-    if (!bridgeIp || !username || isDemoMode) return;
+  // Auto-refresh polling (disabled in demo mode)
+  usePolling(
+    fetchSensors,
+    POLLING_INTERVALS.MOTION_REFRESH,
+    !!(bridgeIp && username && !isDemoMode)
+  );
 
-    const intervalId = setInterval(() => {
-      fetchSensors();
-    }, 30000); // 30 seconds
-
-    // Cleanup on unmount
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [bridgeIp, username, isDemoMode]);
-
-  const motionSensors = getMotionSensors(behaviors, motionAreas);
+  const motionSensors = parseMotionSensors(behaviors, motionAreas);
 
   // Don't render if no MotionAware zones found
   if (!loading && motionSensors.length === 0) {
@@ -129,4 +87,9 @@ export const MotionZones = ({ bridgeIp, username }) => {
       )}
     </div>
   );
+};
+
+MotionZones.propTypes = {
+  bridgeIp: PropTypes.string.isRequired,
+  username: PropTypes.string.isRequired
 };
