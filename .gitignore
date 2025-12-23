@@ -20,6 +20,9 @@ backend/public
 frontend/coverage
 frontend/reports
 frontend/.stryker-tmp
+backend/coverage
+backend/reports
+backend/.stryker-tmp
 
 # Editor directories and files
 .vscode/*
