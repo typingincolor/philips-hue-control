@@ -8,6 +8,7 @@ import { TopToolbar } from './TopToolbar';
 import { BottomNav } from './BottomNav';
 import { RoomContent } from './RoomContent';
 import { ZonesView } from './ZonesView';
+import { MotionZones } from '../MotionZones';
 
 export const LightControl = ({
   sessionToken,
@@ -358,6 +359,11 @@ export const LightControl = ({
           />
         )}
       </div>
+
+      <MotionZones
+        sessionToken={sessionToken}
+        motionZones={dashboard?.motionZones}
+      />
 
       <BottomNav
         rooms={dashboard?.rooms || []}
