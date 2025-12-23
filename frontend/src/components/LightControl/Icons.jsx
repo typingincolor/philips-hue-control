@@ -131,3 +131,117 @@ export const Logout = ({ size = 24, className = '', style = {} }) => (
 );
 
 Logout.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Sofa icon (living room)
+export const Sofa = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3" />
+    <path d="M3 11h18v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z" />
+    <path d="M6 18v2" />
+    <path d="M18 18v2" />
+    <path d="M8 11v2" />
+    <path d="M16 11v2" />
+  </Icon>
+);
+
+Sofa.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Dining table icon (dining room)
+export const DiningTable = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <rect x="3" y="9" width="18" height="3" rx="1" />
+    <path d="M5 12v7" />
+    <path d="M19 12v7" />
+    <circle cx="8" cy="6" r="2" />
+    <circle cx="16" cy="6" r="2" />
+  </Icon>
+);
+
+DiningTable.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Saucepan icon (kitchen)
+export const Saucepan = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M3 11h16a2 2 0 0 1 2 2v2a6 6 0 0 1-6 6H7a6 6 0 0 1-6-6v-2a2 2 0 0 1 2-2z" />
+    <path d="M19 11h3" />
+    <path d="M8 7V5" />
+    <path d="M12 7V4" />
+    <path d="M16 7V5" />
+  </Icon>
+);
+
+Saucepan.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Bed icon (bedroom)
+export const Bed = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M2 9v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9" />
+    <path d="M2 13h20" />
+    <path d="M4 9V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2" />
+    <rect x="6" y="7" width="4" height="4" rx="1" />
+    <rect x="14" y="7" width="4" height="4" rx="1" />
+  </Icon>
+);
+
+Bed.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Desk lamp icon (office)
+export const DeskLamp = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M14 5l-2 8" />
+    <path d="M9 13h6l2-8H7l2 8z" />
+    <path d="M12 13v5" />
+    <path d="M8 21h8" />
+    <path d="M12 18h0" />
+  </Icon>
+);
+
+DeskLamp.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Bathroom/shower icon
+export const Shower = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M4 15h16" />
+    <path d="M7 15v5" />
+    <path d="M17 15v5" />
+    <circle cx="12" cy="8" r="3" />
+    <path d="M12 5V3" />
+    <path d="M8 11l-1 1" />
+    <path d="M16 11l1 1" />
+  </Icon>
+);
+
+Shower.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Garage/car icon
+export const Car = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M5 17h14v-5H5v5z" />
+    <path d="M6 12l2-5h8l2 5" />
+    <circle cx="7" cy="17" r="1" />
+    <circle cx="17" cy="17" r="1" />
+  </Icon>
+);
+
+Car.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Garden/outdoor icon
+export const Tree = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <path d="M12 22v-7" />
+    <path d="M12 8a4 4 0 0 0-4 4h8a4 4 0 0 0-4-4z" />
+    <path d="M12 4a6 6 0 0 0-6 6h12a6 6 0 0 0-6-6z" />
+  </Icon>
+);
+
+Tree.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
+
+// Door icon (hallway/entry)
+export const Door = ({ size = 24, className = '', style = {} }) => (
+  <Icon size={size} className={className} style={style}>
+    <rect x="5" y="2" width="14" height="20" rx="1" />
+    <circle cx="15" cy="12" r="1" />
+  </Icon>
+);
+
+Door.propTypes = { size: PropTypes.number, className: PropTypes.string, style: PropTypes.object };
