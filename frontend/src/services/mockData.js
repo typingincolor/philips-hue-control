@@ -207,10 +207,10 @@ export const mockScenes = {
 // Mock dashboard data (v1 API format)
 const mockDashboard = {
   summary: {
-    totalLights: 14,
-    lightsOn: 11,
-    roomCount: 3,
-    sceneCount: 4
+    totalLights: 32,
+    lightsOn: 24,
+    roomCount: 9,
+    sceneCount: 12
   },
   zones: [
     {
@@ -321,6 +321,110 @@ const mockDashboard = {
       ],
       scenes: [
         { id: "scene-4", name: "Nightlight" }
+      ]
+    },
+    {
+      id: "room-4",
+      name: "Office",
+      stats: {
+        lightsOnCount: 2,
+        totalLights: 3,
+        averageBrightness: 85
+      },
+      lights: [
+        { id: "light-15", name: "Desk Light", on: true, brightness: 100, color: "rgb(255, 250, 240)", shadow: "0 0 30px rgba(255, 250, 240, 0.6)" },
+        { id: "light-16", name: "Monitor Bias", on: true, brightness: 70, color: "rgb(180, 200, 255)", shadow: "0 0 24px rgba(180, 200, 255, 0.48)" },
+        { id: "light-17", name: "Corner Lamp", on: false, brightness: 0, color: null, shadow: null }
+      ],
+      scenes: [
+        { id: "scene-5", name: "Work" },
+        { id: "scene-6", name: "Meeting" }
+      ]
+    },
+    {
+      id: "room-5",
+      name: "Homer's Office",
+      stats: {
+        lightsOnCount: 2,
+        totalLights: 2,
+        averageBrightness: 55
+      },
+      lights: [
+        { id: "light-18", name: "Ceiling", on: true, brightness: 65, color: "rgb(255, 230, 180)", shadow: "0 0 24px rgba(255, 230, 180, 0.48)" },
+        { id: "light-19", name: "Reading Lamp", on: true, brightness: 45, color: "rgb(255, 210, 160)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" }
+      ],
+      scenes: [
+        { id: "scene-7", name: "Donut Time" }
+      ]
+    },
+    {
+      id: "room-6",
+      name: "Bart's Room",
+      stats: {
+        lightsOnCount: 3,
+        totalLights: 4,
+        averageBrightness: 72
+      },
+      lights: [
+        { id: "light-20", name: "Ceiling", on: true, brightness: 80, color: "rgb(255, 180, 100)", shadow: "0 0 26px rgba(255, 180, 100, 0.52)" },
+        { id: "light-21", name: "Lava Lamp", on: true, brightness: 60, color: "rgb(255, 100, 150)", shadow: "0 0 22px rgba(255, 100, 150, 0.44)" },
+        { id: "light-22", name: "Desk", on: true, brightness: 75, color: "rgb(100, 200, 255)", shadow: "0 0 25px rgba(100, 200, 255, 0.5)" },
+        { id: "light-23", name: "Closet", on: false, brightness: 0, color: null, shadow: null }
+      ],
+      scenes: [
+        { id: "scene-8", name: "Skateboard" }
+      ]
+    },
+    {
+      id: "room-7",
+      name: "Maggie Room",
+      stats: {
+        lightsOnCount: 2,
+        totalLights: 3,
+        averageBrightness: 25
+      },
+      lights: [
+        { id: "light-24", name: "Night Light", on: true, brightness: 15, color: "rgb(255, 200, 220)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-25", name: "Mobile Light", on: true, brightness: 35, color: "rgb(200, 220, 255)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-26", name: "Ceiling", on: false, brightness: 0, color: null, shadow: null }
+      ],
+      scenes: [
+        { id: "scene-9", name: "Nap Time" },
+        { id: "scene-10", name: "Play Time" }
+      ]
+    },
+    {
+      id: "room-8",
+      name: "Marge's Office",
+      stats: {
+        lightsOnCount: 2,
+        totalLights: 2,
+        averageBrightness: 78
+      },
+      lights: [
+        { id: "light-27", name: "Vanity", on: true, brightness: 85, color: "rgb(255, 245, 235)", shadow: "0 0 27px rgba(255, 245, 235, 0.54)" },
+        { id: "light-28", name: "Desk Lamp", on: true, brightness: 70, color: "rgb(255, 235, 200)", shadow: "0 0 24px rgba(255, 235, 200, 0.48)" }
+      ],
+      scenes: [
+        { id: "scene-11", name: "Creative" }
+      ]
+    },
+    {
+      id: "room-9",
+      name: "Landing",
+      stats: {
+        lightsOnCount: 2,
+        totalLights: 4,
+        averageBrightness: 40
+      },
+      lights: [
+        { id: "light-29", name: "Hall Ceiling", on: true, brightness: 50, color: "rgb(255, 240, 220)", shadow: "0 0 20px rgba(255, 240, 220, 0.4)" },
+        { id: "light-30", name: "Stair Light", on: true, brightness: 30, color: "rgb(255, 220, 180)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-31", name: "Window", on: false, brightness: 0, color: null, shadow: null },
+        { id: "light-32", name: "Accent", on: false, brightness: 0, color: null, shadow: null }
+      ],
+      scenes: [
+        { id: "scene-12", name: "Welcome" }
       ]
     }
   ]
