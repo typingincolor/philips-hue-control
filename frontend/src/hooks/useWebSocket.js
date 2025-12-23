@@ -158,6 +158,15 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
             }
             break;
 
+          case 'zone':
+            // Update zones array (light groupings)
+            if (updated.zones) {
+              updated.zones = updated.zones.map(zone =>
+                zone.id === change.data.id ? change.data : zone
+              );
+            }
+            break;
+
           default:
             console.warn('[WebSocket] Unknown change type:', change.type);
         }

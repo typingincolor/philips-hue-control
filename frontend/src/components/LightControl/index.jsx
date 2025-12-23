@@ -7,6 +7,7 @@ import { ERROR_MESSAGES } from '../../constants/messages';
 import { MotionZones } from '../MotionZones';
 import { DashboardSummary } from './DashboardSummary';
 import { RoomCard } from './RoomCard';
+import { ZoneCard } from './ZoneCard';
 import { LightButton } from './LightButton';
 
 export const LightControl = ({
@@ -174,6 +175,51 @@ export const LightControl = ({
     }
   };
 
+  const toggleZone = async (zoneId, lightUuids, turnOn) => {
+    setTogglingLights(prev => {
+      const newSet = new Set(prev);
+      lightUuids.forEach(id => newSet.add(id));
+      return newSet;
+    });
+
+    try {
+      const newState = { on: turnOn };
+
+      // Use v1 endpoint that updates all lights in zone
+      const response = await api.updateZoneLights(sessionToken, zoneId, newState);
+
+      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
+      if (isDemoMode) {
+        setLocalDashboard(prev => ({
+          ...prev,
+          zones: prev.zones.map(zone => {
+            if (zone.id === zoneId) {
+              // Replace all lights in this zone with updated data
+              const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
+              return {
+                ...zone,
+                lights: zone.lights.map(l => updatedLightMap.get(l.id) || l)
+              };
+            }
+            return zone;
+          })
+        }));
+
+        // Refresh dashboard to get updated summary stats
+        setTimeout(() => fetchAllData(), 300);
+      }
+    } catch (err) {
+      console.error('Failed to toggle zone:', err);
+      alert(`${ERROR_MESSAGES.ZONE_TOGGLE}: ${err.message}`);
+    } finally {
+      setTogglingLights(prev => {
+        const newSet = new Set(prev);
+        lightUuids.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    }
+  };
+
   const handleSceneChange = async (sceneUuid) => {
     if (!sceneUuid) return;
 
@@ -300,6 +346,33 @@ export const LightControl = ({
               })}
             </div>
           </div>
+
+          {dashboard.zones && dashboard.zones.length > 0 && (
+            <div className="zones-control">
+              <div className="zones-header">
+                <h3>Zones</h3>
+              </div>
+
+              <div className="zones-list">
+                {dashboard.zones.map((zone) => {
+                  const isActivating = activatingScene && zone.scenes.some(s => s.id === activatingScene);
+
+                  return (
+                    <ZoneCard
+                      key={zone.id}
+                      zoneName={zone.name}
+                      zone={zone}
+                      onToggleLight={toggleLight}
+                      onToggleZone={toggleZone}
+                      onActivateScene={handleSceneChange}
+                      togglingLights={togglingLights}
+                      isActivating={isActivating}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

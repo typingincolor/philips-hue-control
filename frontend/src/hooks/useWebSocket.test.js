@@ -598,6 +598,166 @@ describe('useWebSocket', () => {
 
       global.WebSocket = originalWebSocket;
     });
+
+    // Zone (light grouping) update tests
+    it('should handle zone update', async () => {
+      let ws;
+      const originalWebSocket = global.WebSocket;
+      global.WebSocket = class extends MockWebSocket {
+        constructor(url) {
+          super(url);
+          ws = this;
+        }
+      };
+
+      const { result } = renderHook(() =>
+        useWebSocket('test-session-token', null, true)
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(0);
+      });
+
+      // Set initial state with zones
+      act(() => {
+        ws.simulateMessage({
+          type: 'initial_state',
+          data: {
+            summary: {},
+            rooms: [],
+            zones: [
+              { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 0, totalLights: 3 } }
+            ]
+          }
+        });
+      });
+
+      expect(result.current.dashboard.zones).toHaveLength(1);
+      expect(result.current.dashboard.zones[0].stats.lightsOnCount).toBe(0);
+
+      // Update zone
+      act(() => {
+        ws.simulateMessage({
+          type: 'state_update',
+          changes: [
+            {
+              type: 'zone',
+              data: { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 2, totalLights: 3 } }
+            }
+          ]
+        });
+      });
+
+      expect(result.current.dashboard.zones[0].stats.lightsOnCount).toBe(2);
+
+      global.WebSocket = originalWebSocket;
+    });
+
+    it('should handle multiple zone updates', async () => {
+      let ws;
+      const originalWebSocket = global.WebSocket;
+      global.WebSocket = class extends MockWebSocket {
+        constructor(url) {
+          super(url);
+          ws = this;
+        }
+      };
+
+      const { result } = renderHook(() =>
+        useWebSocket('test-session-token', null, true)
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(0);
+      });
+
+      act(() => {
+        ws.simulateMessage({
+          type: 'initial_state',
+          data: {
+            summary: {},
+            rooms: [],
+            zones: [
+              { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 0 } },
+              { id: 'zone-2', name: 'Downstairs', stats: { lightsOnCount: 0 } }
+            ]
+          }
+        });
+      });
+
+      // Update both zones
+      act(() => {
+        ws.simulateMessage({
+          type: 'state_update',
+          changes: [
+            {
+              type: 'zone',
+              data: { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 3 } }
+            },
+            {
+              type: 'zone',
+              data: { id: 'zone-2', name: 'Downstairs', stats: { lightsOnCount: 5 } }
+            }
+          ]
+        });
+      });
+
+      expect(result.current.dashboard.zones[0].stats.lightsOnCount).toBe(3);
+      expect(result.current.dashboard.zones[1].stats.lightsOnCount).toBe(5);
+
+      global.WebSocket = originalWebSocket;
+    });
+
+    it('should preserve zones when not included in update', async () => {
+      let ws;
+      const originalWebSocket = global.WebSocket;
+      global.WebSocket = class extends MockWebSocket {
+        constructor(url) {
+          super(url);
+          ws = this;
+        }
+      };
+
+      const { result } = renderHook(() =>
+        useWebSocket('test-session-token', null, true)
+      );
+
+      await act(async () => {
+        vi.advanceTimersByTime(0);
+      });
+
+      act(() => {
+        ws.simulateMessage({
+          type: 'initial_state',
+          data: {
+            summary: { lightsOn: 5 },
+            rooms: [],
+            zones: [
+              { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 2 } }
+            ]
+          }
+        });
+      });
+
+      // Update summary only
+      act(() => {
+        ws.simulateMessage({
+          type: 'state_update',
+          changes: [
+            {
+              type: 'summary',
+              data: { lightsOn: 7 }
+            }
+          ]
+        });
+      });
+
+      // Zones should be preserved
+      expect(result.current.dashboard.zones).toHaveLength(1);
+      expect(result.current.dashboard.zones[0].name).toBe('Upstairs');
+
+      global.WebSocket = originalWebSocket;
+    });
   });
 
   describe('Reconnection', () => {

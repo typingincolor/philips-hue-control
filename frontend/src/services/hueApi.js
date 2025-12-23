@@ -163,6 +163,23 @@ export const hueApi = {
   },
 
   /**
+   * Update all lights in a zone (V1 API)
+   * @param {string} sessionToken - Session token
+   * @param {string} zoneId - The zone UUID
+   * @param {Object} state - Simplified state { on: boolean, brightness: number }
+   * @returns {Promise<Object>} Updated lights with pre-computed colors/shadows
+   */
+  async updateZoneLights(sessionToken, zoneId, state) {
+    const url = `${PROXY_URL}/api/v1/zones/${zoneId}/lights`;
+
+    return request(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    }, sessionToken);
+  },
+
+  /**
    * Activate a scene (V1 API)
    * @param {string} sessionToken - Session token
    * @param {string} sceneId - The scene UUID

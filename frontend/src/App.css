@@ -847,6 +847,43 @@ button.secondary:hover:not(:disabled) {
   }
 }
 
+/* Zones Section */
+.zones-control {
+  margin-top: 24px;
+}
+
+.zones-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.zones-header h3 {
+  color: #7c3aed;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.zones-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 1800px) {
+  .zones-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .zones-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 .room-group {
   background: white;
   border-radius: 12px;
@@ -1019,6 +1056,122 @@ button.secondary:hover:not(:disabled) {
   justify-content: start;
 }
 
+/* Zone Cards (light groupings spanning multiple rooms) */
+.zone-group {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08),
+              0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9d5ff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.zone-group:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07),
+              0 8px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: #d8b4fe;
+}
+
+.zone-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #faf5ff;
+}
+
+.zone-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.zone-name {
+  color: #111827;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zone-status-badge {
+  background: #faf5ff;
+  color: #7c3aed;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.zone-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zone-brightness-badge {
+  background: #f5f3ff;
+  color: #8b5cf6;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 42px;
+  text-align: center;
+}
+
+.zone-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zone-control-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #8b5cf6;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+}
+
+.zone-control-button:hover:not(:disabled) {
+  background: #7c3aed;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+}
+
+.zone-control-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(139, 92, 246, 0.2);
+}
+
+.zone-control-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.zone-lights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--button-size));
+  gap: var(--grid-gap);
+  justify-content: start;
+}
+
 /* Light Card */
 .light-card {
   display: flex;
@@ -1175,12 +1328,14 @@ button.secondary:hover:not(:disabled) {
   }
 
   .room-lights-grid,
+  .zone-lights-grid,
   .lights-grid-simple {
     grid-template-columns: repeat(auto-fit, var(--button-size));
     gap: var(--grid-gap);
   }
 
-  .room-controls {
+  .room-controls,
+  .zone-controls {
     width: 100%;
   }
 

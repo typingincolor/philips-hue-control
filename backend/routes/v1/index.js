@@ -4,6 +4,7 @@ import dashboardRouter from './dashboard.js';
 import motionZonesRouter from './motionZones.js';
 import lightsRouter from './lights.js';
 import roomsRouter from './rooms.js';
+import zonesRouter from './zones.js';
 import scenesRouter from './scenes.js';
 
 const router = express.Router();
@@ -14,6 +15,7 @@ router.use('/dashboard', dashboardRouter);
 router.use('/motion-zones', motionZonesRouter);
 router.use('/lights', lightsRouter);
 router.use('/rooms', roomsRouter);
+router.use('/zones', zonesRouter);
 router.use('/scenes', scenesRouter);
 
 export default router;
