@@ -152,11 +152,10 @@ body {
 /* Main Content */
 .app-main {
   flex: 1;
-  background: white;
+  background: var(--bg-primary);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .app-main h2 {
@@ -1030,10 +1029,10 @@ button.secondary:hover:not(:disabled) {
 
 .scene-selector {
   padding: 8px 14px;
-  border: 2px solid #e5e7eb;
+  border: 1px solid var(--accent-primary);
   border-radius: 8px;
-  background: white;
-  color: #374151;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -1045,8 +1044,8 @@ button.secondary:hover:not(:disabled) {
 }
 
 .scene-selector:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #3b82f6;
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
 }
 
 .scene-selector:disabled {
@@ -1056,8 +1055,8 @@ button.secondary:hover:not(:disabled) {
 
 .scene-selector:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
 }
 
 .room-control-button {
@@ -1680,7 +1679,7 @@ body.dark-theme {
   align-items: center;
   gap: 6px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--accent-primary);
   color: var(--text-primary);
   padding: 10px 16px;
   border-radius: 8px;
@@ -1720,7 +1719,7 @@ body.dark-theme {
   aspect-ratio: 1;
   border-radius: 24px;
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--accent-primary);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -1730,11 +1729,10 @@ body.dark-theme {
 
 .light-tile:hover {
   transform: translateY(-4px);
-  border-color: var(--border-color-light);
 }
 
 .light-tile.on {
-  border-color: var(--border-color-light);
+  /* Keep amber border */
 }
 
 .light-tile.toggling {
@@ -1798,7 +1796,7 @@ body.dark-theme {
   right: 0;
   height: var(--nav-height);
   background: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--accent-primary);
   display: flex;
   align-items: stretch;
   overflow-x: auto;
@@ -1855,12 +1853,12 @@ body.dark-theme {
 }
 
 .nav-tab-label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.2;
   max-width: 80px;
+  word-wrap: break-word;
 }
 
 .nav-tab-badge {
@@ -2052,7 +2050,7 @@ body.dark-theme {
 
   .nav-tab-label {
     font-size: 0.65rem;
-    max-width: 60px;
+    max-width: 70px;
   }
 
   .zone-item-dark {

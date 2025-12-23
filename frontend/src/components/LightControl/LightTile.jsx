@@ -14,8 +14,8 @@ export const LightTile = ({ light, onToggle, isToggling }) => {
     boxShadow: light.shadow
   } : {};
 
-  // Content color: dark on bright fills for contrast, light on dark/empty
-  const contentColor = brightness > 50 ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.9)';
+  // Content color and background pill for readability
+  const { color: contentColor, background: pillBackground } = getContrastStyle(fillColor, brightness);
 
   return (
     <button
@@ -42,7 +42,17 @@ export const LightTile = ({ light, onToggle, isToggling }) => {
         ) : (
           <LightbulbOff size={48} className="light-tile-icon" style={{ color: contentColor }} />
         )}
-        <span className="light-tile-name" style={{ color: contentColor }}>{light.name || 'Light'}</span>
+        <span
+          className="light-tile-name"
+          style={{
+            color: contentColor,
+            background: pillBackground,
+            padding: '2px 8px',
+            borderRadius: '10px'
+          }}
+        >
+          {light.name || 'Light'}
+        </span>
       </div>
     </button>
   );
@@ -61,6 +71,36 @@ function adjustColor(color, amount) {
   const b = Math.max(0, Math.min(255, parseInt(match[3]) + amount));
 
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Calculate text style with background pill for readability
+function getContrastStyle(color, brightness) {
+  // Parse rgb(r, g, b) format to get luminance
+  const match = color?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  let luminance = 180; // Default for warm colors
+
+  if (match) {
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+    luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  // For bright fill colors with enough coverage, use dark text on light pill
+  // Otherwise use light text on dark pill
+  const isBrightFill = luminance > 140 && brightness >= 50;
+
+  if (isBrightFill) {
+    return {
+      color: 'rgba(0, 0, 0, 0.9)',
+      background: 'rgba(255, 255, 255, 0.7)'
+    };
+  } else {
+    return {
+      color: 'rgba(255, 255, 255, 0.95)',
+      background: 'rgba(0, 0, 0, 0.5)'
+    };
+  }
 }
 
 LightTile.propTypes = {
