@@ -1,4 +1,5 @@
 import { toApiError } from '../utils/errors.js';
+import logger from '../utils/logger.js';
 
 /**
  * Global error handler middleware
@@ -9,7 +10,8 @@ export function errorHandler(err, req, res, next) {
   const apiError = toApiError(err);
 
   // Log error details for debugging
-  console.error(`[ERROR] ${req.method} ${req.path}:`, {
+  logger.error(`${req.method} ${req.path}`, {
+    component: 'ERROR',
     code: apiError.code,
     message: apiError.message,
     statusCode: apiError.statusCode,
