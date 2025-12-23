@@ -5,9 +5,9 @@ import { SceneSelector } from './SceneSelector';
 
 describe('SceneSelector', () => {
   const mockScenes = [
-    { uuid: 'scene-1', name: 'Bright' },
-    { uuid: 'scene-2', name: 'Relax' },
-    { uuid: 'scene-3', name: 'Concentrate' }
+    { id: 'scene-1', name: 'Bright' },
+    { id: 'scene-2', name: 'Relax' },
+    { id: 'scene-3', name: 'Concentrate' }
   ];
 
   it('should render with scenes', () => {

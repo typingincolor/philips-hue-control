@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Philips Hue Light Control** web application built as a monorepo with separated frontend (React) and backend (Express) workspaces. The app controls Philips Hue lights locally through the Hue Bridge API, featuring **true color display** with mathematical color space conversion, **information-dense UI** with brightness indicators and room statistics, **responsive design** optimized for iPhone 14+ and iPad, room organization, scene management, and **MotionAware zone display** with real-time motion detection.
 
+**Architecture (v0.5.0+):** Business logic resides in the backend, exposing a simplified v1 REST API. The backend pre-computes colors, shadows, and statistics, reducing frontend complexity by ~1,300 lines and API calls by 67-83%. See `ARCHITECTURE_UPDATE.md` for migration details.
+
 ## Development Commands
 
 ### Start Development (Both Servers)
@@ -350,24 +352,40 @@ getRoomLightStats(roomLights) {
 
 ### Test Organization
 
-The project includes comprehensive testing with **127 unit tests** achieving a **73.25% mutation score**:
+The project includes comprehensive testing with **190 tests total** (99 backend + 91 frontend):
 
+**Backend Tests** (99 tests, 81% coverage, 62% mutation score):
+```
+backend/test/
+├── services/
+│   ├── colorService.test.js        # 14 tests - Color conversions, warm dim
+│   ├── roomService.test.js         # 23 tests - Room hierarchy, stats
+│   ├── motionService.test.js       # 13 tests - Motion sensor parsing
+│   ├── statsService.test.js        # 10 tests - Dashboard statistics
+│   └── sessionManager.test.js      # 12 tests - Session management
+├── routes/
+│   └── (various route tests)       # 27 tests - API endpoints
+```
+
+**Frontend Tests** (91 tests):
 ```
 frontend/src/
 ├── utils/
-│   ├── colorConversion.test.js     # 31 tests - xy/mirek to RGB, warm dim blending
-│   ├── roomUtils.test.js           # 23 tests - Room hierarchy, scene filtering
-│   ├── validation.test.js          # 8 tests - IP validation
-│   └── motionSensors.test.js       # 13 tests - Motion data parsing
+│   └── validation.test.js          # 8 tests - IP validation
 ├── hooks/
 │   ├── useDemoMode.test.js         # 9 tests - URL parameter parsing
 │   ├── useHueApi.test.js           # 4 tests - API selection (real vs mock)
-│   └── usePolling.test.js          # 10 tests - Interval polling with timers
-└── components/LightControl/
-    ├── DashboardSummary.test.jsx   # 5 tests - Statistics rendering
-    ├── SceneSelector.test.jsx      # 11 tests - Scene dropdown interactions
-    └── LightButton.test.jsx        # 13 tests - Light button rendering
+│   └── usePolling.test.js          # 10 tests - Interval polling
+├── components/
+│   ├── MotionZones.test.jsx        # 17 tests - Motion zone display
+│   └── LightControl/
+│       ├── DashboardSummary.test.jsx   # 5 tests - Statistics rendering
+│       ├── SceneSelector.test.jsx      # 11 tests - Scene dropdown
+│       ├── LightButton.test.jsx        # 15 tests - Light button (uses pre-computed colors)
+│       └── RoomCard.test.jsx           # 16 tests - Room card (uses pre-computed stats)
 ```
+
+**Note:** Business logic tests (colorConversion, roomUtils, motionSensors) moved from frontend to backend as services.
 
 ### Testing Stack
 
