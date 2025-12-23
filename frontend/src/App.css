@@ -1399,16 +1399,16 @@ button.secondary:hover:not(:disabled) {
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 8px;
   padding: 8px 14px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
 }
 
 .motion-zones-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1419,20 +1419,32 @@ button.secondary:hover:not(:disabled) {
 
 .motion-zones-items {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+  flex: 1;
+}
+
+.motion-zones-items::-webkit-scrollbar {
+  display: none;
 }
 
 .motion-zone-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
   font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .motion-zone-item.unreachable {
@@ -1463,7 +1475,7 @@ button.secondary:hover:not(:disabled) {
 .motion-zone-name {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
