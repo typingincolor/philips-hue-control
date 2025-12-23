@@ -16,6 +16,39 @@ class WebSocketService {
   }
 
   /**
+   * Get current connection statistics for debugging
+   */
+  getStats() {
+    const stats = {
+      totalClients: this.wss?.clients?.size || 0,
+      bridges: {},
+      pollingIntervals: this.pollingIntervals.size,
+      stateCaches: this.stateCache.size
+    };
+
+    for (const [bridgeIp, connections] of this.connections) {
+      stats.bridges[bridgeIp] = {
+        connections: connections.size,
+        hasPolling: this.pollingIntervals.has(bridgeIp),
+        hasCache: this.stateCache.has(bridgeIp)
+      };
+    }
+
+    return stats;
+  }
+
+  /**
+   * Log current connection statistics
+   */
+  logStats(context = '') {
+    const stats = this.getStats();
+    console.log(`[WebSocket] Stats${context ? ` (${context})` : ''}: ${stats.totalClients} clients, ${Object.keys(stats.bridges).length} bridges, ${stats.pollingIntervals} polling intervals`);
+    for (const [bridgeIp, info] of Object.entries(stats.bridges)) {
+      console.log(`[WebSocket]   Bridge ${bridgeIp}: ${info.connections} connections, polling=${info.hasPolling}`);
+    }
+  }
+
+  /**
    * Initialize WebSocket server
    */
   initialize(server) {
@@ -45,18 +78,80 @@ class WebSocketService {
       });
     });
 
-    // Heartbeat check every 30 seconds
+    // Heartbeat check every 30 seconds - terminates dead connections
     this.heartbeatInterval = setInterval(() => {
+      let terminated = 0;
       this.wss.clients.forEach((ws) => {
         if (ws.isAlive === false) {
-          return ws.terminate();
+          console.log(`[WebSocket] Terminating unresponsive client for bridge ${ws.bridgeIp || 'unknown'}`);
+          this.handleDisconnect(ws); // Clean up before terminating
+          ws.terminate();
+          terminated++;
+          return;
         }
         ws.isAlive = false;
         ws.ping();
       });
+      if (terminated > 0) {
+        this.logStats('after heartbeat cleanup');
+      }
     }, 30000);
 
+    // Periodic cleanup check every 60 seconds - catches any orphaned resources
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupOrphanedResources();
+    }, 60000);
+
     console.log('[WebSocket] Server initialized on /api/v1/ws');
+  }
+
+  /**
+   * Clean up orphaned polling intervals and stale connections
+   */
+  cleanupOrphanedResources() {
+    let cleaned = false;
+
+    // Check for polling intervals without active connections
+    for (const [bridgeIp, intervalId] of this.pollingIntervals) {
+      const connections = this.connections.get(bridgeIp);
+      if (!connections || connections.size === 0) {
+        console.log(`[WebSocket] Cleaning up orphaned polling interval for bridge ${bridgeIp}`);
+        clearInterval(intervalId);
+        this.pollingIntervals.delete(bridgeIp);
+        this.stateCache.delete(bridgeIp);
+        this.connections.delete(bridgeIp);
+        cleaned = true;
+      }
+    }
+
+    // Check for stale connections (not in OPEN state)
+    for (const [bridgeIp, connections] of this.connections) {
+      const staleConnections = [];
+      connections.forEach(ws => {
+        if (ws.readyState !== 1) { // Not OPEN
+          staleConnections.push(ws);
+        }
+      });
+
+      for (const ws of staleConnections) {
+        console.log(`[WebSocket] Removing stale connection for bridge ${bridgeIp} (state: ${ws.readyState})`);
+        connections.delete(ws);
+        cleaned = true;
+      }
+
+      // If no connections left, stop polling
+      if (connections.size === 0 && this.pollingIntervals.has(bridgeIp)) {
+        console.log(`[WebSocket] No active connections for ${bridgeIp}, stopping polling`);
+        this.stopPolling(bridgeIp);
+        this.connections.delete(bridgeIp);
+        this.stateCache.delete(bridgeIp);
+        cleaned = true;
+      }
+    }
+
+    if (cleaned) {
+      this.logStats('after cleanup');
+    }
   }
 
   /**
@@ -130,6 +225,7 @@ class WebSocketService {
       await this.startPolling(bridgeIp, username);
     }
     this.connections.get(bridgeIp).add(ws);
+    this.logStats('after auth');
 
     // Send initial state
     try {
@@ -151,21 +247,30 @@ class WebSocketService {
    * Handle client disconnection
    */
   handleDisconnect(ws) {
-    console.log('[WebSocket] Client disconnected');
+    const bridgeIp = ws.bridgeIp || 'unknown';
+    console.log(`[WebSocket] Client disconnected from bridge ${bridgeIp}`);
 
     if (ws.bridgeIp) {
       const connections = this.connections.get(ws.bridgeIp);
       if (connections) {
+        const hadConnection = connections.has(ws);
         connections.delete(ws);
+
+        if (hadConnection) {
+          console.log(`[WebSocket] Removed connection for bridge ${ws.bridgeIp}, ${connections.size} remaining`);
+        }
 
         // Stop polling if no more connections for this bridge
         if (connections.size === 0) {
+          console.log(`[WebSocket] No more connections for bridge ${ws.bridgeIp}, cleaning up`);
           this.stopPolling(ws.bridgeIp);
           this.connections.delete(ws.bridgeIp);
           this.stateCache.delete(ws.bridgeIp);
         }
       }
     }
+
+    this.logStats('after disconnect');
   }
 
   /**
@@ -328,6 +433,7 @@ class WebSocketService {
    */
   shutdown() {
     console.log('[WebSocket] Shutting down...');
+    this.logStats('before shutdown');
 
     // Stop all polling
     for (const bridgeIp of this.pollingIntervals.keys()) {
@@ -337,12 +443,25 @@ class WebSocketService {
     // Clear heartbeat
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
+
+    // Clear cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+
+    // Clear all maps
+    this.connections.clear();
+    this.stateCache.clear();
 
     // Close all connections
     if (this.wss) {
       this.wss.close();
     }
+
+    console.log('[WebSocket] Shutdown complete');
   }
 }
 
