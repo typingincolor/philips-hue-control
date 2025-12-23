@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Philips Hue Light Control** web application built as a monorepo with separated frontend (React) and backend (Express) workspaces. The app controls Philips Hue lights locally through the Hue Bridge API, featuring **true color display** with mathematical color space conversion, **information-dense UI** with brightness indicators and room statistics, **responsive design** optimized for iPhone 14+ and iPad, room organization, scene management, **MotionAware zone display** with real-time motion detection, and **WebSocket support** for live updates.
 
-**Architecture (v0.5.0+):** Business logic resides in the backend, exposing a simplified v1 REST API with WebSocket support. The backend pre-computes colors, shadows, and statistics while pushing real-time updates via WebSocket, reducing frontend complexity by ~1,300 lines, API calls by 67-83%, and eliminating polling overhead. See `ARCHITECTURE_UPDATE.md` for migration details.
+**Architecture (v2.0.0):** Business logic resides in the backend, exposing a simplified v1 REST API with WebSocket support. The backend pre-computes colors, shadows, and statistics while pushing real-time updates via WebSocket, reducing frontend complexity by ~1,300 lines, API calls by 67-83%, and eliminating polling overhead. The legacy proxy has been completely removed in favor of controlled v1 endpoints. See `ARCHITECTURE_UPDATE.md` for migration details.
 
 ## Development Commands
 

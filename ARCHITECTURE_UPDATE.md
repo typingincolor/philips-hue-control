@@ -1,8 +1,8 @@
-# Architecture Update - Backend API Refactoring (v0.5.0)
+# Architecture Update - Backend API Refactoring (v2.0.0)
 
 ## Overview
 
-As of v0.5.0, business logic has been moved from frontend to backend, exposing a simplified v1 REST API that pre-computes colors, shadows, and statistics.
+As of v2.0.0, business logic has been moved from frontend to backend, exposing a simplified v1 REST API with WebSocket support that pre-computes colors, shadows, and statistics. The legacy `/api/hue/*` proxy has been completely removed in favor of controlled v1 endpoints.
 
 ## Backend API (v1)
 

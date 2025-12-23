@@ -23,7 +23,7 @@ const PORT = process.env.PORT || config.server.port;
 const HOST = process.env.HOST || config.server.host;
 
 // API version
-const API_VERSION = '1.0.0';
+const API_VERSION = '2.0.0';
 
 // Create an HTTPS agent that accepts self-signed certificates
 const httpsAgent = new https.Agent({
