@@ -58,6 +58,14 @@ export const UI_TEXT = {
   MOTION_DETECTED: 'Motion Detected',
   NO_MOTION: 'No Motion',
 
+  // Dark Theme Navigation
+  NAV_ZONES: 'Zones',
+  ZONES_VIEW_TITLE: 'Zones',
+  ZONES_VIEW_SUBTITLE: 'Control light groups across rooms',
+  TOOLBAR_MOTION_LABEL: 'Motion:',
+  STATUS_LIGHTS_ON: 'on',
+  STATUS_TOTAL_LIGHTS: 'total',
+
   // Common
   ERROR_OCCURRED: 'An error occurred',
   RETRY: 'Retry'

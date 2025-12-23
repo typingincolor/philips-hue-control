@@ -8,6 +8,12 @@ This is a **Philips Hue Light Control** web application built as a monorepo with
 
 **Architecture (v2.0.0):** Business logic resides in the backend, exposing a simplified v1 REST API with WebSocket support. The backend pre-computes colors, shadows, and statistics while pushing real-time updates via WebSocket, reducing frontend complexity by ~1,300 lines, API calls by 67-83%, and eliminating polling overhead. The legacy proxy has been completely removed in favor of controlled v1 endpoints. See `ARCHITECTURE_UPDATE.md` for migration details.
 
+**Performance Optimizations:**
+- **Backend caching**: Static resources (rooms, devices, zones, scenes, behavior_instance) cached with 5-minute TTL
+- **WebSocket polling**: 15-second interval for dynamic data (lights, motion status)
+- **Optimistic updates**: Frontend updates UI immediately on user actions, syncs with backend asynchronously
+- **Brightness minimum**: Lights display minimum 5% brightness when on (prevents 0% display artifacts)
+
 ## Development Commands
 
 ### Start Development (Both Servers)
@@ -160,44 +166,61 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
    - Step 3: LightControl (main UI with lights)
 
 2. **LightControl/index.jsx**: Main control interface
-   - Fetches dashboard data via WebSocket (real mode) or API (demo mode)
-   - Displays rooms with lights, and zones in collapsible section (3-column grid)
-   - Zones section collapsed by default to save vertical space
-   - Integrates MotionZones component (always visible)
+   - Navigation-based layout with bottom room tabs
+   - Uses `selectedRoomId` state to show one room at a time
+   - Integrates TopToolbar, MainPanel, and BottomNav components
    - Works natively with v2 data structures (no adapters)
 
-3. **LightControl/RoomCard.jsx**: Room display component
-   - Displays room name, status badges, and controls
-   - Shows "{X} of {Y} on" count and average brightness
-   - Renders SceneSelector and "All On/Off" button
-   - Contains grid of LightButton components
+3. **LightControl/TopToolbar.jsx**: Header bar
+   - Motion zone indicators with colored dots
+   - Dashboard stats (lights on, rooms, scenes)
+   - Logout button
 
-4. **LightControl/LightButton.jsx**: Individual light control
-   - Displays light color using `getLightColor` utility
-   - Shows dynamic shadows using `getLightShadow` utility
-   - Handles click events for toggling
-   - Displays light name and current state
+4. **LightControl/BottomNav.jsx**: Room navigation tabs
+   - Horizontally scrollable room tabs with room-specific icons
+   - Drag-to-scroll functionality via mouse events
+   - Shows lights-on count badge per room
+   - "Zones" tab for viewing all zones
+   - Amber border-top accent
 
-5. **LightControl/SceneSelector.jsx**: Scene dropdown
-   - Renders scene options for the current room
-   - Handles scene activation
-   - Resets to placeholder after selection
+5. **LightControl/MainPanel.jsx**: Content container
+   - Switches between RoomContent and ZonesView based on selection
 
-6. **LightControl/DashboardSummary.jsx**: Statistics display
-   - Shows total lights on, room count, scene count
-   - Displays demo mode badge when active
+6. **LightControl/RoomContent.jsx**: Room display
+   - Scene selector and "All On/Off" toggle
+   - Grid of LightTile components
 
-7. **LightControl/ZoneCard.jsx**: Compact zone control bar
-   - Displays zone name, light stats (X/Y format), and average brightness
-   - Scene selector dropdown and On/Off toggle button
-   - Compact horizontal bar layout (not card)
-   - Uses pre-computed stats from backend
+7. **LightControl/LightTile.jsx**: Large light button
+   - Brightness displayed as fill height from bottom
+   - Dynamic fill gradient based on light color
+   - Text contrast via background pill (semi-transparent)
+   - Amber border accent
+   - Colored glow shadow for bright lights
 
-8. **MotionZones.jsx**: Compact motion status bar
-   - Inline bar format with "Motion:" label and pill-shaped zone badges
-   - Returns `null` if no MotionAware zones configured (auto-hide)
-   - Shows green dot 🟢 (no motion) or red dot 🔴 (motion detected)
-   - Always visible when zones exist (no collapsing)
+8. **LightControl/ZonesView.jsx**: Zones list
+   - Shows all zones with stats, scene selector, on/off toggle
+
+9. **LightControl/Icons.jsx**: Lucide icon wrappers
+   - Uses `lucide-react` package for all icons
+   - Consistent `strokeWidth: 1.5` styling
+   - Room-specific icons: Sofa, DiningTable, Saucepan, Bed, DeskLamp, Shower, Car, Tree, Door
+   - Scene icons: Sunrise, Sunset, Moon, Sun, Palette, Heart, Focus, Tv, UtensilsCrossed, etc.
+   - `getSceneIcon(sceneName)` function maps scene names to appropriate icons
+
+10. **LightControl/SceneSelector.jsx**: Scene icon buttons
+    - Renders icon buttons for each scene (not a dropdown)
+    - Icons are matched to scene names via `getSceneIcon()`
+    - Tooltips show scene name on hover
+    - 44x44px touch-friendly buttons
+
+11. **LightControl/DashboardSummary.jsx**: Statistics display
+    - Shows total lights on, room count, scene count
+    - Displays demo mode badge when active
+
+12. **MotionZones.jsx**: Compact motion status bar
+    - Inline bar format with pill-shaped zone badges
+    - Returns `null` if no MotionAware zones configured (auto-hide)
+    - Shows green dot (no motion) or red dot (motion detected)
 
 #### Data Flow
 - **localStorage**: Persists bridgeIp and username across sessions (keys from `constants/storage.js`)
@@ -206,6 +229,7 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
 - **useDemoMode hook**: Detects demo mode from URL parameters
 - **usePolling hook**: Reusable interval-based polling with cleanup
 - **hueApi service**: All API calls go through this service layer
+- **mockData service**: Demo mode mock data (10 rooms, 35 lights, 14 scenes, 7 zones, 4 motion zones)
 - **Utilities**: Pure functions for data transformation (color, rooms, validation, motion sensors)
 - **Constants**: Centralized configuration values (polling intervals, storage keys, colors, messages, UI text)
 
@@ -243,11 +267,20 @@ expect(screen.getByText(UI_TEXT.APP_TITLE)).toBeInTheDocument();
 
 ### CSS Architecture
 - **Single CSS file**: `frontend/src/App.css` (no CSS modules)
-- **Responsive grid**: CSS Grid with `repeat(auto-fill, minmax(440px, 1fr))`
-- **Mobile optimization**: Reduced padding on iPhone 14+ (calc(100% - 16px) container width)
-- **Dynamic sizing**: CSS `clamp()` for viewport-responsive buttons and icons
-- **Modern design**: Tailwind-inspired color palette, layered shadows, cubic-bezier transitions
-- **Component classes**: `.motion-zones-bar`, `.zone-bar`, `.room-group`, `.light-bulb-button`, `.lights-summary`, etc.
+- **Dark theme**: Always dark mode with CSS variables
+  - `--bg-primary: #1a1a1a` - Main background
+  - `--bg-secondary: #2d2d2d` - Cards/containers
+  - `--accent-primary: #f59e0b` - Amber accent for borders and highlights
+  - `--text-primary: #ffffff`, `--text-secondary: #a0a0a0`
+- **Navigation layout**: Fixed bottom nav with room tabs, fixed top toolbar
+- **Light tiles**: Large rounded squares with brightness fill effect
+  - Fill height represents brightness percentage
+  - Background pill for text contrast on mixed backgrounds
+  - Colored glow shadows for bright lights (≥50%)
+- **Amber borders**: Consistent accent on light tiles, scene selector, toggle buttons, bottom nav border-top
+- **Responsive grid**: CSS Grid for light tiles, auto-sizing based on viewport
+- **Mobile optimization**: iOS safe area handling for bottom nav
+- **Component classes**: `.top-toolbar`, `.bottom-nav`, `.main-panel`, `.light-tile`, `.room-content`, `.zones-view`
 
 ### UI Features & Patterns
 
@@ -389,22 +422,23 @@ getRoomLightStats(roomLights) {
 
 ### Test Organization
 
-The project includes comprehensive testing with **209 tests total** (99 backend + 110 frontend):
+The project includes comprehensive testing with **332 tests total** (139 backend + 193 frontend):
 
-**Backend Tests** (99 tests, 81% coverage, 62% mutation score):
+**Backend Tests** (139 tests):
 ```
 backend/test/
 ├── services/
-│   ├── colorService.test.js        # 14 tests - Color conversions, warm dim
+│   ├── colorService.test.js        # 18 tests - Color conversions, warm dim, brightness min
 │   ├── roomService.test.js         # 23 tests - Room hierarchy, stats
 │   ├── motionService.test.js       # 13 tests - Motion sensor parsing
 │   ├── statsService.test.js        # 10 tests - Dashboard statistics
-│   └── sessionManager.test.js      # 12 tests - Session management
-├── routes/
-│   └── (various route tests)       # 27 tests - API endpoints
+│   ├── websocketService.test.js    # 13 tests - WebSocket service
+│   └── zoneService.test.js         # 15 tests - Zone hierarchy, stats
+├── utils/
+│   └── (colorConversion, validation)  # 39 tests - Utility functions
 ```
 
-**Frontend Tests** (110 tests):
+**Frontend Tests** (193 tests):
 ```
 frontend/src/
 ├── utils/
@@ -412,16 +446,22 @@ frontend/src/
 ├── hooks/
 │   ├── useDemoMode.test.js         # 9 tests - URL parameter parsing
 │   ├── useHueApi.test.js           # 4 tests - API selection (real vs mock)
-│   └── usePolling.test.js          # 10 tests - Interval polling
+│   ├── usePolling.test.js          # 10 tests - Interval polling
+│   ├── useSession.test.js          # 25 tests - Session management
+│   └── useWebSocket.test.js        # 31 tests - WebSocket connection
+├── services/
+│   └── hueApi.test.js              # 15 tests - API service
 ├── components/
-│   ├── MotionZones.test.jsx        # 10 tests - Motion zone compact bar
+│   ├── App.test.jsx                # 4 tests - App component
+│   ├── MotionZones.test.jsx        # 9 tests - Motion zone alerts
 │   └── LightControl/
 │       ├── DashboardSummary.test.jsx   # 5 tests - Statistics rendering
-│       ├── SceneSelector.test.jsx      # 11 tests - Scene dropdown
+│       ├── SceneSelector.test.jsx      # 8 tests - Scene icon buttons
 │       ├── LightButton.test.jsx        # 15 tests - Light button (uses pre-computed colors)
 │       ├── RoomCard.test.jsx           # 16 tests - Room card (uses pre-computed stats)
 │       ├── ZoneCard.test.jsx           # 14 tests - Zone bar (uses pre-computed stats)
-│       └── index.zones.test.jsx        # 8 tests - Zone integration tests
+│       └── index.zones.test.jsx        # 9 tests - Zone integration tests
+├── integration.test.jsx            # 11 tests - Full integration tests
 ```
 
 **Note:** Business logic tests (colorConversion, roomUtils, motionSensors) moved from frontend to backend as services.
@@ -688,18 +728,25 @@ The MotionAware zones feature is **NOT** available through traditional motion se
 │   ├── TESTING.md                       # Testing documentation
 │   ├── src/
 │   │   ├── App.jsx                      # 3-step flow controller
-│   │   ├── App.css                      # All styles (single file)
+│   │   ├── App.css                      # All styles (dark theme, single file)
 │   │   ├── components/
 │   │   │   ├── BridgeDiscovery.jsx      # Step 1: Find bridge
 │   │   │   ├── Authentication.jsx       # Step 2: Link button auth
-│   │   │   ├── MotionZones.jsx          # MotionAware display
-│   │   │   └── LightControl/            # Main UI (refactored into components)
-│   │   │       ├── index.jsx            # Main container with collapsible zones
-│   │   │       ├── RoomCard.jsx         # Room display with lights
-│   │   │       ├── ZoneCard.jsx         # Compact zone control bar
-│   │   │       ├── LightButton.jsx      # Individual light button
+│   │   │   ├── MotionZones.jsx          # MotionAware compact bar
+│   │   │   └── LightControl/            # Main UI (navigation-based layout)
+│   │   │       ├── index.jsx            # Main container with room selection
+│   │   │       ├── TopToolbar.jsx       # Header: motion dots, stats, logout
+│   │   │       ├── BottomNav.jsx        # Room tabs (drag-scrollable)
+│   │   │       ├── MainPanel.jsx        # Content switcher (room/zones)
+│   │   │       ├── RoomContent.jsx      # Light tiles grid for room
+│   │   │       ├── LightTile.jsx        # Large light button with fill
+│   │   │       ├── ZonesView.jsx        # All zones list
+│   │   │       ├── Icons.jsx            # Lucide icon wrappers
 │   │   │       ├── SceneSelector.jsx    # Scene dropdown
-│   │   │       └── DashboardSummary.jsx # Statistics summary
+│   │   │       ├── DashboardSummary.jsx # Statistics summary
+│   │   │       ├── RoomCard.jsx         # (legacy) Room card display
+│   │   │       ├── ZoneCard.jsx         # (legacy) Zone card display
+│   │   │       └── LightButton.jsx      # (legacy) Light button
 │   │   ├── utils/                       # Pure utility functions (all tested)
 │   │   │   ├── colorConversion.js       # xy/mirek to RGB, warm dim blending
 │   │   │   ├── roomUtils.js             # Room hierarchy building

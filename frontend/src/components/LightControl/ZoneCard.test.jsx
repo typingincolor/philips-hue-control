@@ -125,13 +125,13 @@ describe('ZoneCard', () => {
     expect(screen.getByText('⏳')).toBeInTheDocument();
   });
 
-  it('should call onActivateScene when scene is selected', async () => {
+  it('should call onActivateScene when scene button is clicked', async () => {
     const user = userEvent.setup();
     const onActivateScene = vi.fn();
     render(<ZoneCard {...defaultProps} onActivateScene={onActivateScene} />);
 
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'scene-1');
+    const morningButton = screen.getByTitle('Morning');
+    await user.click(morningButton);
 
     expect(onActivateScene).toHaveBeenCalledWith('scene-1');
   });

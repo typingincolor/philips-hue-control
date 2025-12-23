@@ -4,11 +4,11 @@ import { useHueApi } from '../../hooks/useHueApi';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { ERROR_MESSAGES } from '../../constants/messages';
+import { TopToolbar } from './TopToolbar';
+import { BottomNav } from './BottomNav';
+import { RoomContent } from './RoomContent';
+import { ZonesView } from './ZonesView';
 import { MotionZones } from '../MotionZones';
-import { DashboardSummary } from './DashboardSummary';
-import { RoomCard } from './RoomCard';
-import { ZoneCard } from './ZoneCard';
-import { LightButton } from './LightButton';
 
 export const LightControl = ({
   sessionToken,
@@ -31,8 +31,11 @@ export const LightControl = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [togglingLights, setTogglingLights] = useState(new Set());
+  const [togglingZones, setTogglingZones] = useState(new Set());
   const [activatingScene, setActivatingScene] = useState(null);
-  const [zonesCollapsed, setZonesCollapsed] = useState(true);
+
+  // Navigation state - 'zones' or a room ID
+  const [selectedId, setSelectedId] = useState(null);
 
   // Use local dashboard (synced from WebSocket in real mode, manually fetched in demo mode)
   const dashboard = localDashboard;
@@ -66,17 +69,46 @@ export const LightControl = ({
     if (!isDemoMode) {
       if (wsDashboard) {
         setLoading(false);
-        setError(null); // Clear error when data is received
-        // Sync WebSocket data to local dashboard for display
+        setError(null);
         setLocalDashboard(wsDashboard);
       }
-      // Only show error if we've been trying for a while (not initial connection)
-      // This prevents flash of error during initial WebSocket handshake
       if (wsError && !wsDashboard && !loading) {
         setError(wsError);
       }
     }
   }, [wsDashboard, wsError, isDemoMode, loading]);
+
+  // Set default selected room when dashboard loads
+  useEffect(() => {
+    if (dashboard?.rooms?.length > 0 && selectedId === null) {
+      setSelectedId(dashboard.rooms[0].id);
+    }
+  }, [dashboard, selectedId]);
+
+  // Apply dark theme to body when component mounts
+  useEffect(() => {
+    document.body.classList.add('dark-theme');
+    return () => {
+      document.body.classList.remove('dark-theme');
+    };
+  }, []);
+
+  // Subscribe to motion updates in demo mode
+  useEffect(() => {
+    if (!isDemoMode || !api.subscribeToMotion) return;
+
+    const unsubscribe = api.subscribeToMotion((updatedMotionZones) => {
+      setLocalDashboard(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          motionZones: updatedMotionZones
+        };
+      });
+    });
+
+    return unsubscribe;
+  }, [isDemoMode, api]);
 
   // Helper: Get light by UUID from dashboard
   const getLightByUuid = (uuid) => {
@@ -98,27 +130,24 @@ export const LightControl = ({
       const currentState = light.on ?? false;
       const newState = { on: !currentState };
 
-      // Use v1 endpoint that returns updated light with pre-computed color
       const response = await api.updateLight(sessionToken, lightUuid, newState);
 
-      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
-      if (isDemoMode) {
-        setLocalDashboard(prev => ({
-          ...prev,
-          summary: {
-            ...prev.summary,
-            lightsOn: newState.on
-              ? prev.summary.lightsOn + 1
-              : Math.max(0, prev.summary.lightsOn - 1)
-          },
-          rooms: prev.rooms.map(room => ({
-            ...room,
-            lights: room.lights.map(l =>
-              l.id === lightUuid ? response.light : l
-            )
-          }))
-        }));
-      }
+      // Optimistic update - apply immediately for responsive UI
+      setLocalDashboard(prev => ({
+        ...prev,
+        summary: {
+          ...prev.summary,
+          lightsOn: newState.on
+            ? prev.summary.lightsOn + 1
+            : Math.max(0, prev.summary.lightsOn - 1)
+        },
+        rooms: prev.rooms.map(room => ({
+          ...room,
+          lights: room.lights.map(l =>
+            l.id === lightUuid ? response.light : l
+          )
+        }))
+      }));
     } catch (err) {
       console.error('Failed to toggle light:', err);
       alert(`${ERROR_MESSAGES.LIGHT_TOGGLE}: ${err.message}`);
@@ -131,7 +160,12 @@ export const LightControl = ({
     }
   };
 
-  const toggleRoom = async (roomId, lightUuids, turnOn) => {
+  const toggleRoom = async (roomId, turnOn) => {
+    const room = dashboard?.rooms?.find(r => r.id === roomId);
+    if (!room) return;
+
+    const lightUuids = room.lights.map(l => l.id);
+
     setTogglingLights(prev => {
       const newSet = new Set(prev);
       lightUuids.forEach(id => newSet.add(id));
@@ -140,30 +174,22 @@ export const LightControl = ({
 
     try {
       const newState = { on: turnOn };
-
-      // Use v1 endpoint that updates all lights in room
       const response = await api.updateRoomLights(sessionToken, roomId, newState);
 
-      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
-      if (isDemoMode) {
-        setLocalDashboard(prev => ({
-          ...prev,
-          rooms: prev.rooms.map(room => {
-            if (room.id === roomId) {
-              // Replace all lights in this room with updated data
-              const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
-              return {
-                ...room,
-                lights: room.lights.map(l => updatedLightMap.get(l.id) || l)
-              };
-            }
-            return room;
-          })
-        }));
-
-        // Refresh dashboard to get updated summary stats
-        setTimeout(() => fetchAllData(), 300);
-      }
+      // Optimistic update - apply immediately for responsive UI
+      setLocalDashboard(prev => ({
+        ...prev,
+        rooms: prev.rooms.map(r => {
+          if (r.id === roomId) {
+            const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
+            return {
+              ...r,
+              lights: r.lights.map(l => updatedLightMap.get(l.id) || l)
+            };
+          }
+          return r;
+        })
+      }));
     } catch (err) {
       console.error('Failed to toggle room:', err);
       alert(`${ERROR_MESSAGES.ROOM_TOGGLE}: ${err.message}`);
@@ -176,7 +202,13 @@ export const LightControl = ({
     }
   };
 
-  const toggleZone = async (zoneId, lightUuids, turnOn) => {
+  const toggleZone = async (zoneId, turnOn) => {
+    const zone = dashboard?.zones?.find(z => z.id === zoneId);
+    if (!zone) return;
+
+    const lightUuids = zone.lights?.map(l => l.id) || [];
+
+    setTogglingZones(prev => new Set(prev).add(zoneId));
     setTogglingLights(prev => {
       const newSet = new Set(prev);
       lightUuids.forEach(id => newSet.add(id));
@@ -185,34 +217,31 @@ export const LightControl = ({
 
     try {
       const newState = { on: turnOn };
-
-      // Use v1 endpoint that updates all lights in zone
       const response = await api.updateZoneLights(sessionToken, zoneId, newState);
 
-      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
-      if (isDemoMode) {
-        setLocalDashboard(prev => ({
-          ...prev,
-          zones: prev.zones.map(zone => {
-            if (zone.id === zoneId) {
-              // Replace all lights in this zone with updated data
-              const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
-              return {
-                ...zone,
-                lights: zone.lights.map(l => updatedLightMap.get(l.id) || l)
-              };
-            }
-            return zone;
-          })
-        }));
-
-        // Refresh dashboard to get updated summary stats
-        setTimeout(() => fetchAllData(), 300);
-      }
+      // Optimistic update - apply immediately for responsive UI
+      setLocalDashboard(prev => ({
+        ...prev,
+        zones: prev.zones.map(z => {
+          if (z.id === zoneId) {
+            const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
+            return {
+              ...z,
+              lights: z.lights.map(l => updatedLightMap.get(l.id) || l)
+            };
+          }
+          return z;
+        })
+      }));
     } catch (err) {
       console.error('Failed to toggle zone:', err);
       alert(`${ERROR_MESSAGES.ZONE_TOGGLE}: ${err.message}`);
     } finally {
+      setTogglingZones(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(zoneId);
+        return newSet;
+      });
       setTogglingLights(prev => {
         const newSet = new Set(prev);
         lightUuids.forEach(id => newSet.delete(id));
@@ -221,17 +250,15 @@ export const LightControl = ({
     }
   };
 
-  const handleSceneChange = async (sceneUuid) => {
+  const handleSceneChange = async (sceneUuid, zoneId = null) => {
     if (!sceneUuid) return;
 
-    setActivatingScene(sceneUuid);
+    setActivatingScene(zoneId || sceneUuid);
     try {
-      // Use v1 endpoint that returns affected lights with pre-computed colors
       const response = await api.activateSceneV1(sessionToken, sceneUuid);
       console.log(`Activated scene ${sceneUuid}`, response.affectedLights?.length, 'lights affected');
 
-      // Update dashboard immediately with affected lights (optimistic update)
-      // WebSocket will reconcile with actual state on next poll in real mode
+      // Optimistic update - apply immediately for responsive UI
       if (response.affectedLights && response.affectedLights.length > 0) {
         const updatedLightMap = new Map(response.affectedLights.map(l => [l.id, l]));
 
@@ -249,11 +276,6 @@ export const LightControl = ({
           };
         });
       }
-
-      // In demo mode, refresh full dashboard after short delay
-      if (isDemoMode) {
-        setTimeout(() => fetchAllData(), 300);
-      }
     } catch (err) {
       console.error('Failed to activate scene:', err);
       alert(`${ERROR_MESSAGES.SCENE_ACTIVATION}: ${err.message}`);
@@ -262,125 +284,85 @@ export const LightControl = ({
     }
   };
 
-  return (
-    <div className="light-control">
-      <div className="header-with-status">
-        <h2>
-          Light Control
-          {isDemoMode && <span className="demo-badge">DEMO MODE</span>}
-        </h2>
-        <div className="header-actions">
-          <div
-            className={`status-indicator ${wsConnected || isDemoMode ? 'connected' : 'disconnected'}`}
-            title={
-              isDemoMode
-                ? "Demo mode - no real bridge"
-                : wsConnected
-                  ? "Connected via WebSocket"
-                  : "Disconnected - attempting to reconnect..."
-            }
-          ></div>
-          {onLogout && (
-            <button onClick={onLogout} className="logout-button" title="Logout and disconnect">
-              Logout
-            </button>
-          )}
+  // Get the selected room from dashboard
+  const selectedRoom = selectedId !== 'zones'
+    ? dashboard?.rooms?.find(r => r.id === selectedId)
+    : null;
+
+  // Loading state
+  if (loading && !dashboard) {
+    return (
+      <div className="dark-layout">
+        <div className="dark-loading">
+          <span>Connecting to bridge...</span>
         </div>
       </div>
+    );
+  }
 
-      {loading && !dashboard && (
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Connecting to bridge...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="error-box">
-          <h4>Connection Failed</h4>
-          <p className="error-message">{error}</p>
-          <div className="troubleshooting">
-            <h5>Troubleshooting:</h5>
-            <ul>
-              <li>Ensure your device is on the same network as the bridge</li>
-              <li>Try logging out and logging in again</li>
-              <li>Make sure the proxy server is running</li>
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {dashboard && !error && (
-        <>
-          <MotionZones
-            sessionToken={sessionToken}
-            motionZones={dashboard.motionZones}
-          />
-
-          <DashboardSummary
-            totalLightsOn={dashboard.summary.lightsOn}
-            roomCount={dashboard.summary.roomCount}
-            sceneCount={dashboard.summary.sceneCount}
-          />
-
-          <div className="lights-control">
-            <div className="lights-header">
-              <h3>Lights ({dashboard.summary.totalLights})</h3>
-            </div>
-
-            <div className="rooms-list">
-              {dashboard.rooms.map((room) => {
-                const isActivating = activatingScene && room.scenes.some(s => s.id === activatingScene);
-
-                return (
-                  <RoomCard
-                    key={room.id}
-                    roomName={room.name}
-                    room={room}
-                    onToggleLight={toggleLight}
-                    onToggleRoom={toggleRoom}
-                    onActivateScene={handleSceneChange}
-                    togglingLights={togglingLights}
-                    isActivating={isActivating}
-                  />
-                );
-              })}
+  // Error state
+  if (error && !dashboard) {
+    return (
+      <div className="dark-layout">
+        <TopToolbar
+          summary={{}}
+          isConnected={false}
+          isDemoMode={isDemoMode}
+          onLogout={onLogout}
+        />
+        <div className="main-panel">
+          <div className="empty-state-dark">
+            <div className="empty-state-dark-icon">⚠️</div>
+            <div className="empty-state-dark-text">
+              Connection failed: {error}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          {dashboard.zones && dashboard.zones.length > 0 && (
-            <div className="zones-control">
-              <button
-                className="zones-header-toggle"
-                onClick={() => setZonesCollapsed(!zonesCollapsed)}
-              >
-                <span className={`collapse-icon ${zonesCollapsed ? 'collapsed' : ''}`}>▼</span>
-                <h3>Zones ({dashboard.zones.length})</h3>
-              </button>
+  return (
+    <div className="dark-layout">
+      <TopToolbar
+        summary={dashboard?.summary || {}}
+        isConnected={wsConnected || isDemoMode}
+        isDemoMode={isDemoMode}
+        onLogout={onLogout}
+      />
 
-              {!zonesCollapsed && (
-                <div className="zones-list">
-                  {dashboard.zones.map((zone) => {
-                    const isActivating = activatingScene && zone.scenes.some(s => s.id === activatingScene);
+      <div className="main-panel">
+        {selectedId === 'zones' ? (
+          <ZonesView
+            zones={dashboard?.zones || []}
+            onToggleZone={toggleZone}
+            onActivateScene={handleSceneChange}
+            togglingZones={togglingZones}
+            activatingScene={activatingScene}
+          />
+        ) : (
+          <RoomContent
+            room={selectedRoom}
+            onToggleLight={toggleLight}
+            onToggleRoom={toggleRoom}
+            onActivateScene={handleSceneChange}
+            togglingLights={togglingLights}
+            isActivatingScene={!!activatingScene}
+          />
+        )}
+      </div>
 
-                    return (
-                      <ZoneCard
-                        key={zone.id}
-                        zoneName={zone.name}
-                        zone={zone}
-                        onToggleZone={toggleZone}
-                        onActivateScene={handleSceneChange}
-                        togglingLights={togglingLights}
-                        isActivating={isActivating}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+      <MotionZones
+        sessionToken={sessionToken}
+        motionZones={dashboard?.motionZones}
+      />
+
+      <BottomNav
+        rooms={dashboard?.rooms || []}
+        zones={dashboard?.zones || []}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+      />
     </div>
   );
 };

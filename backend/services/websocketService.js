@@ -12,7 +12,7 @@ class WebSocketService {
     this.connections = new Map(); // bridgeIp → Set<WebSocket>
     this.pollingIntervals = new Map(); // bridgeIp → intervalId
     this.stateCache = new Map(); // bridgeIp → lastKnownState
-    this.pollInterval = 5000; // Poll every 5 seconds
+    this.pollInterval = 15000; // Poll every 15 seconds
   }
 
   /**

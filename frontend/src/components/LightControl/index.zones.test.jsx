@@ -69,7 +69,7 @@ vi.mock('../../hooks/useWebSocket', () => ({
   })
 }));
 
-describe('LightControl - Zones', () => {
+describe('LightControl - Zones (Navigation)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDashboardData = { ...baseDashboard };
@@ -82,23 +82,26 @@ describe('LightControl - Zones', () => {
     };
   });
 
-  it('should render zones section when zones are present', async () => {
+  it('should render Zones tab in bottom nav when zones are present', async () => {
     render(<LightControl sessionToken="test-token" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Zones (2)')).toBeInTheDocument();
+      // Look for Zones tab in bottom navigation
+      expect(screen.getByText('Zones')).toBeInTheDocument();
     });
   });
 
-  it('should render zone cards for each zone', async () => {
+  it('should show zones view when Zones tab is clicked', async () => {
     const user = userEvent.setup();
     render(<LightControl sessionToken="test-token" />);
 
-    // Expand zones section
+    // Wait for dashboard to load
     await waitFor(() => {
-      expect(screen.getByText('Zones (2)')).toBeInTheDocument();
+      expect(screen.getByText('Zones')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Zones (2)'));
+
+    // Click Zones tab
+    await user.click(screen.getByText('Zones'));
 
     await waitFor(() => {
       expect(screen.getByText('Upstairs')).toBeInTheDocument();
@@ -106,36 +109,37 @@ describe('LightControl - Zones', () => {
     });
   });
 
-  it('should display zone stats', async () => {
+  it('should display zone stats in zones view', async () => {
     const user = userEvent.setup();
     render(<LightControl sessionToken="test-token" />);
 
-    // Expand zones section
     await waitFor(() => {
-      expect(screen.getByText('Zones (2)')).toBeInTheDocument();
+      expect(screen.getByText('Zones')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Zones (2)'));
+    await user.click(screen.getByText('Zones'));
 
     await waitFor(() => {
-      // Check for zone stats (compact format)
-      expect(screen.getByText('2/4')).toBeInTheDocument();
-      expect(screen.getByText('1/2')).toBeInTheDocument();
+      // Check for zone stats format "X of Y on"
+      expect(screen.getByText(/2 of 4 on/)).toBeInTheDocument();
+      expect(screen.getByText(/1 of 2 on/)).toBeInTheDocument();
     });
   });
 
-  it('should not render zones section when no zones exist', async () => {
+  it('should not render Zones tab when no zones exist', async () => {
     mockDashboardData = { ...baseDashboard, zones: [] };
 
     render(<LightControl sessionToken="test-token" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Lights (6)')).toBeInTheDocument();
+      // Dashboard should load - check for room name in nav
+      expect(screen.getByText('Living Room')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText(/^Zones/)).not.toBeInTheDocument();
+    // Zones tab should not be present
+    expect(screen.queryByText('Zones')).not.toBeInTheDocument();
   });
 
-  it('should not render zones section when zones is undefined', async () => {
+  it('should not render Zones tab when zones is undefined', async () => {
     const dashboardWithoutZones = { ...baseDashboard };
     delete dashboardWithoutZones.zones;
     mockDashboardData = dashboardWithoutZones;
@@ -143,21 +147,20 @@ describe('LightControl - Zones', () => {
     render(<LightControl sessionToken="test-token" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Lights (6)')).toBeInTheDocument();
+      expect(screen.getByText('Living Room')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText(/^Zones/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Zones')).not.toBeInTheDocument();
   });
 
-  it('should render zone scenes', async () => {
+  it('should render zone scenes in zones view', async () => {
     const user = userEvent.setup();
     render(<LightControl sessionToken="test-token" />);
 
-    // Expand zones section
     await waitFor(() => {
-      expect(screen.getByText('Zones (2)')).toBeInTheDocument();
+      expect(screen.getByText('Zones')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Zones (2)'));
+    await user.click(screen.getByText('Zones'));
 
     await waitFor(() => {
       expect(screen.getByText('Evening')).toBeInTheDocument();
@@ -165,55 +168,67 @@ describe('LightControl - Zones', () => {
     });
   });
 
-  it('should render zone toggle buttons', async () => {
+  it('should render zone toggle buttons in zones view', async () => {
     const user = userEvent.setup();
     render(<LightControl sessionToken="test-token" />);
 
-    // Expand zones section
     await waitFor(() => {
-      expect(screen.getByText('Zones (2)')).toBeInTheDocument();
+      expect(screen.getByText('Zones')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Zones (2)'));
+    await user.click(screen.getByText('Zones'));
 
     await waitFor(() => {
-      // Zones have lights on, so should show "Off" buttons (compact format)
-      const offButtons = screen.getAllByText('🌙 Off');
-      expect(offButtons.length).toBeGreaterThanOrEqual(2); // At least 2 zones
+      // Zones have lights on, so should show "Off" buttons
+      const offButtons = screen.getAllByText(/Off/);
+      expect(offButtons.length).toBeGreaterThanOrEqual(2);
     });
   });
 
-  it('should call toggleZone when zone All Off clicked', async () => {
+  it('should call toggleZone when zone Off button is clicked', async () => {
     const user = userEvent.setup();
 
     render(<LightControl sessionToken="test-token" />);
 
-    // Expand zones section
     await waitFor(() => {
-      expect(screen.getByText('Zones (2)')).toBeInTheDocument();
+      expect(screen.getByText('Zones')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Zones (2)'));
+    await user.click(screen.getByText('Zones'));
 
     await waitFor(() => {
       expect(screen.getByText('Upstairs')).toBeInTheDocument();
     });
 
-    // Find the zone control button in the Upstairs zone
-    const zoneBars = document.querySelectorAll('.zone-bar');
-    const upstairsCard = Array.from(zoneBars).find(bar =>
-      bar.textContent.includes('Upstairs')
+    // Find zone items and click the first Off button
+    const zoneItems = document.querySelectorAll('.zone-item-dark');
+    expect(zoneItems.length).toBe(2);
+
+    const upstairsZone = Array.from(zoneItems).find(item =>
+      item.textContent.includes('Upstairs')
     );
+    expect(upstairsZone).toBeTruthy();
 
-    expect(upstairsCard).toBeTruthy();
+    const offButton = upstairsZone.querySelector('.zone-toggle-btn');
+    expect(offButton).toBeTruthy();
 
-    const allOffButton = upstairsCard.querySelector('.zone-control-button');
-    expect(allOffButton).toBeTruthy();
-
-    await user.click(allOffButton);
+    await user.click(offButton);
 
     expect(mockApi.updateZoneLights).toHaveBeenCalledWith(
       'test-token',
       'zone-1',
       { on: false }
     );
+  });
+
+  it('should show zone count badge on Zones tab', async () => {
+    render(<LightControl sessionToken="test-token" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Zones')).toBeInTheDocument();
+    });
+
+    // The badge shows the zone count
+    const zonesTab = screen.getByText('Zones').closest('.nav-tab');
+    expect(zonesTab).toBeTruthy();
+    expect(zonesTab.textContent).toContain('2');
   });
 });

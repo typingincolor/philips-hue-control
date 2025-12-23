@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { MotionZones } from './MotionZones';
 
 // Mock the hooks
@@ -7,12 +7,7 @@ vi.mock('../hooks/useHueApi', () => ({
   useHueApi: vi.fn()
 }));
 
-vi.mock('../hooks/useDemoMode', () => ({
-  useDemoMode: vi.fn()
-}));
-
 import { useHueApi } from '../hooks/useHueApi';
-import { useDemoMode } from '../hooks/useDemoMode';
 
 describe('MotionZones', () => {
   const mockGetMotionZones = vi.fn();
@@ -23,70 +18,25 @@ describe('MotionZones', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useHueApi.mockReturnValue(mockApi);
-    useDemoMode.mockReturnValue(false);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  const mockZones = [
-    {
-      id: 'zone-1',
-      name: 'Hallway MotionAware',
-      motionDetected: false,
-      enabled: true,
-      reachable: true,
-      lastChanged: '2025-12-23T10:30:00Z'
-    },
-    {
-      id: 'zone-2',
-      name: 'Bedroom MotionAware',
-      motionDetected: true,
-      enabled: true,
-      reachable: true,
-      lastChanged: '2025-12-23T10:45:00Z'
-    }
-  ];
+  it('should return null when no zones have motion', () => {
+    const zones = [
+      { id: 'zone-1', name: 'Kitchen', motionDetected: false, reachable: true }
+    ];
 
-  it('should render motion zones', async () => {
-    render(<MotionZones sessionToken="test-session-token" motionZones={mockZones} />);
+    const { container } = render(
+      <MotionZones sessionToken="test-session-token" motionZones={zones} />
+    );
 
-    await waitFor(() => {
-      expect(screen.getByText('Motion:')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('Hallway MotionAware')).toBeInTheDocument();
-    expect(screen.getByText('Bedroom MotionAware')).toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 
-  it('should show green dot when no motion detected', async () => {
-    mockGetMotionZones.mockResolvedValue({ zones: mockZones });
-
-    render(<MotionZones sessionToken="test-session-token" motionZones={mockZones} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Hallway MotionAware')).toBeInTheDocument();
-    });
-
-    const motionZones = screen.getAllByText('🟢');
-    expect(motionZones.length).toBeGreaterThan(0);
-  });
-
-  it('should show red dot when motion detected', async () => {
-    mockGetMotionZones.mockResolvedValue({ zones: mockZones });
-
-    render(<MotionZones sessionToken="test-session-token" motionZones={mockZones} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Bedroom MotionAware')).toBeInTheDocument();
-    });
-
-    const motionZones = screen.getAllByText('🔴');
-    expect(motionZones.length).toBeGreaterThan(0);
-  });
-
-  it('should return null when no zones found', () => {
+  it('should return null when zones array is empty', () => {
     const { container } = render(
       <MotionZones sessionToken="test-session-token" motionZones={[]} />
     );
@@ -94,15 +44,66 @@ describe('MotionZones', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('should show loading state when no motionZones prop provided', () => {
-    render(<MotionZones sessionToken="test-session-token" />);
+  it('should show alert when motion is detected', () => {
+    const zones = [
+      { id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true }
+    ];
 
-    expect(screen.getByText('...')).toBeInTheDocument();
+    render(<MotionZones sessionToken="test-session-token" motionZones={zones} />);
+
+    expect(screen.getByText(/Motion: Kitchen/)).toBeInTheDocument();
+    expect(screen.getByText('🔴')).toBeInTheDocument();
   });
 
-  it('should fallback to API in demo mode', async () => {
-    useDemoMode.mockReturnValue(true);
-    mockGetMotionZones.mockResolvedValue({ zones: mockZones });
+  it('should show multiple alerts for multiple motion zones', () => {
+    const zones = [
+      { id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true },
+      { id: 'zone-2', name: 'Living Room', motionDetected: true, reachable: true }
+    ];
+
+    render(<MotionZones sessionToken="test-session-token" motionZones={zones} />);
+
+    expect(screen.getByText(/Motion: Kitchen/)).toBeInTheDocument();
+    expect(screen.getByText(/Motion: Living Room/)).toBeInTheDocument();
+  });
+
+  it('should auto-dismiss alert after 3 seconds', async () => {
+    vi.useFakeTimers();
+
+    const zones = [
+      { id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true }
+    ];
+
+    render(<MotionZones sessionToken="test-session-token" motionZones={zones} />);
+
+    expect(screen.getByText(/Motion: Kitchen/)).toBeInTheDocument();
+
+    // Fast-forward 3 seconds
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(screen.queryByText(/Motion: Kitchen/)).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it('should not show alert for unreachable zones', () => {
+    const zones = [
+      { id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: false }
+    ];
+
+    const { container } = render(
+      <MotionZones sessionToken="test-session-token" motionZones={zones} />
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('should fetch from API when no motionZones prop provided', async () => {
+    mockGetMotionZones.mockResolvedValue({
+      zones: [{ id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true }]
+    });
 
     render(<MotionZones sessionToken="test-session-token" />);
 
@@ -110,59 +111,29 @@ describe('MotionZones', () => {
       expect(mockGetMotionZones).toHaveBeenCalledWith('test-session-token');
     });
 
-    expect(screen.getByText('Hallway MotionAware')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Motion: Kitchen/)).toBeInTheDocument();
+    });
   });
 
-  it('should mark unreachable zones', () => {
-    const zonesWithUnreachable = [
-      { ...mockZones[0], reachable: false }
-    ];
+  it('should not fetch when sessionToken is empty', () => {
+    render(<MotionZones sessionToken="" />);
 
-    const { container } = render(
-      <MotionZones sessionToken="test-session-token" motionZones={zonesWithUnreachable} />
-    );
-
-    expect(screen.getByText('Hallway MotionAware')).toBeInTheDocument();
-
-    const unreachableZone = container.querySelector('.unreachable');
-    expect(unreachableZone).toBeInTheDocument();
-  });
-
-
-  it('should handle zones without motion data gracefully', () => {
-    const incompleteZones = [
-      {
-        id: 'zone-1',
-        name: 'Test Zone',
-        motionDetected: false,
-        enabled: true,
-        reachable: true
-      }
-    ];
-
-    render(<MotionZones sessionToken="test-session-token" motionZones={incompleteZones} />);
-
-    expect(screen.getByText('Test Zone')).toBeInTheDocument();
-  });
-
-  it('should have correct structure', () => {
-    const { container } = render(
-      <MotionZones sessionToken="test-session-token" motionZones={mockZones} />
-    );
-
-    expect(screen.getByText('Motion:')).toBeInTheDocument();
-
-    expect(container.querySelector('.motion-zones-bar')).toBeInTheDocument();
-    expect(container.querySelector('.motion-zones-label')).toBeInTheDocument();
-    expect(container.querySelector('.motion-zones-items')).toBeInTheDocument();
-  });
-
-  it('should not render when missing credentials', () => {
-    const { container } = render(
-      <MotionZones sessionToken="" />
-    );
-
-    // Should not make API call without credentials
     expect(mockGetMotionZones).not.toHaveBeenCalled();
+  });
+
+  it('should have correct alert structure', () => {
+    const zones = [
+      { id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true }
+    ];
+
+    const { container } = render(
+      <MotionZones sessionToken="test-session-token" motionZones={zones} />
+    );
+
+    expect(container.querySelector('.motion-alert-container')).toBeInTheDocument();
+    expect(container.querySelector('.motion-alert')).toBeInTheDocument();
+    expect(container.querySelector('.motion-alert-dot')).toBeInTheDocument();
+    expect(container.querySelector('.motion-alert-text')).toBeInTheDocument();
   });
 });

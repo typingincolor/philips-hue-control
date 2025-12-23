@@ -1,67 +1,65 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useHueApi } from '../hooks/useHueApi';
-import { useDemoMode } from '../hooks/useDemoMode';
 
 export const MotionZones = ({ sessionToken, motionZones }) => {
-  const isDemoMode = useDemoMode();
   const api = useHueApi();
 
   const [zones, setZones] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [activeAlerts, setActiveAlerts] = useState([]);
+  const previousMotionState = useRef({});
 
   // Use WebSocket data if available, otherwise fallback to API
   useEffect(() => {
     if (motionZones) {
-      // WebSocket data available (real-time)
       setZones(motionZones);
-      setLoading(false);
-      setError(null);
     } else if (sessionToken) {
-      // Fallback: fetch from API (for demo mode or when backend doesn't send motionZones yet)
       const fetchSensors = async () => {
         try {
           const motionData = await api.getMotionZones(sessionToken);
           setZones(motionData.zones || []);
-          setError(null);
         } catch (err) {
           console.error('[MotionZones] Failed to fetch MotionAware data:', err);
-          setError(err.message);
-        } finally {
-          setLoading(false);
         }
       };
       fetchSensors();
     }
   }, [sessionToken, motionZones, api]);
 
-  // Don't render if no MotionAware zones found
-  if (!loading && zones.length === 0) {
+  // Detect motion changes and trigger alerts
+  useEffect(() => {
+    zones.forEach(zone => {
+      const wasDetected = previousMotionState.current[zone.id];
+      const isDetected = zone.motionDetected && zone.reachable !== false;
+
+      // Show alert when motion newly detected
+      if (isDetected && !wasDetected) {
+        const alertId = `${zone.id}-${Date.now()}`;
+        setActiveAlerts(prev => [...prev, { id: alertId, name: zone.name }]);
+
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+          setActiveAlerts(prev => prev.filter(a => a.id !== alertId));
+        }, 3000);
+      }
+
+      previousMotionState.current[zone.id] = isDetected;
+    });
+  }, [zones]);
+
+  // Don't render anything if no active alerts
+  if (activeAlerts.length === 0) {
     return null;
   }
 
   return (
-    <div className="motion-zones-bar">
-      <span className="motion-zones-label">Motion:</span>
-      {loading && <span className="loading-text">...</span>}
-      {error && <span className="motion-zones-error">Failed</span>}
-      {!loading && zones.length > 0 && (
-        <div className="motion-zones-items">
-          {zones.map((zone) => (
-            <span
-              key={zone.id}
-              className={`motion-zone-item ${!zone.reachable ? 'unreachable' : ''}`}
-              title={!zone.reachable ? 'Sensor unreachable' : zone.motionDetected ? 'Motion detected' : 'No motion'}
-            >
-              <span className={`motion-dot ${zone.motionDetected ? 'active' : 'inactive'}`}>
-                {zone.motionDetected ? '🔴' : '🟢'}
-              </span>
-              <span className="motion-zone-name">{zone.name}</span>
-            </span>
-          ))}
+    <div className="motion-alert-container">
+      {activeAlerts.map(alert => (
+        <div key={alert.id} className="motion-alert">
+          <span className="motion-alert-dot">🔴</span>
+          <span className="motion-alert-text">Motion: {alert.name}</span>
         </div>
-      )}
+      ))}
     </div>
   );
 };
