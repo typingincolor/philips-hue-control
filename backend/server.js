@@ -5,6 +5,10 @@ import https from 'https';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
+import v1Routes from './routes/v1/index.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { openApiSpec } from './openapi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +21,9 @@ const app = express();
 const PORT = process.env.PORT || config.server.port;
 const HOST = process.env.HOST || config.server.host;
 
+// API version
+const API_VERSION = '1.0.0';
+
 // Create an HTTPS agent that accepts self-signed certificates
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false
@@ -27,6 +34,15 @@ app.use(cors());
 
 // Parse JSON bodies
 app.use(express.json());
+
+// API Documentation (Swagger UI)
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, {
+  customSiteTitle: 'Hue Control API Docs',
+  customCss: '.swagger-ui .topbar { display: none }'
+}));
+
+// Mount v1 API routes
+app.use('/api/v1', v1Routes);
 
 // Proxy endpoint for Hue Bridge requests
 app.all(/^\/api\/hue\/(.*)/, async (req, res) => {
@@ -108,9 +124,27 @@ app.get('/api/discovery', async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoint (updated with version info)
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Proxy server is running' });
+  res.json({
+    status: 'ok',
+    message: 'Hue API server is running',
+    version: API_VERSION,
+    docs: '/api/v1/docs',
+    capabilities: [
+      'dashboard',
+      'motion-zones',
+      'light-control',
+      'scene-activation',
+      'session-auth',
+      'legacy-proxy'
+    ]
+  });
+});
+
+// Alias at /api/health
+app.get('/api/health', (req, res) => {
+  res.redirect('/health');
 });
 
 // Config endpoint - expose configuration to frontend
@@ -124,6 +158,13 @@ app.get('/api/config', (req, res) => {
 // Serve static files from frontend build
 const frontendBuildPath = path.join(__dirname, 'public');
 app.use(express.static(frontendBuildPath));
+
+// Error handlers (must be after all routes)
+// 404 handler for API routes
+app.use('/api', notFoundHandler);
+
+// Global error handler
+app.use(errorHandler);
 
 // SPA fallback: serve index.html for all other routes (Express 5 compatible)
 app.use((req, res) => {
