@@ -362,7 +362,6 @@ export const LightControl = ({
                       key={zone.id}
                       zoneName={zone.name}
                       zone={zone}
-                      onToggleLight={toggleLight}
                       onToggleZone={toggleZone}
                       onActivateScene={handleSceneChange}
                       togglingLights={togglingLights}

@@ -1,11 +1,9 @@
 import PropTypes from 'prop-types';
-import { LightButton } from './LightButton';
 import { SceneSelector } from './SceneSelector';
 
 export const ZoneCard = ({
   zoneName,
   zone,
-  onToggleLight,
   onToggleZone,
   onActivateScene,
   togglingLights,
@@ -50,16 +48,6 @@ export const ZoneCard = ({
         </div>
       </div>
 
-      <div className="zone-lights-grid">
-        {zone.lights.map((light) => (
-          <LightButton
-            key={light.id}
-            light={light}
-            onToggle={onToggleLight}
-            isToggling={togglingLights.has(light.id)}
-          />
-        ))}
-      </div>
     </div>
   );
 };
@@ -82,7 +70,6 @@ ZoneCard.propTypes = {
       })
     ).isRequired
   }).isRequired,
-  onToggleLight: PropTypes.func.isRequired,
   onToggleZone: PropTypes.func.isRequired,
   onActivateScene: PropTypes.func.isRequired,
   togglingLights: PropTypes.instanceOf(Set).isRequired,

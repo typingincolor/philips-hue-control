@@ -13,51 +13,11 @@ describe('ZoneCard', () => {
       averageBrightness: 80.5
     },
     lights: [
-      {
-        id: 'light-1',
-        name: 'Light 1',
-        on: true,
-        brightness: 80,
-        color: 'rgb(255, 200, 100)',
-        shadow: '0 0 20px rgba(255, 200, 100, 0.4)',
-        colorSource: 'xy'
-      },
-      {
-        id: 'light-2',
-        name: 'Light 2',
-        on: true,
-        brightness: 75,
-        color: 'rgb(255, 180, 120)',
-        shadow: '0 0 18px rgba(255, 180, 120, 0.38)',
-        colorSource: 'temperature'
-      },
-      {
-        id: 'light-3',
-        name: 'Light 3',
-        on: true,
-        brightness: 86,
-        color: 'rgb(255, 220, 140)',
-        shadow: '0 0 22px rgba(255, 220, 140, 0.45)',
-        colorSource: 'xy'
-      },
-      {
-        id: 'light-4',
-        name: 'Light 4',
-        on: false,
-        brightness: 0,
-        color: null,
-        shadow: null,
-        colorSource: null
-      },
-      {
-        id: 'light-5',
-        name: 'Light 5',
-        on: false,
-        brightness: 0,
-        color: null,
-        shadow: null,
-        colorSource: null
-      }
+      { id: 'light-1', name: 'Light 1', on: true, brightness: 80 },
+      { id: 'light-2', name: 'Light 2', on: true, brightness: 75 },
+      { id: 'light-3', name: 'Light 3', on: true, brightness: 86 },
+      { id: 'light-4', name: 'Light 4', on: false, brightness: 0 },
+      { id: 'light-5', name: 'Light 5', on: false, brightness: 0 }
     ],
     scenes: [
       { id: 'scene-1', name: 'Morning' },
@@ -68,7 +28,6 @@ describe('ZoneCard', () => {
   const defaultProps = {
     zoneName: 'Upstairs',
     zone: mockZone,
-    onToggleLight: vi.fn(),
     onToggleZone: vi.fn(),
     onActivateScene: vi.fn(),
     togglingLights: new Set(),
@@ -93,15 +52,6 @@ describe('ZoneCard', () => {
     };
     render(<ZoneCard {...defaultProps} zone={zoneAllOff} />);
     expect(screen.getByText('—')).toBeInTheDocument();
-  });
-
-  it('should render all lights', () => {
-    render(<ZoneCard {...defaultProps} />);
-    expect(screen.getByText('Light 1')).toBeInTheDocument();
-    expect(screen.getByText('Light 2')).toBeInTheDocument();
-    expect(screen.getByText('Light 3')).toBeInTheDocument();
-    expect(screen.getByText('Light 4')).toBeInTheDocument();
-    expect(screen.getByText('Light 5')).toBeInTheDocument();
   });
 
   it('should render scene selector with scenes', () => {
@@ -172,24 +122,7 @@ describe('ZoneCard', () => {
     const togglingLights = new Set(['light-1', 'light-2', 'light-3', 'light-4', 'light-5']);
     render(<ZoneCard {...defaultProps} togglingLights={togglingLights} />);
 
-    const loadingEmojis = screen.getAllByText('⏳');
-    expect(loadingEmojis.length).toBeGreaterThan(0);
-  });
-
-  it('should call onToggleLight when light is clicked', async () => {
-    const user = userEvent.setup();
-    const onToggleLight = vi.fn();
-    render(<ZoneCard {...defaultProps} onToggleLight={onToggleLight} />);
-
-    const lightButtons = screen.getAllByRole('button');
-    const firstLightButton = lightButtons.find(btn =>
-      btn.querySelector('.bulb-icon')
-    );
-
-    if (firstLightButton) {
-      await user.click(firstLightButton);
-      expect(onToggleLight).toHaveBeenCalled();
-    }
+    expect(screen.getByText('⏳')).toBeInTheDocument();
   });
 
   it('should call onActivateScene when scene is selected', async () => {
@@ -211,7 +144,6 @@ describe('ZoneCard', () => {
     expect(container.querySelector('.zone-title-row')).toBeInTheDocument();
     expect(container.querySelector('.zone-badges')).toBeInTheDocument();
     expect(container.querySelector('.zone-controls')).toBeInTheDocument();
-    expect(container.querySelector('.zone-lights-grid')).toBeInTheDocument();
   });
 
   it('should handle zone with no scenes', () => {
