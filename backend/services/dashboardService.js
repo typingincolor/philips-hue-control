@@ -2,6 +2,7 @@ import hueClient from './hueClient.js';
 import colorService from './colorService.js';
 import roomService from './roomService.js';
 import statsService from './statsService.js';
+import motionService from './motionService.js';
 
 /**
  * Dashboard Service
@@ -17,15 +18,19 @@ class DashboardService {
   async getDashboard(bridgeIp, username) {
     console.log(`[DASHBOARD SERVICE] Fetching data for bridge ${bridgeIp}`);
 
-    // Step 1: Fetch all data in parallel
-    const [lightsData, roomsData, devicesData, scenesData] = await Promise.all([
+    // Step 1: Fetch all data in parallel (including motion zones)
+    const [lightsData, roomsData, devicesData, scenesData, motionZonesResult] = await Promise.all([
       hueClient.getLights(bridgeIp, username),
       hueClient.getRooms(bridgeIp, username),
       hueClient.getDevices(bridgeIp, username),
-      hueClient.getScenes(bridgeIp, username)
+      hueClient.getScenes(bridgeIp, username),
+      motionService.getMotionZones(bridgeIp, username).catch(err => {
+        console.error(`[DASHBOARD SERVICE] Failed to fetch motion zones: ${err.message}`);
+        return { zones: [] }; // Return empty array on error
+      })
     ]);
 
-    console.log(`[DASHBOARD SERVICE] Fetched ${lightsData.data?.length || 0} lights, ${roomsData.data?.length || 0} rooms`);
+    console.log(`[DASHBOARD SERVICE] Fetched ${lightsData.data?.length || 0} lights, ${roomsData.data?.length || 0} rooms, ${motionZonesResult.zones?.length || 0} motion zones`);
 
     // Step 2: Build room hierarchy
     const roomMap = roomService.buildRoomHierarchy(lightsData, roomsData, devicesData);
@@ -63,10 +68,11 @@ class DashboardService {
 
     console.log(`[DASHBOARD SERVICE] Summary: ${summary.lightsOn}/${summary.totalLights} lights on, ${summary.roomCount} rooms`);
 
-    // Step 5: Return unified response
+    // Step 5: Return unified response with motion zones
     return {
       summary,
-      rooms
+      rooms,
+      motionZones: motionZonesResult.zones || []
     };
   }
 }

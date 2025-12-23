@@ -264,6 +264,23 @@ class WebSocketService {
       }
     }
 
+    // Detect motion zone changes
+    const prevMotionZones = previous.motionZones || [];
+    const currMotionZones = current.motionZones || [];
+
+    const prevMotionMap = new Map(prevMotionZones.map(z => [z.id, z]));
+
+    for (const zone of currMotionZones) {
+      const prevZone = prevMotionMap.get(zone.id);
+
+      if (!prevZone || JSON.stringify(prevZone) !== JSON.stringify(zone)) {
+        changes.push({
+          type: 'motion_zone',
+          data: zone
+        });
+      }
+    }
+
     return changes;
   }
 
