@@ -10,8 +10,7 @@ import { RoomCard } from './RoomCard';
 import { LightButton } from './LightButton';
 
 export const LightControl = ({
-  bridgeIp,
-  username,
+  sessionToken,
   onLogout
 }) => {
   const isDemoMode = useDemoMode();
@@ -22,7 +21,7 @@ export const LightControl = ({
     isConnected: wsConnected,
     dashboard: wsDashboard,
     error: wsError
-  } = useWebSocket(bridgeIp, username, !isDemoMode);
+  } = useWebSocket(sessionToken, null, !isDemoMode);
 
   // Local dashboard state (for demo mode or manual updates)
   const [localDashboard, setLocalDashboard] = useState(null);
@@ -42,7 +41,7 @@ export const LightControl = ({
     setError(null);
 
     try {
-      const dashboardData = await api.getDashboard(bridgeIp, username);
+      const dashboardData = await api.getDashboard(sessionToken);
       setLocalDashboard(dashboardData);
       console.log('[Dashboard] Fetched dashboard successfully');
     } catch (err) {
@@ -55,10 +54,10 @@ export const LightControl = ({
 
   // Initial fetch in demo mode only
   useEffect(() => {
-    if (bridgeIp && username && isDemoMode) {
+    if (sessionToken && isDemoMode) {
       fetchAllData();
     }
-  }, [bridgeIp, username, isDemoMode]);
+  }, [sessionToken, isDemoMode]);
 
   // Update loading state based on WebSocket connection in real mode
   useEffect(() => {
@@ -94,24 +93,26 @@ export const LightControl = ({
       const newState = { on: !currentState };
 
       // Use v1 endpoint that returns updated light with pre-computed color
-      const response = await api.updateLight(bridgeIp, username, lightUuid, newState);
+      const response = await api.updateLight(sessionToken, lightUuid, newState);
 
-      // Update dashboard with new light data
-      setDashboard(prev => ({
-        ...prev,
-        summary: {
-          ...prev.summary,
-          lightsOn: newState.on
-            ? prev.summary.lightsOn + 1
-            : Math.max(0, prev.summary.lightsOn - 1)
-        },
-        rooms: prev.rooms.map(room => ({
-          ...room,
-          lights: room.lights.map(l =>
-            l.id === lightUuid ? response.light : l
-          )
-        }))
-      }));
+      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
+      if (isDemoMode) {
+        setLocalDashboard(prev => ({
+          ...prev,
+          summary: {
+            ...prev.summary,
+            lightsOn: newState.on
+              ? prev.summary.lightsOn + 1
+              : Math.max(0, prev.summary.lightsOn - 1)
+          },
+          rooms: prev.rooms.map(room => ({
+            ...room,
+            lights: room.lights.map(l =>
+              l.id === lightUuid ? response.light : l
+            )
+          }))
+        }));
+      }
     } catch (err) {
       console.error('Failed to toggle light:', err);
       alert(`${ERROR_MESSAGES.LIGHT_TOGGLE}: ${err.message}`);
@@ -135,26 +136,28 @@ export const LightControl = ({
       const newState = { on: turnOn };
 
       // Use v1 endpoint that updates all lights in room
-      const response = await api.updateRoomLights(bridgeIp, username, roomId, newState);
+      const response = await api.updateRoomLights(sessionToken, roomId, newState);
 
-      // Update dashboard with new light data
-      setDashboard(prev => ({
-        ...prev,
-        rooms: prev.rooms.map(room => {
-          if (room.id === roomId) {
-            // Replace all lights in this room with updated data
-            const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
-            return {
-              ...room,
-              lights: room.lights.map(l => updatedLightMap.get(l.id) || l)
-            };
-          }
-          return room;
-        })
-      }));
+      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
+      if (isDemoMode) {
+        setLocalDashboard(prev => ({
+          ...prev,
+          rooms: prev.rooms.map(room => {
+            if (room.id === roomId) {
+              // Replace all lights in this room with updated data
+              const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
+              return {
+                ...room,
+                lights: room.lights.map(l => updatedLightMap.get(l.id) || l)
+              };
+            }
+            return room;
+          })
+        }));
 
-      // Refresh dashboard to get updated summary stats
-      setTimeout(() => fetchAllData(), 300);
+        // Refresh dashboard to get updated summary stats
+        setTimeout(() => fetchAllData(), 300);
+      }
     } catch (err) {
       console.error('Failed to toggle room:', err);
       alert(`${ERROR_MESSAGES.ROOM_TOGGLE}: ${err.message}`);
@@ -173,26 +176,29 @@ export const LightControl = ({
     setActivatingScene(sceneUuid);
     try {
       // Use v1 endpoint that returns affected lights with pre-computed colors
-      const response = await api.activateSceneV1(bridgeIp, username, sceneUuid);
+      const response = await api.activateSceneV1(sessionToken, sceneUuid);
       console.log(`Activated scene ${sceneUuid}`);
 
-      // Update dashboard with affected lights
-      if (response.affectedLights && response.affectedLights.length > 0) {
-        const updatedLightMap = new Map(response.affectedLights.map(l => [l.id, l]));
+      // In demo mode, update local dashboard. In real mode, WebSocket will update automatically
+      if (isDemoMode) {
+        // Update dashboard with affected lights
+        if (response.affectedLights && response.affectedLights.length > 0) {
+          const updatedLightMap = new Map(response.affectedLights.map(l => [l.id, l]));
 
-        setDashboard(prev => ({
-          ...prev,
-          rooms: prev.rooms.map(room => ({
-            ...room,
-            lights: room.lights.map(light =>
-              updatedLightMap.get(light.id) || light
-            )
-          }))
-        }));
+          setLocalDashboard(prev => ({
+            ...prev,
+            rooms: prev.rooms.map(room => ({
+              ...room,
+              lights: room.lights.map(light =>
+                updatedLightMap.get(light.id) || light
+              )
+            }))
+          }));
+        }
+
+        // Refresh full dashboard after short delay to ensure all state is synced
+        setTimeout(() => fetchAllData(), 300);
       }
-
-      // Refresh full dashboard after short delay to ensure all state is synced
-      setTimeout(() => fetchAllData(), 300);
     } catch (err) {
       console.error('Failed to activate scene:', err);
       alert(`${ERROR_MESSAGES.SCENE_ACTIVATION}: ${err.message}`);
@@ -242,7 +248,7 @@ export const LightControl = ({
             <h5>Troubleshooting:</h5>
             <ul>
               <li>Ensure your device is on the same network as the bridge</li>
-              <li>Check if the bridge IP is correct: {bridgeIp}</li>
+              <li>Try logging out and logging in again</li>
               <li>Make sure the proxy server is running</li>
             </ul>
           </div>
@@ -251,7 +257,7 @@ export const LightControl = ({
 
       {dashboard && !error && (
         <>
-          <MotionZones bridgeIp={bridgeIp} username={username} />
+          <MotionZones sessionToken={sessionToken} />
 
           <DashboardSummary
             totalLightsOn={dashboard.summary.lightsOn}
@@ -290,7 +296,6 @@ export const LightControl = ({
 };
 
 LightControl.propTypes = {
-  bridgeIp: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired,
+  sessionToken: PropTypes.string.isRequired,
   onLogout: PropTypes.func
 };

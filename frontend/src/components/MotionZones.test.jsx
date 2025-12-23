@@ -60,7 +60,7 @@ describe('MotionZones', () => {
   it('should render motion zones', async () => {
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Motion Zones')).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe('MotionZones', () => {
   it('should show green dot when no motion detected', async () => {
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Hallway MotionAware')).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('MotionZones', () => {
   it('should show red dot when motion detected', async () => {
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Bedroom MotionAware')).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('MotionZones', () => {
     mockGetMotionZones.mockResolvedValue({ zones: [] });
 
     const { container } = render(
-      <MotionZones bridgeIp="192.168.1.100" username="test-user" />
+      <MotionZones sessionToken="test-session-token" />
     );
 
     await waitFor(() => {
@@ -117,7 +117,7 @@ describe('MotionZones', () => {
       () => new Promise(() => {}) // Never resolves
     );
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     expect(screen.getByText('Loading sensors...')).toBeInTheDocument();
   });
@@ -126,7 +126,7 @@ describe('MotionZones', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockGetMotionZones.mockRejectedValue(new Error('Network error'));
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     await waitFor(() => {
       expect(consoleError).toHaveBeenCalledWith(
@@ -143,10 +143,10 @@ describe('MotionZones', () => {
   it('should call API with correct parameters', async () => {
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     await waitFor(() => {
-      expect(mockGetMotionZones).toHaveBeenCalledWith('192.168.1.100', 'test-user');
+      expect(mockGetMotionZones).toHaveBeenCalledWith('test-session-token');
     });
   });
 
@@ -157,7 +157,7 @@ describe('MotionZones', () => {
     mockGetMotionZones.mockResolvedValue({ zones: zonesWithUnreachable });
 
     const { container } = render(
-      <MotionZones bridgeIp="192.168.1.100" username="test-user" />
+      <MotionZones sessionToken="test-session-token" />
     );
 
     await waitFor(() => {
@@ -171,7 +171,7 @@ describe('MotionZones', () => {
   it('should setup polling with correct interval', () => {
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     expect(usePolling).toHaveBeenCalled();
     const pollingArgs = usePolling.mock.calls[0];
@@ -183,7 +183,7 @@ describe('MotionZones', () => {
     useDemoMode.mockReturnValue(true);
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     expect(usePolling).toHaveBeenCalled();
     const pollingArgs = usePolling.mock.calls[0];
@@ -201,7 +201,7 @@ describe('MotionZones', () => {
     ];
     mockGetMotionZones.mockResolvedValue({ zones: incompleteZones });
 
-    render(<MotionZones bridgeIp="192.168.1.100" username="test-user" />);
+    render(<MotionZones sessionToken="test-session-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Test Zone')).toBeInTheDocument();
@@ -212,7 +212,7 @@ describe('MotionZones', () => {
     mockGetMotionZones.mockResolvedValue({ zones: mockZones });
 
     const { container } = render(
-      <MotionZones bridgeIp="192.168.1.100" username="test-user" />
+      <MotionZones sessionToken="test-session-token" />
     );
 
     await waitFor(() => {
@@ -226,7 +226,7 @@ describe('MotionZones', () => {
 
   it('should not render when missing credentials', () => {
     const { container } = render(
-      <MotionZones bridgeIp="" username="" />
+      <MotionZones sessionToken="" />
     );
 
     // Should not make API call without credentials

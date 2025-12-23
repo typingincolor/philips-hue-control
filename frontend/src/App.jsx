@@ -11,7 +11,7 @@ function App() {
   const {
     step,
     bridgeIp,
-    username,
+    sessionToken,
     lights,
     loading,
     error,
@@ -24,7 +24,7 @@ function App() {
   // In demo mode, use dummy credentials and skip to connected step
   const effectiveStep = isDemoMode ? 'connected' : step;
   const effectiveBridgeIp = isDemoMode ? 'demo-bridge' : bridgeIp;
-  const effectiveUsername = isDemoMode ? 'demo-user' : username;
+  const effectiveSessionToken = isDemoMode ? 'demo-session-token' : sessionToken;
 
   return (
     <div className="app">
@@ -68,8 +68,7 @@ function App() {
 
         {effectiveStep === 'connected' && (
           <LightControl
-            bridgeIp={effectiveBridgeIp}
-            username={effectiveUsername}
+            sessionToken={effectiveSessionToken}
             onLogout={reset}
           />
         )}

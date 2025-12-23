@@ -108,97 +108,78 @@ export const hueApi = {
   /**
    * Get unified dashboard data (V1 API)
    * Returns pre-computed colors, shadows, room hierarchy, and statistics in a single call
-   * @param {string} sessionToken - Session token (preferred) OR bridgeIp (legacy)
-   * @param {string} username - Username (only needed if using legacy auth)
+   * @param {string} sessionToken - Session token
    * @returns {Promise<Object>} Dashboard data with summary and rooms
    */
-  async getDashboard(sessionToken, username = null) {
-    // If sessionToken looks like an IP, it's legacy mode
-    const isLegacyMode = sessionToken && sessionToken.includes('.');
-
-    const url = isLegacyMode
-      ? `${PROXY_URL}/api/v1/dashboard?bridgeIp=${sessionToken}&username=${username}`
-      : `${PROXY_URL}/api/v1/dashboard`;
-
-    return request(url, {}, isLegacyMode ? null : sessionToken);
+  async getDashboard(sessionToken) {
+    const url = `${PROXY_URL}/api/v1/dashboard`;
+    return request(url, {}, sessionToken);
   },
 
   /**
    * Get motion zones (V1 API)
    * Returns parsed MotionAware zones with status
-   * @param {string} sessionToken - Session token (preferred) OR bridgeIp (legacy)
-   * @param {string} username - Username (only needed if using legacy auth)
+   * @param {string} sessionToken - Session token
    * @returns {Promise<Object>} Motion zones data
    */
-  async getMotionZones(sessionToken, username = null) {
-    const isLegacyMode = sessionToken && sessionToken.includes('.');
-
-    const url = isLegacyMode
-      ? `${PROXY_URL}/api/v1/motion-zones?bridgeIp=${sessionToken}&username=${username}`
-      : `${PROXY_URL}/api/v1/motion-zones`;
-
-    return request(url, {}, isLegacyMode ? null : sessionToken);
+  async getMotionZones(sessionToken) {
+    const url = `${PROXY_URL}/api/v1/motion-zones`;
+    return request(url, {}, sessionToken);
   },
 
   /**
    * Update a light (V1 API - simplified)
-   * @param {string} sessionToken - Session token (preferred) OR bridgeIp (legacy)
-   * @param {string} username - Username (only needed if using legacy auth)
+   * @param {string} sessionToken - Session token
    * @param {string} lightId - The light UUID
    * @param {Object} state - Simplified state { on: boolean, brightness: number }
    * @returns {Promise<Object>} Updated light with pre-computed color/shadow
    */
-  async updateLight(sessionToken, username, lightId, state) {
-    const isLegacyMode = sessionToken && sessionToken.includes('.');
-
-    const url = isLegacyMode
-      ? `${PROXY_URL}/api/v1/lights/${lightId}?bridgeIp=${sessionToken}&username=${username}`
-      : `${PROXY_URL}/api/v1/lights/${lightId}`;
+  async updateLight(sessionToken, lightId, state) {
+    const url = `${PROXY_URL}/api/v1/lights/${lightId}`;
 
     return request(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state)
-    }, isLegacyMode ? null : sessionToken);
+    }, sessionToken);
   },
 
   /**
    * Update all lights in a room (V1 API)
-   * @param {string} sessionToken - Session token (preferred) OR bridgeIp (legacy)
-   * @param {string} username - Username (only needed if using legacy auth)
+   * @param {string} sessionToken - Session token
    * @param {string} roomId - The room UUID
    * @param {Object} state - Simplified state { on: boolean, brightness: number }
    * @returns {Promise<Object>} Updated lights with pre-computed colors/shadows
    */
-  async updateRoomLights(sessionToken, username, roomId, state) {
-    const isLegacyMode = sessionToken && sessionToken.includes('.');
-
-    const url = isLegacyMode
-      ? `${PROXY_URL}/api/v1/rooms/${roomId}/lights?bridgeIp=${sessionToken}&username=${username}`
-      : `${PROXY_URL}/api/v1/rooms/${roomId}/lights`;
+  async updateRoomLights(sessionToken, roomId, state) {
+    const url = `${PROXY_URL}/api/v1/rooms/${roomId}/lights`;
 
     return request(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state)
-    }, isLegacyMode ? null : sessionToken);
+    }, sessionToken);
   },
 
   /**
    * Activate a scene (V1 API)
-   * @param {string} sessionToken - Session token (preferred) OR bridgeIp (legacy)
-   * @param {string} username - Username (only needed if using legacy auth)
+   * @param {string} sessionToken - Session token
    * @param {string} sceneId - The scene UUID
    * @returns {Promise<Object>} Affected lights with pre-computed colors/shadows
    */
-  async activateSceneV1(sessionToken, username, sceneId) {
-    const isLegacyMode = sessionToken && sessionToken.includes('.');
+  async activateSceneV1(sessionToken, sceneId) {
+    const url = `${PROXY_URL}/api/v1/scenes/${sceneId}/activate`;
+    return request(url, { method: 'POST' }, sessionToken);
+  },
 
-    const url = isLegacyMode
-      ? `${PROXY_URL}/api/v1/scenes/${sceneId}/activate?bridgeIp=${sessionToken}&username=${username}`
-      : `${PROXY_URL}/api/v1/scenes/${sceneId}/activate`;
-
-    return request(url, { method: 'POST' }, isLegacyMode ? null : sessionToken);
+  /**
+   * Refresh session token (extends expiration)
+   * @param {string} sessionToken - Current session token
+   * @returns {Promise<Object>} New session info { sessionToken, expiresIn, bridgeIp }
+   */
+  async refreshSession(sessionToken) {
+    const url = `${PROXY_URL}/api/v1/auth/refresh`;
+    return request(url, { method: 'POST' }, sessionToken);
   },
 
   /**

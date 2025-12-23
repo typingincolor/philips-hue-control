@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { STORAGE_KEYS } from '../constants/storage';
+import { hueApi } from '../services/hueApi';
 
 /**
  * Session management hook
- * Handles session token storage, validation, and expiration
+ * Handles session token storage, validation, expiration, and auto-refresh
  */
 export const useSession = () => {
   const [sessionToken, setSessionToken] = useState(null);
   const [bridgeIp, setBridgeIp] = useState(null);
   const [expiresAt, setExpiresAt] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Load session from localStorage on mount
   useEffect(() => {
@@ -51,6 +53,44 @@ export const useSession = () => {
 
     return () => clearInterval(intervalId);
   }, [expiresAt]);
+
+  // Auto-refresh token 5 minutes before expiration
+  useEffect(() => {
+    if (!expiresAt || !sessionToken || !bridgeIp) return;
+
+    const REFRESH_BEFORE_EXPIRY = 5 * 60 * 1000; // 5 minutes in ms
+    const refreshTime = expiresAt - REFRESH_BEFORE_EXPIRY;
+    const now = Date.now();
+
+    // If already past refresh time, schedule for next tick (handles page reload)
+    const delay = Math.max(0, refreshTime - now);
+
+    // Only schedule if we haven't expired yet
+    if (now < expiresAt) {
+      console.log(`[Session] Auto-refresh scheduled in ${Math.floor(delay / 1000)} seconds`);
+
+      const timeoutId = setTimeout(async () => {
+        if (isRefreshing) return; // Prevent duplicate refreshes
+
+        setIsRefreshing(true);
+        console.log('[Session] Auto-refreshing token...');
+
+        try {
+          const newSession = await hueApi.refreshSession(sessionToken);
+          createSession(newSession.sessionToken, bridgeIp, newSession.expiresIn);
+          console.log('[Session] Auto-refresh successful');
+        } catch (error) {
+          console.error('[Session] Auto-refresh failed:', error);
+          // Don't clear session immediately - let it expire naturally
+          // User will see "session expired" message on next API call
+        } finally {
+          setIsRefreshing(false);
+        }
+      }, delay);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [expiresAt, sessionToken, bridgeIp, isRefreshing]);
 
   /**
    * Create a new session

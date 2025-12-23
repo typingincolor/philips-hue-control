@@ -5,7 +5,7 @@ import { useDemoMode } from '../hooks/useDemoMode';
 import { usePolling } from '../hooks/usePolling';
 import { POLLING_INTERVALS } from '../constants/polling';
 
-export const MotionZones = ({ bridgeIp, username }) => {
+export const MotionZones = ({ sessionToken }) => {
   const isDemoMode = useDemoMode();
   const api = useHueApi();
 
@@ -16,7 +16,7 @@ export const MotionZones = ({ bridgeIp, username }) => {
   // Fetch MotionAware zones from unified endpoint
   const fetchSensors = async () => {
     try {
-      const motionData = await api.getMotionZones(bridgeIp, username);
+      const motionData = await api.getMotionZones(sessionToken);
       setZones(motionData.zones || []);
       setError(null);
     } catch (err) {
@@ -29,16 +29,16 @@ export const MotionZones = ({ bridgeIp, username }) => {
 
   // Initial fetch
   useEffect(() => {
-    if (bridgeIp && username) {
+    if (sessionToken) {
       fetchSensors();
     }
-  }, [bridgeIp, username]);
+  }, [sessionToken]);
 
   // Auto-refresh polling (disabled in demo mode)
   usePolling(
     fetchSensors,
     POLLING_INTERVALS.MOTION_REFRESH,
-    !!(bridgeIp && username && !isDemoMode)
+    !!(sessionToken && !isDemoMode)
   );
 
   // Don't render if no MotionAware zones found
@@ -80,6 +80,5 @@ export const MotionZones = ({ bridgeIp, username }) => {
 };
 
 MotionZones.propTypes = {
-  bridgeIp: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired
+  sessionToken: PropTypes.string.isRequired
 };

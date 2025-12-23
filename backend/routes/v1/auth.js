@@ -165,6 +165,34 @@ router.get('/session', requireSession, (req, res) => {
 });
 
 /**
+ * POST /api/v1/auth/refresh
+ * Refresh an existing session token (extends expiration)
+ *
+ * Headers:
+ *   Authorization: Bearer <sessionToken>
+ *
+ * Returns:
+ *   {
+ *     "sessionToken": "hue_sess_new123...",
+ *     "expiresIn": 86400,
+ *     "bridgeIp": "192.168.1.100"
+ *   }
+ */
+router.post('/refresh', requireSession, (req, res) => {
+  const { bridgeIp, username, sessionToken: oldToken } = req.hue;
+
+  console.log(`[AUTH] Refreshing session for bridge ${bridgeIp}`);
+
+  // Revoke old token
+  sessionManager.revokeSession(oldToken);
+
+  // Create new session with same credentials
+  const sessionInfo = sessionManager.createSession(bridgeIp, username);
+
+  res.json(sessionInfo);
+});
+
+/**
  * GET /api/v1/auth/stats
  * Get session statistics (for monitoring/debugging)
  *
