@@ -8,98 +8,98 @@ export const mockLights = {
       on: { on: true },
       dimming: { brightness: 100 },
       color: { xy: { x: 0.6915, y: 0.3083 } }, // Red
-      metadata: { name: "Living Room 1" }
+      metadata: { name: "Bright Red" }
     },
     {
       id: "light-2",
       on: { on: true },
       dimming: { brightness: 75 },
       color: { xy: { x: 0.1532, y: 0.0475 } }, // Blue
-      metadata: { name: "Living Room 2" }
+      metadata: { name: "Blue 75%" }
     },
     {
       id: "light-3",
       on: { on: true },
       dimming: { brightness: 50 },
       color: { xy: { x: 0.1700, y: 0.7000 } }, // Green
-      metadata: { name: "Living Room 3" }
+      metadata: { name: "Green 50%" }
     },
     {
       id: "light-4",
       on: { on: true },
       dimming: { brightness: 25 },
       color: { xy: { x: 0.5016, y: 0.4152 } }, // Orange
-      metadata: { name: "Living Room 4" }
+      metadata: { name: "Dim Orange" }
     },
     {
       id: "light-5",
       on: { on: true },
       dimming: { brightness: 10 },
       color: { xy: { x: 0.3227, y: 0.3290 } }, // Warm White
-      metadata: { name: "Living Room 5" }
+      metadata: { name: "Very Dim White" }
     },
     {
       id: "light-6",
       on: { on: false },
       dimming: { brightness: 0 },
       color: { xy: { x: 0.3227, y: 0.3290 } },
-      metadata: { name: "Living Room 6" }
+      metadata: { name: "Off" }
     },
     {
       id: "light-7",
       on: { on: true },
       dimming: { brightness: 90 },
       color_temperature: { mirek: 153 }, // Cool white
-      metadata: { name: "Kitchen 1" }
+      metadata: { name: "Bright Cool" }
     },
     {
       id: "light-8",
       on: { on: true },
       dimming: { brightness: 60 },
       color_temperature: { mirek: 250 }, // Neutral white
-      metadata: { name: "Kitchen 2" }
+      metadata: { name: "Neutral 60%" }
     },
     {
       id: "light-9",
       on: { on: true },
       dimming: { brightness: 40 },
       color_temperature: { mirek: 400 }, // Warm white
-      metadata: { name: "Kitchen 3" }
+      metadata: { name: "Dim Warm" }
     },
     {
       id: "light-10",
       on: { on: true },
       dimming: { brightness: 80 },
       color: { xy: { x: 0.5614, y: 0.4156 } }, // Yellow
-      metadata: { name: "Bedroom 1" }
+      metadata: { name: "Bright Yellow" }
     },
     {
       id: "light-11",
       on: { on: true },
       dimming: { brightness: 45 },
       color: { xy: { x: 0.2731, y: 0.1601 } }, // Purple
-      metadata: { name: "Bedroom 2" }
+      metadata: { name: "Purple 45%" }
     },
     {
       id: "light-12",
       on: { on: false },
       dimming: { brightness: 0 },
       color: { xy: { x: 0.3227, y: 0.3290 } },
-      metadata: { name: "Bedroom 3" }
+      metadata: { name: "Off 2" }
     },
     {
       id: "light-13",
       on: { on: true },
       dimming: { brightness: 5 },
       color: { xy: { x: 0.6915, y: 0.3083 } }, // Red (should look warm)
-      metadata: { name: "Test Very Dim" }
+      metadata: { name: "Very Dim Red" }
     },
     {
       id: "light-14",
       on: { on: true },
       dimming: { brightness: 15 },
       color: { xy: { x: 0.1532, y: 0.0475 } }, // Blue (should start transitioning)
-      metadata: { name: "Test Dim Threshold" }
+      metadata: { name: "Dim Blue" }
     }
   ]
 };
@@ -212,6 +212,59 @@ const mockDashboard = {
     roomCount: 3,
     sceneCount: 4
   },
+  zones: [
+    {
+      id: "zone-1",
+      name: "Downstairs",
+      stats: {
+        lightsOnCount: 2,
+        totalLights: 3,
+        averageBrightness: 95
+      },
+      lights: [
+        { id: "light-1", name: "Bright Red", on: true, brightness: 100 },
+        { id: "light-7", name: "Bright Cool", on: true, brightness: 90 },
+        { id: "light-6", name: "Off", on: false, brightness: 0 }
+      ],
+      scenes: [
+        { id: "scene-z1", name: "Evening" }
+      ]
+    },
+    {
+      id: "zone-2",
+      name: "Upstairs",
+      stats: {
+        lightsOnCount: 0,
+        totalLights: 2,
+        averageBrightness: 0
+      },
+      lights: [
+        { id: "light-12", name: "Off 2", on: false, brightness: 0 },
+        { id: "light-6", name: "Off", on: false, brightness: 0 }
+      ],
+      scenes: [
+        { id: "scene-z2", name: "Morning" }
+      ]
+    },
+    {
+      id: "zone-3",
+      name: "Dining room lamps",
+      stats: {
+        lightsOnCount: 3,
+        totalLights: 3,
+        averageBrightness: 68
+      },
+      lights: [
+        { id: "light-2", name: "Blue 75%", on: true, brightness: 75 },
+        { id: "light-3", name: "Green 50%", on: true, brightness: 50 },
+        { id: "light-10", name: "Bright Yellow", on: true, brightness: 80 }
+      ],
+      scenes: [
+        { id: "scene-z3", name: "Dinner" }
+      ]
+    }
+  ],
+  motionZones: [],
   rooms: [
     {
       id: "room-1",
@@ -222,12 +275,12 @@ const mockDashboard = {
         averageBrightness: 52
       },
       lights: [
-        { id: "light-1", name: "Living Room 1", on: true, brightness: 100, color: "rgb(255, 120, 100)", shadow: "0 0 30px rgba(255, 120, 100, 0.6)" },
-        { id: "light-2", name: "Living Room 2", on: true, brightness: 75, color: "rgb(100, 120, 255)", shadow: "0 0 25px rgba(100, 120, 255, 0.5)" },
-        { id: "light-3", name: "Living Room 3", on: true, brightness: 50, color: "rgb(120, 255, 120)", shadow: "0 0 20px rgba(120, 255, 120, 0.4)" },
-        { id: "light-4", name: "Living Room 4", on: true, brightness: 25, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
-        { id: "light-5", name: "Living Room 5", on: true, brightness: 10, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
-        { id: "light-6", name: "Living Room 6", on: false, brightness: 0, color: null, shadow: null }
+        { id: "light-1", name: "Bright Red", on: true, brightness: 100, color: "rgb(255, 120, 100)", shadow: "0 0 30px rgba(255, 120, 100, 0.6)" },
+        { id: "light-2", name: "Blue 75%", on: true, brightness: 75, color: "rgb(100, 120, 255)", shadow: "0 0 25px rgba(100, 120, 255, 0.5)" },
+        { id: "light-3", name: "Green 50%", on: true, brightness: 50, color: "rgb(120, 255, 120)", shadow: "0 0 20px rgba(120, 255, 120, 0.4)" },
+        { id: "light-4", name: "Dim Orange", on: true, brightness: 25, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-5", name: "Very Dim White", on: true, brightness: 10, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-6", name: "Off", on: false, brightness: 0, color: null, shadow: null }
       ],
       scenes: [
         { id: "scene-1", name: "Bright" },
@@ -243,9 +296,9 @@ const mockDashboard = {
         averageBrightness: 63
       },
       lights: [
-        { id: "light-7", name: "Kitchen 1", on: true, brightness: 90, color: "rgb(220, 230, 255)", shadow: "0 0 28px rgba(220, 230, 255, 0.56)" },
-        { id: "light-8", name: "Kitchen 2", on: true, brightness: 60, color: "rgb(255, 240, 220)", shadow: "0 0 22px rgba(255, 240, 220, 0.44)" },
-        { id: "light-9", name: "Kitchen 3", on: true, brightness: 40, color: "rgb(255, 220, 180)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" }
+        { id: "light-7", name: "Bright Cool", on: true, brightness: 90, color: "rgb(220, 230, 255)", shadow: "0 0 28px rgba(220, 230, 255, 0.56)" },
+        { id: "light-8", name: "Neutral 60%", on: true, brightness: 60, color: "rgb(255, 240, 220)", shadow: "0 0 22px rgba(255, 240, 220, 0.44)" },
+        { id: "light-9", name: "Dim Warm", on: true, brightness: 40, color: "rgb(255, 220, 180)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" }
       ],
       scenes: [
         { id: "scene-3", name: "Concentrate" }
@@ -260,11 +313,11 @@ const mockDashboard = {
         averageBrightness: 47
       },
       lights: [
-        { id: "light-10", name: "Bedroom 1", on: true, brightness: 80, color: "rgb(255, 230, 120)", shadow: "0 0 26px rgba(255, 230, 120, 0.52)" },
-        { id: "light-11", name: "Bedroom 2", on: true, brightness: 45, color: "rgb(200, 150, 255)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
-        { id: "light-12", name: "Bedroom 3", on: false, brightness: 0, color: null, shadow: null },
-        { id: "light-13", name: "Test Very Dim", on: true, brightness: 5, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
-        { id: "light-14", name: "Test Dim Threshold", on: true, brightness: 15, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" }
+        { id: "light-10", name: "Bright Yellow", on: true, brightness: 80, color: "rgb(255, 230, 120)", shadow: "0 0 26px rgba(255, 230, 120, 0.52)" },
+        { id: "light-11", name: "Purple 45%", on: true, brightness: 45, color: "rgb(200, 150, 255)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-12", name: "Off 2", on: false, brightness: 0, color: null, shadow: null },
+        { id: "light-13", name: "Very Dim Red", on: true, brightness: 5, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" },
+        { id: "light-14", name: "Dim Blue", on: true, brightness: 15, color: "rgb(255, 200, 130)", shadow: "0 4px 8px rgba(0, 0, 0, 0.1)" }
       ],
       scenes: [
         { id: "scene-4", name: "Nightlight" }
@@ -316,6 +369,21 @@ export const mockApi = {
         light.on = state.on ?? light.on;
       });
       return { updatedLights: room.lights };
+    }
+
+    return { updatedLights: [] };
+  },
+
+  async updateZoneLights(sessionToken, zoneId, state) {
+    await delay(200);
+    console.log(`[MOCK] updateZoneLights ${zoneId}:`, state);
+
+    const zone = mockDashboard.zones.find(z => z.id === zoneId);
+    if (zone) {
+      zone.lights.forEach(light => {
+        light.on = state.on ?? light.on;
+      });
+      return { updatedLights: zone.lights };
     }
 
     return { updatedLights: [] };
