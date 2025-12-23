@@ -427,6 +427,23 @@ button.secondary:hover:not(:disabled) {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+.status-indicator.disconnected {
+  background: #e67e22;
+  box-shadow: 0 0 8px rgba(230, 126, 34, 0.6);
+  animation: pulse-warning 1s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+}
+
 @keyframes pulse-glow {
   0%, 100% {
     box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);

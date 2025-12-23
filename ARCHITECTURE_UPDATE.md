@@ -93,6 +93,47 @@ Bulk update all lights in a room.
 #### `POST /api/v1/scenes/:id/activate`
 Activate scene, returns affected lights with pre-computed colors.
 
+#### `WebSocket /api/v1/ws`
+Real-time dashboard updates via WebSocket connection.
+
+**Connection Flow:**
+1. Client connects to `ws://localhost:3001/api/v1/ws`
+2. Client sends authentication:
+   ```json
+   {
+     "type": "auth",
+     "bridgeIp": "192.168.1.100",
+     "username": "hue-username"
+   }
+   ```
+3. Server sends initial state:
+   ```json
+   {
+     "type": "initial_state",
+     "data": { /* full dashboard object */ }
+   }
+   ```
+4. Server pushes updates when state changes:
+   ```json
+   {
+     "type": "state_update",
+     "changes": [
+       {
+         "type": "light",
+         "data": { /* updated light */ },
+         "roomId": "room-uuid"
+       }
+     ]
+   }
+   ```
+
+**Benefits:**
+- Eliminates polling overhead (no more 30-second intervals)
+- Instant updates when lights change (5-second polling on backend)
+- All connected clients see changes simultaneously
+- Automatic reconnection with exponential backoff
+- Disabled in demo mode
+
 ### Authentication
 
 Three methods supported (in order of preference):
@@ -124,7 +165,8 @@ Three methods supported (in order of preference):
 - 75 unit tests for business logic
 
 ### After (v0.5.0)
-- **1-2 API calls** per page load (dashboard + motion zones)
+- **1 initial API call** (WebSocket initial state)
+- **Real-time updates** via WebSocket (no polling)
 - Zero frontend data transformation
 - Pre-computed colors and shadows from backend
 - Pre-computed statistics from backend
@@ -142,9 +184,11 @@ const shadow = getLightShadow(light, color);
 
 **New Pattern:**
 ```javascript
-const dashboard = await api.getDashboard(bridgeIp, username);
+// WebSocket provides initial state and real-time updates
+const { dashboard, isConnected } = useWebSocket(bridgeIp, username);
 // Use dashboard.rooms, dashboard.summary directly
 // Colors and shadows pre-computed!
+// Updates pushed automatically when lights change!
 ```
 
 ## Backend Services
@@ -156,6 +200,7 @@ const dashboard = await api.getDashboard(bridgeIp, username);
 - **colorService.js** - Color conversions (xy/mirek → RGB, warm dim blending, shadow generation)
 - **statsService.js** - Dashboard statistics calculations
 - **sessionManager.js** - Session token management
+- **websocketService.js** - Real-time WebSocket connection management, state change detection, broadcasting
 
 ### Testing
 - **99 backend tests** (81% coverage)
@@ -165,8 +210,10 @@ const dashboard = await api.getDashboard(bridgeIp, username);
 ## Migration Benefits
 
 ### Performance
-- **67-83% fewer API calls** (1-2 vs 4-6)
+- **67-83% fewer API calls** (1 initial vs 4-6 on every load)
+- **No polling overhead** - WebSocket pushes updates only when needed
 - **Network overhead reduced** by 3× (fewer round trips)
+- **Real-time updates** - 5-second backend polling vs 30-second frontend polling
 - **~1,323 lines of code removed** from frontend
 
 ### Maintainability
@@ -178,7 +225,7 @@ const dashboard = await api.getDashboard(bridgeIp, username);
 ### Extensibility
 - Easy to add new endpoints
 - Can add server-side caching
-- Can add WebSocket support for real-time updates
+- **WebSocket support implemented** for real-time updates
 - Can add API versioning
 
 ## Color Display System

@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 import v1Routes from './routes/v1/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { openApiSpec } from './openapi.js';
+import websocketService from './services/websocketService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -137,6 +138,7 @@ app.get('/health', (req, res) => {
       'light-control',
       'scene-activation',
       'session-auth',
+      'websocket',
       'legacy-proxy'
     ]
   });
@@ -171,7 +173,7 @@ app.use((req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║  Philips Hue Control Server                            ║
@@ -181,6 +183,19 @@ app.listen(PORT, HOST, () => {
 ║  http://<your-local-ip>:${PORT}                          ║
 ║                                                        ║
 ║  API proxy and frontend served on same port            ║
+║  WebSocket support enabled at /api/v1/ws               ║
 ╚════════════════════════════════════════════════════════╝
   `);
+});
+
+// Initialize WebSocket server
+websocketService.initialize(server);
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  websocketService.shutdown();
+  server.close(() => {
+    console.log('HTTP server closed');
+  });
 });

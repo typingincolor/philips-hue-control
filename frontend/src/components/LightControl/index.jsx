@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useHueApi } from '../../hooks/useHueApi';
 import { useDemoMode } from '../../hooks/useDemoMode';
-import { usePolling } from '../../hooks/usePolling';
-import { POLLING_INTERVALS } from '../../constants/polling';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { MotionZones } from '../MotionZones';
 import { DashboardSummary } from './DashboardSummary';
@@ -18,8 +17,15 @@ export const LightControl = ({
   const isDemoMode = useDemoMode();
   const api = useHueApi();
 
-  // API data - single dashboard response
-  const [dashboard, setDashboard] = useState(null);
+  // WebSocket connection (disabled in demo mode)
+  const {
+    isConnected: wsConnected,
+    dashboard: wsDashboard,
+    error: wsError
+  } = useWebSocket(bridgeIp, username, !isDemoMode);
+
+  // Local dashboard state (for demo mode or manual updates)
+  const [localDashboard, setLocalDashboard] = useState(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -27,39 +33,45 @@ export const LightControl = ({
   const [togglingLights, setTogglingLights] = useState(new Set());
   const [activatingScene, setActivatingScene] = useState(null);
 
-  // Fetch all data from unified dashboard endpoint
+  // Use WebSocket dashboard in real mode, local dashboard in demo mode
+  const dashboard = isDemoMode ? localDashboard : wsDashboard;
+
+  // Fetch dashboard for demo mode (no WebSocket)
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const dashboardData = await api.getDashboard(bridgeIp, username);
-      setDashboard(dashboardData);
-      console.log('[ConnectionTest] Fetched dashboard successfully');
+      setLocalDashboard(dashboardData);
+      console.log('[Dashboard] Fetched dashboard successfully');
     } catch (err) {
-      console.error('[ConnectionTest] Failed to fetch dashboard:', err);
+      console.error('[Dashboard] Failed to fetch dashboard:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial data fetch on mount
+  // Initial fetch in demo mode only
   useEffect(() => {
-    if (bridgeIp && username) {
+    if (bridgeIp && username && isDemoMode) {
       fetchAllData();
     }
-  }, [bridgeIp, username]);
+  }, [bridgeIp, username, isDemoMode]);
 
-  // Auto-refresh polling (disabled in demo mode)
-  usePolling(
-    () => {
-      console.log('[Auto-refresh] Refreshing all data...');
-      fetchAllData();
-    },
-    POLLING_INTERVALS.LIGHTS_REFRESH,
-    !!(bridgeIp && username && !isDemoMode)
-  );
+  // Update loading state based on WebSocket connection in real mode
+  useEffect(() => {
+    if (!isDemoMode) {
+      if (wsDashboard) {
+        setLoading(false);
+      }
+      if (wsError) {
+        setError(wsError);
+        setLoading(false);
+      }
+    }
+  }, [wsDashboard, wsError, isDemoMode]);
 
   // Helper: Get light by UUID from dashboard
   const getLightByUuid = (uuid) => {
@@ -197,7 +209,16 @@ export const LightControl = ({
           {isDemoMode && <span className="demo-badge">DEMO MODE</span>}
         </h2>
         <div className="header-actions">
-          <div className="status-indicator connected" title={isDemoMode ? "Demo mode - no real bridge" : "Connected to bridge"}></div>
+          <div
+            className={`status-indicator ${wsConnected || isDemoMode ? 'connected' : 'disconnected'}`}
+            title={
+              isDemoMode
+                ? "Demo mode - no real bridge"
+                : wsConnected
+                  ? "Connected via WebSocket"
+                  : "Disconnected - attempting to reconnect..."
+            }
+          ></div>
           {onLogout && (
             <button onClick={onLogout} className="logout-button" title="Logout and disconnect">
               Logout
