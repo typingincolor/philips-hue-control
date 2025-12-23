@@ -55,12 +55,17 @@ class ColorService {
     // Get pre-computed shadow
     const shadow = this.getLightShadow(light, color);
 
+    // Calculate brightness with minimum of 5% when light is on
+    const isOn = light.on?.on ?? false;
+    const rawBrightness = light.dimming?.brightness ?? 0;
+    const brightness = isOn ? Math.max(5, rawBrightness) : 0;
+
     // Return enriched light with additional properties
     return {
       id: light.id,
       name: light.metadata?.name || 'Unknown',
-      on: light.on?.on ?? false,
-      brightness: light.dimming?.brightness ?? 0,
+      on: isOn,
+      brightness,
       color,
       shadow,
       colorSource,

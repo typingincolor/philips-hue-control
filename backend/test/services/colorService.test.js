@@ -96,16 +96,68 @@ describe('ColorService', () => {
       expect(result.on).toBe(false);
     });
 
-    it('should handle missing brightness (defaults to 0)', () => {
+    it('should show minimum 5% brightness when light is on but brightness is 0', () => {
       const light = {
         id: 'light-7',
+        metadata: { name: 'Test' },
+        on: { on: true },
+        dimming: { brightness: 0 }
+      };
+
+      const result = colorService.enrichLight(light);
+
+      expect(result.brightness).toBe(5);
+    });
+
+    it('should show minimum 5% brightness when light is on but brightness is missing', () => {
+      const light = {
+        id: 'light-8',
         metadata: { name: 'Test' },
         on: { on: true }
       };
 
       const result = colorService.enrichLight(light);
 
+      expect(result.brightness).toBe(5);
+    });
+
+    it('should show minimum 5% brightness when light is on but brightness is less than 5', () => {
+      const light = {
+        id: 'light-9',
+        metadata: { name: 'Test' },
+        on: { on: true },
+        dimming: { brightness: 2 }
+      };
+
+      const result = colorService.enrichLight(light);
+
+      expect(result.brightness).toBe(5);
+    });
+
+    it('should show 0% brightness when light is off', () => {
+      const light = {
+        id: 'light-10',
+        metadata: { name: 'Test' },
+        on: { on: false },
+        dimming: { brightness: 50 }
+      };
+
+      const result = colorService.enrichLight(light);
+
       expect(result.brightness).toBe(0);
+    });
+
+    it('should preserve brightness above 5% when light is on', () => {
+      const light = {
+        id: 'light-11',
+        metadata: { name: 'Test' },
+        on: { on: true },
+        dimming: { brightness: 80 }
+      };
+
+      const result = colorService.enrichLight(light);
+
+      expect(result.brightness).toBe(80);
     });
 
     it('should prefer xy color over temperature when both present', () => {

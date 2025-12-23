@@ -4,6 +4,7 @@ import https from 'https';
 /**
  * HueClient - Low-level Hue Bridge API client
  * Handles all communication with the Philips Hue Bridge
+ * Includes caching for static resources (rooms, devices, zones, scenes)
  */
 class HueClient {
   constructor() {
@@ -11,6 +12,50 @@ class HueClient {
     this.httpsAgent = new https.Agent({
       rejectUnauthorized: false
     });
+
+    // Cache for static resources (5 minute TTL)
+    this.cache = new Map();
+    this.cacheTTL = 5 * 60 * 1000; // 5 minutes
+  }
+
+  /**
+   * Get cached data or fetch fresh
+   * @private
+   */
+  _getCached(key) {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  /**
+   * Store data in cache
+   * @private
+   */
+  _setCache(key, data) {
+    this.cache.set(key, {
+      data,
+      expiresAt: Date.now() + this.cacheTTL
+    });
+  }
+
+  /**
+   * Clear cache for a specific bridge or all bridges
+   */
+  clearCache(bridgeIp = null) {
+    if (bridgeIp) {
+      for (const key of this.cache.keys()) {
+        if (key.startsWith(bridgeIp)) {
+          this.cache.delete(key);
+        }
+      }
+      console.log(`[HueClient] Cleared cache for bridge ${bridgeIp}`);
+    } else {
+      this.cache.clear();
+      console.log('[HueClient] Cleared all cache');
+    }
   }
 
   /**
@@ -62,44 +107,83 @@ class HueClient {
   }
 
   /**
-   * Get all lights
+   * Get all lights (NOT cached - changes frequently)
    */
   async getLights(bridgeIp, username) {
     return this._request('GET', bridgeIp, '/clip/v2/resource/light', username);
   }
 
   /**
-   * Get all rooms
+   * Get all rooms (cached - rarely changes)
    */
   async getRooms(bridgeIp, username) {
-    return this._request('GET', bridgeIp, '/clip/v2/resource/room', username);
+    const cacheKey = `${bridgeIp}:rooms`;
+    const cached = this._getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = await this._request('GET', bridgeIp, '/clip/v2/resource/room', username);
+    this._setCache(cacheKey, data);
+    return data;
   }
 
   /**
-   * Get all devices
+   * Get all devices (cached - rarely changes)
    */
   async getDevices(bridgeIp, username) {
-    return this._request('GET', bridgeIp, '/clip/v2/resource/device', username);
+    const cacheKey = `${bridgeIp}:devices`;
+    const cached = this._getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = await this._request('GET', bridgeIp, '/clip/v2/resource/device', username);
+    this._setCache(cacheKey, data);
+    return data;
   }
 
   /**
-   * Get all scenes
+   * Get all scenes (cached - rarely changes)
    */
   async getScenes(bridgeIp, username) {
-    return this._request('GET', bridgeIp, '/clip/v2/resource/scene', username);
+    const cacheKey = `${bridgeIp}:scenes`;
+    const cached = this._getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = await this._request('GET', bridgeIp, '/clip/v2/resource/scene', username);
+    this._setCache(cacheKey, data);
+    return data;
   }
 
   /**
-   * Get all zones
+   * Get all zones (cached - rarely changes)
    */
   async getZones(bridgeIp, username) {
-    return this._request('GET', bridgeIp, '/clip/v2/resource/zone', username);
+    const cacheKey = `${bridgeIp}:zones`;
+    const cached = this._getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = await this._request('GET', bridgeIp, '/clip/v2/resource/zone', username);
+    this._setCache(cacheKey, data);
+    return data;
   }
 
   /**
    * Get a specific resource type
+   * Caches static resources: behavior_instance
+   * Does NOT cache dynamic resources: convenience_area_motion, light, etc.
    */
   async getResource(bridgeIp, username, resourceType) {
+    // Cache behavior_instance (motion zone configuration - rarely changes)
+    const cachedTypes = ['behavior_instance'];
+
+    if (cachedTypes.includes(resourceType)) {
+      const cacheKey = `${bridgeIp}:${resourceType}`;
+      const cached = this._getCached(cacheKey);
+      if (cached) return cached;
+
+      const data = await this._request('GET', bridgeIp, `/clip/v2/resource/${resourceType}`, username);
+      this._setCache(cacheKey, data);
+      return data;
+    }
+
     return this._request('GET', bridgeIp, `/clip/v2/resource/${resourceType}`, username);
   }
 

@@ -10,65 +10,42 @@ describe('SceneSelector', () => {
     { id: 'scene-3', name: 'Concentrate' }
   ];
 
-  it('should render with scenes', () => {
+  it('should render scene icon buttons', () => {
     const onActivate = vi.fn();
     render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
 
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getByText('🎨 Select Scene')).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(3);
   });
 
-  it('should render all scene options', () => {
+  it('should show tooltip with scene name on each button', () => {
     const onActivate = vi.fn();
     render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
 
-    expect(screen.getByText('Bright')).toBeInTheDocument();
-    expect(screen.getByText('Relax')).toBeInTheDocument();
-    expect(screen.getByText('Concentrate')).toBeInTheDocument();
+    expect(screen.getByTitle('Bright')).toBeInTheDocument();
+    expect(screen.getByTitle('Relax')).toBeInTheDocument();
+    expect(screen.getByTitle('Concentrate')).toBeInTheDocument();
   });
 
-  it('should call onActivate when scene is selected', async () => {
+  it('should call onActivate when scene button is clicked', async () => {
     const user = userEvent.setup();
     const onActivate = vi.fn();
     render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
 
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'scene-2');
+    const relaxButton = screen.getByTitle('Relax');
+    await user.click(relaxButton);
 
     expect(onActivate).toHaveBeenCalledWith('scene-2');
   });
 
-  it('should not call onActivate when placeholder is selected', async () => {
-    const user = userEvent.setup();
-    const onActivate = vi.fn();
-    render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
-
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, '');
-
-    expect(onActivate).not.toHaveBeenCalled();
-  });
-
-  it('should be disabled when activating', () => {
+  it('should disable all buttons when activating', () => {
     const onActivate = vi.fn();
     render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={true} />);
 
-    const select = screen.getByRole('combobox');
-    expect(select).toBeDisabled();
-  });
-
-  it('should show activating message when activating', () => {
-    const onActivate = vi.fn();
-    render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={true} />);
-
-    expect(screen.getByText('⏳ Activating...')).toBeInTheDocument();
-  });
-
-  it('should show default message when not activating', () => {
-    const onActivate = vi.fn();
-    render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
-
-    expect(screen.getByText('🎨 Select Scene')).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button');
+    buttons.forEach(button => {
+      expect(button).toBeDisabled();
+    });
   });
 
   it('should return null when scenes array is empty', () => {
@@ -89,24 +66,23 @@ describe('SceneSelector', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('should reset select value after selection', async () => {
-    const user = userEvent.setup();
-    const onActivate = vi.fn();
-    render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
-
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'scene-1');
-
-    expect(select.value).toBe('');
-  });
-
   it('should have correct CSS class', () => {
     const onActivate = vi.fn();
     const { container } = render(
       <SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />
     );
 
-    expect(container.querySelector('.scene-control')).toBeInTheDocument();
-    expect(container.querySelector('.scene-selector')).toBeInTheDocument();
+    expect(container.querySelector('.scene-icons')).toBeInTheDocument();
+    expect(container.querySelector('.scene-icon-button')).toBeInTheDocument();
+  });
+
+  it('should render scene names in tooltips', () => {
+    const onActivate = vi.fn();
+    render(<SceneSelector scenes={mockScenes} onActivate={onActivate} isActivating={false} />);
+
+    // Check tooltip spans exist
+    expect(screen.getByText('Bright')).toBeInTheDocument();
+    expect(screen.getByText('Relax')).toBeInTheDocument();
+    expect(screen.getByText('Concentrate')).toBeInTheDocument();
   });
 });

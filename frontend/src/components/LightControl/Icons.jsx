@@ -17,7 +17,32 @@ import {
   ShowerHead,
   Car as LucideCar,
   TreeDeciduous,
-  DoorOpen
+  DoorOpen,
+  // Scene icons
+  Sunrise,
+  Sunset,
+  Heart,
+  Palette,
+  Briefcase,
+  Users,
+  Focus,
+  CloudMoon,
+  Gamepad2,
+  Sparkles,
+  Coffee,
+  Wine,
+  Tv,
+  PartyPopper,
+  Flame,
+  Snowflake,
+  Zap,
+  Eye,
+  BookOpen,
+  Music,
+  Dumbbell,
+  Bath,
+  Baby,
+  Star
 } from 'lucide-react';
 
 // Default props for consistent styling
@@ -114,3 +139,100 @@ export const Tree = (props) => (
 export const Door = (props) => (
   <DoorOpen {...defaultProps} {...props} />
 );
+
+// ============================================
+// Scene Icons
+// ============================================
+
+// Scene icon mapping - maps scene name patterns to icons
+const sceneIconMap = {
+  // Brightness/Energy scenes
+  bright: Sun,
+  energize: Zap,
+  concentrate: Focus,
+  focus: Focus,
+  work: Briefcase,
+  meeting: Users,
+  read: BookOpen,
+  reading: BookOpen,
+
+  // Relaxation scenes
+  relax: Sofa,
+  calm: CloudMoon,
+  dimmed: LucideMoon,
+  nightlight: LucideMoon,
+  night: LucideMoon,
+
+  // Time of day scenes
+  morning: Sunrise,
+  sunrise: Sunrise,
+  evening: Sunset,
+  sunset: Sunset,
+
+  // Dining/Social scenes
+  dinner: UtensilsCrossed,
+  dining: UtensilsCrossed,
+  romantic: Heart,
+  date: Heart,
+  party: PartyPopper,
+
+  // Activity scenes
+  movie: Tv,
+  tv: Tv,
+  gaming: Gamepad2,
+  game: Gamepad2,
+  play: Gamepad2,
+  music: Music,
+  workout: Dumbbell,
+  exercise: Dumbbell,
+
+  // Mood scenes
+  creative: Palette,
+  warm: Flame,
+  cozy: Flame,
+  cool: Snowflake,
+  arctic: Snowflake,
+
+  // Special scenes
+  welcome: DoorOpen,
+  away: Eye,
+  coffee: Coffee,
+  wine: Wine,
+  bath: Bath,
+  spa: Bath,
+  nap: LucideBed,
+  sleep: LucideBed,
+  baby: Baby,
+  nursery: Baby,
+
+  // Default
+  default: Sparkles
+};
+
+// Get the appropriate icon component for a scene name
+export const getSceneIcon = (sceneName) => {
+  if (!sceneName) return Sparkles;
+
+  const normalizedName = sceneName.toLowerCase().trim();
+
+  // Check for exact match first
+  if (sceneIconMap[normalizedName]) {
+    return sceneIconMap[normalizedName];
+  }
+
+  // Check for partial matches
+  for (const [key, IconComponent] of Object.entries(sceneIconMap)) {
+    if (normalizedName.includes(key) || key.includes(normalizedName)) {
+      return IconComponent;
+    }
+  }
+
+  // Default icon for custom/unknown scenes
+  return Star;
+};
+
+// Scene icon component that auto-selects icon based on name
+export const SceneIcon = ({ name, ...props }) => {
+  const IconComponent = getSceneIcon(name);
+  return <IconComponent {...defaultProps} {...props} />;
+};

@@ -21,9 +21,11 @@ export const RoomContent = ({
     );
   }
 
-  const { lights = [], scenes = [], stats = {} } = room;
-  const allOn = stats.lightsOnCount === stats.totalLights && stats.totalLights > 0;
-  const anyOn = stats.lightsOnCount > 0;
+  const { lights = [], scenes = [] } = room;
+  // Calculate from actual light states (not pre-computed stats) so toggle updates immediately
+  const lightsOn = lights.filter(l => l.on).length;
+  const allOn = lightsOn === lights.length && lights.length > 0;
+  const anyOn = lightsOn > 0;
 
   return (
     <div className="room-content">
@@ -35,22 +37,15 @@ export const RoomContent = ({
             isActivating={isActivatingScene}
           />
         </div>
-        <button
-          className={`room-toggle-all ${allOn ? 'all-on' : ''}`}
-          onClick={() => onToggleRoom(room.id, !anyOn)}
-        >
-          {anyOn ? (
-            <>
-              <Moon size={18} />
-              <span>{UI_TEXT.BUTTON_ALL_OFF}</span>
-            </>
-          ) : (
-            <>
-              <Sun size={18} />
-              <span>{UI_TEXT.BUTTON_ALL_ON}</span>
-            </>
-          )}
-        </button>
+        <div className="toggle-selector">
+          <button
+            className={`room-toggle-all ${!anyOn ? 'lights-off' : ''}`}
+            onClick={() => onToggleRoom(room.id, !anyOn)}
+            title={anyOn ? UI_TEXT.BUTTON_ALL_OFF : UI_TEXT.BUTTON_ALL_ON}
+          >
+            {anyOn ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+        </div>
       </div>
 
       {lights.length === 0 ? (

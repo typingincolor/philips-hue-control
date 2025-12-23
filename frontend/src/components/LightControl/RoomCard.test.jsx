@@ -188,13 +188,13 @@ describe('RoomCard', () => {
     }
   });
 
-  it('should call onActivateScene when scene is selected', async () => {
+  it('should call onActivateScene when scene button is clicked', async () => {
     const user = userEvent.setup();
     const onActivateScene = vi.fn();
     render(<RoomCard {...defaultProps} onActivateScene={onActivateScene} />);
 
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'scene-1');
+    const brightButton = screen.getByTitle('Bright');
+    await user.click(brightButton);
 
     expect(onActivateScene).toHaveBeenCalledWith('scene-1');
   });

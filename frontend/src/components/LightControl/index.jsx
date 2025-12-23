@@ -132,23 +132,22 @@ export const LightControl = ({
 
       const response = await api.updateLight(sessionToken, lightUuid, newState);
 
-      if (isDemoMode) {
-        setLocalDashboard(prev => ({
-          ...prev,
-          summary: {
-            ...prev.summary,
-            lightsOn: newState.on
-              ? prev.summary.lightsOn + 1
-              : Math.max(0, prev.summary.lightsOn - 1)
-          },
-          rooms: prev.rooms.map(room => ({
-            ...room,
-            lights: room.lights.map(l =>
-              l.id === lightUuid ? response.light : l
-            )
-          }))
-        }));
-      }
+      // Optimistic update - apply immediately for responsive UI
+      setLocalDashboard(prev => ({
+        ...prev,
+        summary: {
+          ...prev.summary,
+          lightsOn: newState.on
+            ? prev.summary.lightsOn + 1
+            : Math.max(0, prev.summary.lightsOn - 1)
+        },
+        rooms: prev.rooms.map(room => ({
+          ...room,
+          lights: room.lights.map(l =>
+            l.id === lightUuid ? response.light : l
+          )
+        }))
+      }));
     } catch (err) {
       console.error('Failed to toggle light:', err);
       alert(`${ERROR_MESSAGES.LIGHT_TOGGLE}: ${err.message}`);
@@ -177,22 +176,20 @@ export const LightControl = ({
       const newState = { on: turnOn };
       const response = await api.updateRoomLights(sessionToken, roomId, newState);
 
-      if (isDemoMode) {
-        setLocalDashboard(prev => ({
-          ...prev,
-          rooms: prev.rooms.map(r => {
-            if (r.id === roomId) {
-              const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
-              return {
-                ...r,
-                lights: r.lights.map(l => updatedLightMap.get(l.id) || l)
-              };
-            }
-            return r;
-          })
-        }));
-        setTimeout(() => fetchAllData(), 300);
-      }
+      // Optimistic update - apply immediately for responsive UI
+      setLocalDashboard(prev => ({
+        ...prev,
+        rooms: prev.rooms.map(r => {
+          if (r.id === roomId) {
+            const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
+            return {
+              ...r,
+              lights: r.lights.map(l => updatedLightMap.get(l.id) || l)
+            };
+          }
+          return r;
+        })
+      }));
     } catch (err) {
       console.error('Failed to toggle room:', err);
       alert(`${ERROR_MESSAGES.ROOM_TOGGLE}: ${err.message}`);
@@ -222,22 +219,20 @@ export const LightControl = ({
       const newState = { on: turnOn };
       const response = await api.updateZoneLights(sessionToken, zoneId, newState);
 
-      if (isDemoMode) {
-        setLocalDashboard(prev => ({
-          ...prev,
-          zones: prev.zones.map(z => {
-            if (z.id === zoneId) {
-              const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
-              return {
-                ...z,
-                lights: z.lights.map(l => updatedLightMap.get(l.id) || l)
-              };
-            }
-            return z;
-          })
-        }));
-        setTimeout(() => fetchAllData(), 300);
-      }
+      // Optimistic update - apply immediately for responsive UI
+      setLocalDashboard(prev => ({
+        ...prev,
+        zones: prev.zones.map(z => {
+          if (z.id === zoneId) {
+            const updatedLightMap = new Map(response.updatedLights.map(l => [l.id, l]));
+            return {
+              ...z,
+              lights: z.lights.map(l => updatedLightMap.get(l.id) || l)
+            };
+          }
+          return z;
+        })
+      }));
     } catch (err) {
       console.error('Failed to toggle zone:', err);
       alert(`${ERROR_MESSAGES.ZONE_TOGGLE}: ${err.message}`);
@@ -263,6 +258,7 @@ export const LightControl = ({
       const response = await api.activateSceneV1(sessionToken, sceneUuid);
       console.log(`Activated scene ${sceneUuid}`, response.affectedLights?.length, 'lights affected');
 
+      // Optimistic update - apply immediately for responsive UI
       if (response.affectedLights && response.affectedLights.length > 0) {
         const updatedLightMap = new Map(response.affectedLights.map(l => [l.id, l]));
 
@@ -279,10 +275,6 @@ export const LightControl = ({
             }))
           };
         });
-      }
-
-      if (isDemoMode) {
-        setTimeout(() => fetchAllData(), 300);
       }
     } catch (err) {
       console.error('Failed to activate scene:', err);

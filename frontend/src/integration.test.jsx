@@ -352,10 +352,12 @@ describe('Integration Tests', () => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
       }, { timeout: 10000 });
 
-      // Verify dashboard content
-      expect(screen.getByText('Light 1')).toBeInTheDocument();
-      expect(screen.getByText('Light 2')).toBeInTheDocument();
-      expect(screen.getByText('Light 3')).toBeInTheDocument();
+      // Verify dashboard content (wait for lights to render)
+      await waitFor(() => {
+        expect(screen.getByText('Light 1')).toBeInTheDocument();
+        expect(screen.getByText('Light 2')).toBeInTheDocument();
+        expect(screen.getByText('Light 3')).toBeInTheDocument();
+      });
 
       // Verify toolbar exists (stats show icons with values)
       const toolbar = document.querySelector('.top-toolbar');
@@ -519,14 +521,17 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
-      // Wait for dashboard
-      await waitFor(() => screen.getByText('Living Room'));
+      // Wait for dashboard and scene button to appear
+      await waitFor(() => {
+        expect(screen.getByText('Living Room')).toBeInTheDocument();
+        expect(screen.getByTitle('Bright')).toBeInTheDocument();
+      });
 
-      // Find scene selector (first select element, which is the scene selector)
-      const sceneSelect = screen.getByRole('combobox');
+      // Find scene button by title (scenes are now icon buttons with tooltips)
+      const brightButton = screen.getByTitle('Bright');
 
       // Activate scene
-      await user.selectOptions(sceneSelect, 'scene-1');
+      await user.click(brightButton);
 
       // Lights should update immediately (optimistic)
       // We don't need to wait for WebSocket poll (5 seconds)

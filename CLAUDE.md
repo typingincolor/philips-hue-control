@@ -8,6 +8,12 @@ This is a **Philips Hue Light Control** web application built as a monorepo with
 
 **Architecture (v2.0.0):** Business logic resides in the backend, exposing a simplified v1 REST API with WebSocket support. The backend pre-computes colors, shadows, and statistics while pushing real-time updates via WebSocket, reducing frontend complexity by ~1,300 lines, API calls by 67-83%, and eliminating polling overhead. The legacy proxy has been completely removed in favor of controlled v1 endpoints. See `ARCHITECTURE_UPDATE.md` for migration details.
 
+**Performance Optimizations:**
+- **Backend caching**: Static resources (rooms, devices, zones, scenes, behavior_instance) cached with 5-minute TTL
+- **WebSocket polling**: 15-second interval for dynamic data (lights, motion status)
+- **Optimistic updates**: Frontend updates UI immediately on user actions, syncs with backend asynchronously
+- **Brightness minimum**: Lights display minimum 5% brightness when on (prevents 0% display artifacts)
+
 ## Development Commands
 
 ### Start Development (Both Servers)
@@ -198,11 +204,14 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
    - Uses `lucide-react` package for all icons
    - Consistent `strokeWidth: 1.5` styling
    - Room-specific icons: Sofa, DiningTable, Saucepan, Bed, DeskLamp, Shower, Car, Tree, Door
+   - Scene icons: Sunrise, Sunset, Moon, Sun, Palette, Heart, Focus, Tv, UtensilsCrossed, etc.
+   - `getSceneIcon(sceneName)` function maps scene names to appropriate icons
 
-10. **LightControl/SceneSelector.jsx**: Scene dropdown
-    - Renders scene options for the current room
-    - Handles scene activation
-    - Amber border accent
+10. **LightControl/SceneSelector.jsx**: Scene icon buttons
+    - Renders icon buttons for each scene (not a dropdown)
+    - Icons are matched to scene names via `getSceneIcon()`
+    - Tooltips show scene name on hover
+    - 44x44px touch-friendly buttons
 
 11. **LightControl/DashboardSummary.jsx**: Statistics display
     - Shows total lights on, room count, scene count
@@ -413,22 +422,23 @@ getRoomLightStats(roomLights) {
 
 ### Test Organization
 
-The project includes comprehensive testing with **209 tests total** (99 backend + 110 frontend):
+The project includes comprehensive testing with **332 tests total** (139 backend + 193 frontend):
 
-**Backend Tests** (99 tests, 81% coverage, 62% mutation score):
+**Backend Tests** (139 tests):
 ```
 backend/test/
 ├── services/
-│   ├── colorService.test.js        # 14 tests - Color conversions, warm dim
+│   ├── colorService.test.js        # 18 tests - Color conversions, warm dim, brightness min
 │   ├── roomService.test.js         # 23 tests - Room hierarchy, stats
 │   ├── motionService.test.js       # 13 tests - Motion sensor parsing
 │   ├── statsService.test.js        # 10 tests - Dashboard statistics
-│   └── sessionManager.test.js      # 12 tests - Session management
-├── routes/
-│   └── (various route tests)       # 27 tests - API endpoints
+│   ├── websocketService.test.js    # 13 tests - WebSocket service
+│   └── zoneService.test.js         # 15 tests - Zone hierarchy, stats
+├── utils/
+│   └── (colorConversion, validation)  # 39 tests - Utility functions
 ```
 
-**Frontend Tests** (110 tests):
+**Frontend Tests** (193 tests):
 ```
 frontend/src/
 ├── utils/
@@ -436,16 +446,22 @@ frontend/src/
 ├── hooks/
 │   ├── useDemoMode.test.js         # 9 tests - URL parameter parsing
 │   ├── useHueApi.test.js           # 4 tests - API selection (real vs mock)
-│   └── usePolling.test.js          # 10 tests - Interval polling
+│   ├── usePolling.test.js          # 10 tests - Interval polling
+│   ├── useSession.test.js          # 25 tests - Session management
+│   └── useWebSocket.test.js        # 31 tests - WebSocket connection
+├── services/
+│   └── hueApi.test.js              # 15 tests - API service
 ├── components/
-│   ├── MotionZones.test.jsx        # 10 tests - Motion zone compact bar
+│   ├── App.test.jsx                # 4 tests - App component
+│   ├── MotionZones.test.jsx        # 9 tests - Motion zone alerts
 │   └── LightControl/
 │       ├── DashboardSummary.test.jsx   # 5 tests - Statistics rendering
-│       ├── SceneSelector.test.jsx      # 11 tests - Scene dropdown
+│       ├── SceneSelector.test.jsx      # 8 tests - Scene icon buttons
 │       ├── LightButton.test.jsx        # 15 tests - Light button (uses pre-computed colors)
 │       ├── RoomCard.test.jsx           # 16 tests - Room card (uses pre-computed stats)
 │       ├── ZoneCard.test.jsx           # 14 tests - Zone bar (uses pre-computed stats)
-│       └── index.zones.test.jsx        # 8 tests - Zone integration tests
+│       └── index.zones.test.jsx        # 9 tests - Zone integration tests
+├── integration.test.jsx            # 11 tests - Full integration tests
 ```
 
 **Note:** Business logic tests (colorConversion, roomUtils, motionSensors) moved from frontend to backend as services.
