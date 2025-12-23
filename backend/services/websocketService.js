@@ -281,6 +281,23 @@ class WebSocketService {
       }
     }
 
+    // Detect zone (light grouping) changes
+    const prevZones = previous.zones || [];
+    const currZones = current.zones || [];
+
+    const prevZoneMap = new Map(prevZones.map(z => [z.id, z]));
+
+    for (const zone of currZones) {
+      const prevZone = prevZoneMap.get(zone.id);
+
+      if (!prevZone || JSON.stringify(prevZone) !== JSON.stringify(zone)) {
+        changes.push({
+          type: 'zone',
+          data: zone
+        });
+      }
+    }
+
     return changes;
   }
 

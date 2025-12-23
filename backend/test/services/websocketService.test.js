@@ -249,5 +249,177 @@ describe('WebSocketService', () => {
       const motionZoneChanges = changes.filter(c => c.type === 'motion_zone');
       expect(motionZoneChanges).toHaveLength(0);
     });
+
+    // Zone (light grouping) change detection tests
+    it('should detect zone changes when light state changes', () => {
+      const previous = {
+        summary: { lightsOn: 1, totalLights: 2, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          {
+            id: 'zone-1',
+            name: 'Upstairs',
+            stats: { lightsOnCount: 1, totalLights: 2, averageBrightness: 80 },
+            lights: [
+              { id: 'light-1', on: { on: true } },
+              { id: 'light-2', on: { on: false } }
+            ]
+          }
+        ]
+      };
+
+      const current = {
+        summary: { lightsOn: 2, totalLights: 2, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          {
+            id: 'zone-1',
+            name: 'Upstairs',
+            stats: { lightsOnCount: 2, totalLights: 2, averageBrightness: 90 },
+            lights: [
+              { id: 'light-1', on: { on: true } },
+              { id: 'light-2', on: { on: true } } // Changed to on
+            ]
+          }
+        ]
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      expect(changes).toContainEqual({
+        type: 'zone',
+        data: current.zones[0]
+      });
+    });
+
+    it('should detect zone stats changes', () => {
+      const previous = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          {
+            id: 'zone-1',
+            name: 'Downstairs',
+            stats: { lightsOnCount: 1, totalLights: 1, averageBrightness: 50 },
+            lights: []
+          }
+        ]
+      };
+
+      const current = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          {
+            id: 'zone-1',
+            name: 'Downstairs',
+            stats: { lightsOnCount: 1, totalLights: 1, averageBrightness: 100 }, // Changed
+            lights: []
+          }
+        ]
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      expect(changes).toContainEqual({
+        type: 'zone',
+        data: current.zones[0]
+      });
+    });
+
+    it('should not detect changes when zones are identical', () => {
+      const zoneData = {
+        id: 'zone-1',
+        name: 'Upstairs',
+        stats: { lightsOnCount: 1, totalLights: 1, averageBrightness: 80 },
+        lights: [{ id: 'light-1', on: { on: true } }]
+      };
+
+      const previous = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [zoneData]
+      };
+
+      const current = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [{ ...zoneData }]
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      const zoneChanges = changes.filter(c => c.type === 'zone');
+      expect(zoneChanges).toHaveLength(0);
+    });
+
+    it('should detect changes to multiple zones', () => {
+      const previous = {
+        summary: { lightsOn: 2, totalLights: 2, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 1 } },
+          { id: 'zone-2', name: 'Downstairs', stats: { lightsOnCount: 1 } }
+        ]
+      };
+
+      const current = {
+        summary: { lightsOn: 0, totalLights: 2, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 0 } }, // Changed
+          { id: 'zone-2', name: 'Downstairs', stats: { lightsOnCount: 0 } } // Changed
+        ]
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      const zoneChanges = changes.filter(c => c.type === 'zone');
+      expect(zoneChanges).toHaveLength(2);
+      expect(zoneChanges[0].data.id).toBe('zone-1');
+      expect(zoneChanges[1].data.id).toBe('zone-2');
+    });
+
+    it('should handle missing zones array gracefully', () => {
+      const previous = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: []
+        // No zones property
+      };
+
+      const current = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: [
+          { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 1 } }
+        ]
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      expect(changes).toContainEqual({
+        type: 'zone',
+        data: current.zones[0]
+      });
+    });
+
+    it('should handle empty zones array', () => {
+      const previous = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: []
+      };
+
+      const current = {
+        summary: { lightsOn: 1, totalLights: 1, roomCount: 1, sceneCount: 1 },
+        rooms: [],
+        zones: []
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      const zoneChanges = changes.filter(c => c.type === 'zone');
+      expect(zoneChanges).toHaveLength(0);
+    });
   });
 });

@@ -90,6 +90,13 @@ class HueClient {
   }
 
   /**
+   * Get all zones
+   */
+  async getZones(bridgeIp, username) {
+    return this._request('GET', bridgeIp, '/clip/v2/resource/zone', username);
+  }
+
+  /**
    * Get a specific resource type
    */
   async getResource(bridgeIp, username, resourceType) {

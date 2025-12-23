@@ -3,6 +3,7 @@ import colorService from './colorService.js';
 import roomService from './roomService.js';
 import statsService from './statsService.js';
 import motionService from './motionService.js';
+import zoneService from './zoneService.js';
 
 /**
  * Dashboard Service
@@ -18,19 +19,23 @@ class DashboardService {
   async getDashboard(bridgeIp, username) {
     console.log(`[DASHBOARD SERVICE] Fetching data for bridge ${bridgeIp}`);
 
-    // Step 1: Fetch all data in parallel (including motion zones)
-    const [lightsData, roomsData, devicesData, scenesData, motionZonesResult] = await Promise.all([
+    // Step 1: Fetch all data in parallel (including motion zones and zones)
+    const [lightsData, roomsData, devicesData, scenesData, zonesData, motionZonesResult] = await Promise.all([
       hueClient.getLights(bridgeIp, username),
       hueClient.getRooms(bridgeIp, username),
       hueClient.getDevices(bridgeIp, username),
       hueClient.getScenes(bridgeIp, username),
+      hueClient.getZones(bridgeIp, username).catch(err => {
+        console.error(`[DASHBOARD SERVICE] Failed to fetch zones: ${err.message}`);
+        return { data: [] }; // Return empty array on error
+      }),
       motionService.getMotionZones(bridgeIp, username).catch(err => {
         console.error(`[DASHBOARD SERVICE] Failed to fetch motion zones: ${err.message}`);
         return { zones: [] }; // Return empty array on error
       })
     ]);
 
-    console.log(`[DASHBOARD SERVICE] Fetched ${lightsData.data?.length || 0} lights, ${roomsData.data?.length || 0} rooms, ${motionZonesResult.zones?.length || 0} motion zones`);
+    console.log(`[DASHBOARD SERVICE] Fetched ${lightsData.data?.length || 0} lights, ${roomsData.data?.length || 0} rooms, ${zonesData.data?.length || 0} zones, ${motionZonesResult.zones?.length || 0} motion zones`);
 
     // Step 2: Build room hierarchy
     const roomMap = roomService.buildRoomHierarchy(lightsData, roomsData, devicesData);
@@ -63,15 +68,40 @@ class DashboardService {
       };
     });
 
-    // Step 4: Calculate dashboard summary
+    // Step 4: Build zone hierarchy and process zones
+    const zoneMap = zoneService.buildZoneHierarchy(lightsData, zonesData, devicesData) || {};
+
+    const zones = Object.entries(zoneMap).map(([zoneName, zoneData]) => {
+      // Enrich lights with pre-computed colors and shadows
+      const enrichedLights = zoneData.lights.map(light => colorService.enrichLight(light));
+
+      // Calculate zone statistics
+      const stats = zoneService.calculateZoneStats(zoneData.lights);
+
+      // Get scenes for this zone
+      const scenes = zoneData.zoneUuid
+        ? zoneService.getScenesForZone(scenesData, zoneData.zoneUuid)
+        : [];
+
+      return {
+        id: zoneData.zoneUuid,
+        name: zoneName,
+        stats,
+        lights: enrichedLights,
+        scenes
+      };
+    });
+
+    // Step 5: Calculate dashboard summary
     const summary = statsService.calculateDashboardStats(lightsData, roomMap, scenesData);
 
-    console.log(`[DASHBOARD SERVICE] Summary: ${summary.lightsOn}/${summary.totalLights} lights on, ${summary.roomCount} rooms`);
+    console.log(`[DASHBOARD SERVICE] Summary: ${summary.lightsOn}/${summary.totalLights} lights on, ${summary.roomCount} rooms, ${zones.length} zones`);
 
-    // Step 5: Return unified response with motion zones
+    // Step 6: Return unified response with zones and motion zones
     return {
       summary,
       rooms,
+      zones,
       motionZones: motionZonesResult.zones || []
     };
   }
