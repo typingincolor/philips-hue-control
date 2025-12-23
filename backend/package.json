@@ -18,12 +18,13 @@
     "express": "^5.2.1",
     "fs-extra": "^11.2.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "vitest": "^4.0.0",
-    "@vitest/coverage-v8": "^4.0.0",
     "@stryker-mutator/core": "^9.4.0",
-    "@stryker-mutator/vitest-runner": "^9.4.0"
+    "@stryker-mutator/vitest-runner": "^9.4.0",
+    "@vitest/coverage-v8": "^4.0.0",
+    "vitest": "^4.0.0"
   }
 }
