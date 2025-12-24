@@ -9,36 +9,52 @@ const logger = createLogger('Session');
  * Session management hook
  * Handles session token storage, validation, expiration, and auto-refresh
  */
-export const useSession = () => {
-  const [sessionToken, setSessionToken] = useState(null);
-  const [bridgeIp, setBridgeIp] = useState(null);
-  const [expiresAt, setExpiresAt] = useState(null);
-  const [isExpired, setIsExpired] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+// Initialize session state synchronously from localStorage
+// This prevents race conditions with useHueBridge which depends on sessionToken
+const getInitialSessionState = () => {
+  const storedToken = localStorage.getItem(STORAGE_KEYS.SESSION_TOKEN);
+  const storedBridgeIp = localStorage.getItem(STORAGE_KEYS.BRIDGE_IP);
+  const storedExpiresAt = localStorage.getItem(STORAGE_KEYS.SESSION_EXPIRES_AT);
 
-  // Load session from localStorage on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem(STORAGE_KEYS.SESSION_TOKEN);
-    const storedBridgeIp = localStorage.getItem(STORAGE_KEYS.BRIDGE_IP);
-    const storedExpiresAt = localStorage.getItem(STORAGE_KEYS.SESSION_EXPIRES_AT);
+  if (storedToken && storedBridgeIp && storedExpiresAt) {
+    const expiryTime = parseInt(storedExpiresAt, 10);
+    const now = Date.now();
 
-    if (storedToken && storedBridgeIp && storedExpiresAt) {
-      const expiryTime = parseInt(storedExpiresAt, 10);
-      const now = Date.now();
-
-      if (now < expiryTime) {
-        setSessionToken(storedToken);
-        setBridgeIp(storedBridgeIp);
-        setExpiresAt(expiryTime);
-        setIsExpired(false);
-      } else {
-        // Session expired, clear it
-        localStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.SESSION_EXPIRES_AT);
-        setIsExpired(true);
-      }
+    if (now < expiryTime) {
+      return {
+        sessionToken: storedToken,
+        bridgeIp: storedBridgeIp,
+        expiresAt: expiryTime,
+        isExpired: false,
+      };
+    } else {
+      // Session expired, clear it
+      localStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.SESSION_EXPIRES_AT);
+      return {
+        sessionToken: null,
+        bridgeIp: null,
+        expiresAt: null,
+        isExpired: true,
+      };
     }
-  }, []);
+  }
+
+  return {
+    sessionToken: null,
+    bridgeIp: null,
+    expiresAt: null,
+    isExpired: false,
+  };
+};
+
+export const useSession = () => {
+  const initialState = getInitialSessionState();
+  const [sessionToken, setSessionToken] = useState(initialState.sessionToken);
+  const [bridgeIp, setBridgeIp] = useState(initialState.bridgeIp);
+  const [expiresAt, setExpiresAt] = useState(initialState.expiresAt);
+  const [isExpired, setIsExpired] = useState(initialState.isExpired);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check for expiration periodically
   useEffect(() => {
