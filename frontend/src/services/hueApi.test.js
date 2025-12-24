@@ -339,4 +339,119 @@ describe('hueApi', () => {
       await expect(hueApi.getDashboard('test-token')).rejects.toThrow('Invalid parameter');
     });
   });
+
+  describe('connect', () => {
+    it('should connect successfully with stored credentials', async () => {
+      const mockSession = {
+        sessionToken: 'hue_sess_abc123',
+        expiresIn: 86400,
+        bridgeIp: '192.168.1.100'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockSession)
+      });
+
+      const result = await hueApi.connect('192.168.1.100');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/auth/connect',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify({ bridgeIp: '192.168.1.100' })
+        })
+      );
+
+      expect(result).toEqual(mockSession);
+    });
+
+    it('should throw PAIRING_REQUIRED when no stored credentials', async () => {
+      fetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: () =>
+          Promise.resolve({
+            error: 'No stored credentials',
+            requiresPairing: true
+          })
+      });
+
+      await expect(hueApi.connect('192.168.1.100')).rejects.toThrow('PAIRING_REQUIRED');
+    });
+
+    it('should throw error when credentials are invalid', async () => {
+      fetch.mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: () =>
+          Promise.resolve({
+            error: 'Stored credentials are no longer valid',
+            requiresPairing: true
+          })
+      });
+
+      await expect(hueApi.connect('192.168.1.100')).rejects.toThrow('PAIRING_REQUIRED');
+    });
+  });
+
+  describe('checkBridgeStatus', () => {
+    it('should return true when credentials exist', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            bridgeIp: '192.168.1.100',
+            hasCredentials: true
+          })
+      });
+
+      const result = await hueApi.checkBridgeStatus('192.168.1.100');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/auth/bridge-status?bridgeIp=192.168.1.100'
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when no credentials exist', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            bridgeIp: '192.168.1.100',
+            hasCredentials: false
+          })
+      });
+
+      const result = await hueApi.checkBridgeStatus('192.168.1.100');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false on network error', async () => {
+      fetch.mockRejectedValue(new Error('Network error'));
+
+      const result = await hueApi.checkBridgeStatus('192.168.1.100');
+
+      expect(result).toBe(false);
+    });
+
+    it('should URL-encode the bridgeIp parameter', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ hasCredentials: false })
+      });
+
+      await hueApi.checkBridgeStatus('192.168.1.100');
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('bridgeIp=192.168.1.100')
+      );
+    });
+  });
 });

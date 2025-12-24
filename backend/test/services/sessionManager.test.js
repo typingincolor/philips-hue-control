@@ -395,4 +395,70 @@ describe('SessionManager', () => {
       expect(result2.bridgeIp).toBe('192.168.1.101');
     });
   });
+
+  describe('Bridge Credentials Storage', () => {
+    beforeEach(() => {
+      // Clear bridge credentials before each test
+      sessionManager.bridgeCredentials.clear();
+    });
+
+    describe('storeBridgeCredentials', () => {
+      it('should store credentials for a bridge', () => {
+        sessionManager.storeBridgeCredentials(bridgeIp, username);
+
+        expect(sessionManager.bridgeCredentials.has(bridgeIp)).toBe(true);
+        expect(sessionManager.bridgeCredentials.get(bridgeIp)).toBe(username);
+      });
+
+      it('should overwrite existing credentials for same bridge', () => {
+        sessionManager.storeBridgeCredentials(bridgeIp, 'old-user');
+        sessionManager.storeBridgeCredentials(bridgeIp, 'new-user');
+
+        expect(sessionManager.bridgeCredentials.get(bridgeIp)).toBe('new-user');
+      });
+
+      it('should store credentials for multiple bridges', () => {
+        sessionManager.storeBridgeCredentials('192.168.1.100', 'user1');
+        sessionManager.storeBridgeCredentials('192.168.1.101', 'user2');
+
+        expect(sessionManager.bridgeCredentials.get('192.168.1.100')).toBe('user1');
+        expect(sessionManager.bridgeCredentials.get('192.168.1.101')).toBe('user2');
+      });
+    });
+
+    describe('getBridgeCredentials', () => {
+      it('should return stored username for bridge', () => {
+        sessionManager.storeBridgeCredentials(bridgeIp, username);
+
+        const result = sessionManager.getBridgeCredentials(bridgeIp);
+
+        expect(result).toBe(username);
+      });
+
+      it('should return null for unknown bridge', () => {
+        const result = sessionManager.getBridgeCredentials('192.168.1.200');
+
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('hasBridgeCredentials', () => {
+      it('should return true for bridge with stored credentials', () => {
+        sessionManager.storeBridgeCredentials(bridgeIp, username);
+
+        expect(sessionManager.hasBridgeCredentials(bridgeIp)).toBe(true);
+      });
+
+      it('should return false for unknown bridge', () => {
+        expect(sessionManager.hasBridgeCredentials('192.168.1.200')).toBe(false);
+      });
+
+      it('should return false after credentials are cleared', () => {
+        sessionManager.storeBridgeCredentials(bridgeIp, username);
+        sessionManager.bridgeCredentials.clear();
+
+        expect(sessionManager.hasBridgeCredentials(bridgeIp)).toBe(false);
+      });
+    });
+  });
 });
