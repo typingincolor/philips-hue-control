@@ -226,6 +226,9 @@ router.post('/session', async (req, res, next) => {
       throw new BridgeConnectionError(bridgeIp, error);
     }
 
+    // Store credentials for reuse by other clients
+    sessionManager.storeBridgeCredentials(bridgeIp, username);
+
     // Create session
     const sessionInfo = sessionManager.createSession(bridgeIp, username);
 
