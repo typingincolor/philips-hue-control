@@ -225,7 +225,14 @@ const mockDashboard = {
         { id: 'light-7', name: 'Ceiling', on: true, brightness: 90 },
         { id: 'light-6', name: 'Ceiling', on: false, brightness: 0 },
       ],
-      scenes: [{ id: 'scene-z1', name: 'Evening' }],
+      scenes: [
+        { id: 'scene-z1-1', name: 'Bright' },
+        { id: 'scene-z1-2', name: 'Relax' },
+        { id: 'scene-z1-3', name: 'Evening' },
+        { id: 'scene-z1-4', name: 'Dimmed' },
+        { id: 'scene-z1-5', name: 'Nightlight' },
+        { id: 'scene-z1-6', name: 'Energize' },
+      ],
     },
     {
       id: 'zone-2',
@@ -239,7 +246,14 @@ const mockDashboard = {
         { id: 'light-12', name: 'Bedside Right', on: false, brightness: 0 },
         { id: 'light-6', name: 'Ceiling', on: false, brightness: 0 },
       ],
-      scenes: [{ id: 'scene-z2', name: 'Morning' }],
+      scenes: [
+        { id: 'scene-z2-1', name: 'Morning' },
+        { id: 'scene-z2-2', name: 'Daytime' },
+        { id: 'scene-z2-3', name: 'Concentrate' },
+        { id: 'scene-z2-4', name: 'Read' },
+        { id: 'scene-z2-5', name: 'Relax' },
+        { id: 'scene-z2-6', name: 'Rest' },
+      ],
     },
     {
       id: 'zone-3',
@@ -254,7 +268,14 @@ const mockDashboard = {
         { id: 'light-3', name: 'Plant Light', on: true, brightness: 50 },
         { id: 'light-10', name: 'Ceiling', on: true, brightness: 80 },
       ],
-      scenes: [{ id: 'scene-z3', name: 'Dinner' }],
+      scenes: [
+        { id: 'scene-z3-1', name: 'Dinner' },
+        { id: 'scene-z3-2', name: 'Romantic' },
+        { id: 'scene-z3-3', name: 'Party' },
+        { id: 'scene-z3-4', name: 'Bright' },
+        { id: 'scene-z3-5', name: 'Cozy' },
+        { id: 'scene-z3-6', name: 'Movie' },
+      ],
     },
   ],
   motionZones: [

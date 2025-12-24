@@ -2099,6 +2099,9 @@ body.dark-theme {
 .zones-view {
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .zones-view-header {
@@ -2274,8 +2277,20 @@ body.dark-theme {
 
   .zone-item-controls {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-top: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .zone-item-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zone-item-controls .scene-icons {
+    flex-shrink: 0;
   }
 }
 
