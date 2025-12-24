@@ -77,11 +77,59 @@ export const hueApi = {
    */
   async createUser(bridgeIp, appName = 'hue_control_app') {
     const url = `${PROXY_URL}/api/v1/auth/pair`;
-    return request(url, {
+    logger.info('createUser: sending pair request', { bridgeIp, url });
+    const data = await request(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bridgeIp, appName })
-    }).then(data => data.username);
+    });
+    logger.info('createUser: received response', { username: data.username });
+    return data.username;
+  },
+
+  /**
+   * Connect to a bridge using stored server-side credentials (no pairing needed)
+   * @param {string} bridgeIp - The IP address of the bridge
+   * @returns {Promise<Object>} Session info with token, or throws if pairing required
+   */
+  async connect(bridgeIp) {
+    const url = `${PROXY_URL}/api/v1/auth/connect`;
+    logger.info('connect: trying stored credentials', { bridgeIp });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bridgeIp })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (data.requiresPairing) {
+        logger.info('connect: pairing required');
+        throw new Error('PAIRING_REQUIRED');
+      }
+      throw new Error(data.error || 'Failed to connect');
+    }
+
+    logger.info('connect: connected with stored credentials');
+    return data;
+  },
+
+  /**
+   * Check if a bridge has stored credentials on the server
+   * @param {string} bridgeIp - The IP address of the bridge
+   * @returns {Promise<boolean>} True if credentials exist
+   */
+  async checkBridgeStatus(bridgeIp) {
+    const url = `${PROXY_URL}/api/v1/auth/bridge-status?bridgeIp=${encodeURIComponent(bridgeIp)}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.hasCredentials;
+    } catch {
+      return false;
+    }
   },
 
   // ============================================================

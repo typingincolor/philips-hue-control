@@ -36,6 +36,7 @@ const httpsAgent = new https.Agent({
 router.post('/pair', async (req, res, next) => {
   try {
     const { bridgeIp, appName = 'hue_control_app' } = req.body;
+    logger.info('Pair request received', { bridgeIp, appName });
 
     if (!bridgeIp) {
       throw new MissingCredentialsError('bridgeIp');
@@ -44,11 +45,13 @@ router.post('/pair', async (req, res, next) => {
     logger.info('Pairing with bridge', { bridgeIp });
 
     // Make pairing request to Hue Bridge
+    logger.debug('Sending request to bridge...');
     const response = await axios.post(
       `https://${bridgeIp}/api`,
       { devicetype: appName },
       { httpsAgent, timeout: REQUEST_TIMEOUT_MS, validateStatus: () => true }
     );
+    logger.debug('Bridge response received', { data: response.data });
 
     // Check for errors
     if (response.data && response.data[0]) {
@@ -63,6 +66,10 @@ router.post('/pair', async (req, res, next) => {
       if (response.data[0].success) {
         const username = response.data[0].success.username;
         logger.info('Successfully paired with bridge', { bridgeIp });
+
+        // Store credentials for reuse by other clients
+        sessionManager.storeBridgeCredentials(bridgeIp, username);
+
         return res.json({ username });
       }
     }
@@ -85,6 +92,99 @@ router.post('/pair', async (req, res, next) => {
     }
     next(error);
   }
+});
+
+/**
+ * POST /api/v1/auth/connect
+ * Connect to a bridge using stored credentials (no pairing needed)
+ * Use this when another client has already paired with the bridge
+ *
+ * Body:
+ *   {
+ *     "bridgeIp": "192.168.1.100"
+ *   }
+ *
+ * Returns:
+ *   {
+ *     "sessionToken": "hue_sess_abc123...",
+ *     "expiresIn": 86400,
+ *     "bridgeIp": "192.168.1.100"
+ *   }
+ *
+ * Error (404):
+ *   {
+ *     "error": "No stored credentials for this bridge",
+ *     "requiresPairing": true
+ *   }
+ */
+router.post('/connect', async (req, res, next) => {
+  try {
+    const { bridgeIp } = req.body;
+
+    if (!bridgeIp) {
+      throw new MissingCredentialsError('bridgeIp');
+    }
+
+    logger.info('Connect request', { bridgeIp });
+
+    // Check if we have stored credentials for this bridge
+    const username = sessionManager.getBridgeCredentials(bridgeIp);
+
+    if (!username) {
+      logger.info('No stored credentials, pairing required', { bridgeIp });
+      return res.status(404).json({
+        error: 'No stored credentials for this bridge. Pairing required.',
+        requiresPairing: true
+      });
+    }
+
+    // Validate credentials still work
+    try {
+      await hueClient.getLights(bridgeIp, username);
+    } catch (error) {
+      logger.warn('Stored credentials invalid, pairing required', { bridgeIp });
+      return res.status(401).json({
+        error: 'Stored credentials are no longer valid. Pairing required.',
+        requiresPairing: true
+      });
+    }
+
+    // Create session with stored credentials
+    const sessionInfo = sessionManager.createSession(bridgeIp, username);
+    logger.info('Connected using stored credentials', { bridgeIp });
+
+    res.json(sessionInfo);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/auth/bridge-status
+ * Check if a bridge has stored credentials
+ *
+ * Query:
+ *   bridgeIp - The bridge IP to check
+ *
+ * Returns:
+ *   {
+ *     "bridgeIp": "192.168.1.100",
+ *     "hasCredentials": true
+ *   }
+ */
+router.get('/bridge-status', (req, res) => {
+  const { bridgeIp } = req.query;
+
+  if (!bridgeIp) {
+    return res.status(400).json({ error: 'bridgeIp query parameter required' });
+  }
+
+  const hasCredentials = sessionManager.hasBridgeCredentials(bridgeIp);
+
+  res.json({
+    bridgeIp,
+    hasCredentials
+  });
 });
 
 /**

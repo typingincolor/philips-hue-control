@@ -13,12 +13,44 @@ class SessionManager {
     // In-memory session storage: { sessionToken → { bridgeIp, username, createdAt, lastUsed } }
     this.sessions = new Map();
 
+    // Persistent bridge credentials: { bridgeIp → username }
+    // Once paired, credentials are reusable by any client
+    this.bridgeCredentials = new Map();
+
     // Session configuration
     this.SESSION_EXPIRY = SESSION_EXPIRY_MS;
     this.CLEANUP_INTERVAL = SESSION_CLEANUP_INTERVAL_MS;
 
     // Start cleanup interval
     this.startCleanup();
+  }
+
+  /**
+   * Store bridge credentials for reuse by other clients
+   * @param {string} bridgeIp - Bridge IP address
+   * @param {string} username - Hue username/API key
+   */
+  storeBridgeCredentials(bridgeIp, username) {
+    this.bridgeCredentials.set(bridgeIp, username);
+    logger.info('Stored bridge credentials', { bridgeIp });
+  }
+
+  /**
+   * Get stored credentials for a bridge
+   * @param {string} bridgeIp - Bridge IP address
+   * @returns {string|null} Username or null if not found
+   */
+  getBridgeCredentials(bridgeIp) {
+    return this.bridgeCredentials.get(bridgeIp) || null;
+  }
+
+  /**
+   * Check if bridge has stored credentials
+   * @param {string} bridgeIp - Bridge IP address
+   * @returns {boolean} True if credentials exist
+   */
+  hasBridgeCredentials(bridgeIp) {
+    return this.bridgeCredentials.has(bridgeIp);
   }
 
   /**

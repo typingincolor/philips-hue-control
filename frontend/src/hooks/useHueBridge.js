@@ -103,23 +103,59 @@ export const useHueBridge = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Run only on mount
   }, []);
 
-  const setBridgeIp = ip => {
+  const setBridgeIp = async ip => {
     localStorage.setItem(STORAGE_KEYS.BRIDGE_IP, ip);
     setState(prev => ({
       ...prev,
       bridgeIp: ip,
-      step: 'authentication',
+      loading: true,
       error: null
     }));
+
+    // Try to connect using stored server-side credentials first
+    try {
+      logger.info('Trying to connect with stored credentials', { bridgeIp: ip });
+      const sessionInfo = await hueApi.connect(ip);
+
+      // Success! Create session and go to connected
+      createSession(sessionInfo.sessionToken, ip, sessionInfo.expiresIn);
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        step: 'connected'
+      }));
+      logger.info('Connected using stored credentials');
+    } catch (error) {
+      if (error.message === 'PAIRING_REQUIRED') {
+        // No stored credentials, need to pair
+        logger.info('Pairing required for this bridge');
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          step: 'authentication'
+        }));
+      } else {
+        // Other error
+        logger.error('Connection failed', { error: error.message });
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          step: 'authentication',
+          error: error.message
+        }));
+      }
+    }
   };
 
   const authenticate = useCallback(async () => {
+    logger.info('Starting authentication', { bridgeIp: state.bridgeIp });
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
       // Step 1: Pair with bridge (get username)
+      logger.info('Step 1: Calling createUser...');
       const username = await hueApi.createUser(state.bridgeIp);
-      logger.info('Pairing successful, creating session...');
+      logger.info('Pairing successful, creating session...', { username });
 
       // Step 2: Create session token
       const sessionInfo = await hueApi.createSession(state.bridgeIp, username);
