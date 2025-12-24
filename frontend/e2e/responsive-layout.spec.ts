@@ -379,6 +379,110 @@ test.describe('Vertical Centering', () => {
   }
 });
 
+test.describe('Zones View Layout', () => {
+  // Tolerance for centering comparison (pixels)
+  const CENTERING_TOLERANCE = 5;
+
+  for (const [, viewport] of Object.entries(VIEWPORTS)) {
+    test.describe(`${viewport.name}`, () => {
+      test.use({ viewport });
+
+      test.beforeEach(async ({ page }) => {
+        await page.goto('/?demo=true');
+        await page.waitForSelector('.bottom-nav');
+
+        // Click the Zones tab to navigate to zones view
+        const zonesTab = page.locator('.nav-tab').filter({ hasText: 'Zones' });
+        await zonesTab.click();
+        await page.waitForSelector('.zones-view');
+      });
+
+      test('zones view should fit within viewport', async ({ page }) => {
+        const zonesView = page.locator('.zones-view');
+        const zonesBox = await zonesView.boundingBox();
+        expect(zonesBox).not.toBeNull();
+
+        if (zonesBox) {
+          // Zones view should not extend beyond viewport width
+          expect(zonesBox.x).toBeGreaterThanOrEqual(0);
+          expect(zonesBox.x + zonesBox.width).toBeLessThanOrEqual(viewport.width);
+        }
+      });
+
+      test('zones view should be horizontally centered', async ({ page }) => {
+        const zonesView = page.locator('.zones-view');
+        const zonesBox = await zonesView.boundingBox();
+        expect(zonesBox).not.toBeNull();
+
+        // Get the main panel (parent container)
+        const mainPanel = page.locator('.main-panel');
+        const mainPanelBox = await mainPanel.boundingBox();
+        expect(mainPanelBox).not.toBeNull();
+
+        if (zonesBox && mainPanelBox) {
+          // Calculate left and right margins
+          const leftMargin = zonesBox.x - mainPanelBox.x;
+          const rightMargin = mainPanelBox.x + mainPanelBox.width - (zonesBox.x + zonesBox.width);
+
+          // Log for debugging
+          console.log(
+            `${viewport.name}: leftMargin=${leftMargin.toFixed(1)}px, rightMargin=${rightMargin.toFixed(1)}px`
+          );
+
+          // Assert margins are equal (centered) within tolerance
+          expect(Math.abs(leftMargin - rightMargin)).toBeLessThanOrEqual(CENTERING_TOLERANCE);
+        }
+      });
+
+      test('zones list should not overlap with top toolbar', async ({ page }) => {
+        const toolbar = page.locator('.top-toolbar');
+        const zonesView = page.locator('.zones-view');
+
+        const toolbarBox = await toolbar.boundingBox();
+        const zonesBox = await zonesView.boundingBox();
+
+        expect(toolbarBox).not.toBeNull();
+        expect(zonesBox).not.toBeNull();
+
+        if (toolbarBox && zonesBox) {
+          // Zones view should start below toolbar
+          expect(zonesBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height);
+        }
+      });
+
+      test('zones list should not overlap with bottom navigation', async ({ page }) => {
+        const nav = page.locator('.bottom-nav');
+        const zonesList = page.locator('.zones-list-dark');
+
+        const navBox = await nav.boundingBox();
+        const zonesListBox = await zonesList.boundingBox();
+
+        expect(navBox).not.toBeNull();
+        expect(zonesListBox).not.toBeNull();
+
+        if (navBox && zonesListBox) {
+          // Zones list bottom should be above nav top
+          expect(zonesListBox.y + zonesListBox.height).toBeLessThanOrEqual(navBox.y);
+        }
+      });
+
+      test('all zone items should be visible without horizontal scrolling', async ({ page }) => {
+        const zoneItems = page.locator('.zone-item-dark');
+        const count = await zoneItems.count();
+
+        // Check each zone item is within viewport width
+        for (let i = 0; i < count; i++) {
+          const box = await zoneItems.nth(i).boundingBox();
+          if (box) {
+            expect(box.x).toBeGreaterThanOrEqual(0);
+            expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+          }
+        }
+      });
+    });
+  }
+});
+
 test.describe('Scene Drawer', () => {
   test.use({ viewport: VIEWPORTS.ipad });
 
