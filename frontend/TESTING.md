@@ -305,7 +305,50 @@ Some mutations are OK to survive:
 - [x] Custom hooks (useDemoMode, useHueApi, usePolling, useSession, useWebSocket)
 - [x] React components (with Testing Library)
 - [x] Integration tests (API → UI flow)
-- [ ] E2E tests (Playwright/Cypress)
+- [x] E2E tests (Playwright)
+
+## E2E Testing
+
+### Setup
+
+E2E tests use **Playwright** and run against the dev server in demo mode.
+
+```bash
+# Run E2E tests (starts dev server automatically)
+npm run test:e2e
+
+# Run with UI (interactive mode)
+npm run test:e2e:ui
+
+# Run with visible browser
+npm run test:e2e:headed
+```
+
+### Test Files
+
+```
+e2e/
+├── demo-mode.spec.ts    # Dashboard tests in demo mode
+├── discovery.spec.ts    # Bridge discovery flow
+├── auth.spec.ts         # Authentication flow
+└── session.spec.ts      # Session persistence
+```
+
+### Demo Mode Testing
+
+All E2E tests use `?demo=true` URL parameter:
+- No real Hue Bridge required
+- Deterministic mock data
+- Fast execution
+- Works in CI/CD
+
+### Configuration
+
+See `playwright.config.ts` for:
+- Base URL: `http://localhost:5173`
+- Browser: Chromium only (for speed)
+- Screenshots on failure
+- Trace on first retry
 
 ### Potential Enhancements
 

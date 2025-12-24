@@ -20,6 +20,9 @@ backend/public
 frontend/coverage
 frontend/reports
 frontend/.stryker-tmp
+frontend/test-results
+frontend/playwright-report
+frontend/playwright/.cache
 backend/coverage
 backend/reports
 backend/.stryker-tmp
