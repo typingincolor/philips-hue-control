@@ -38,3 +38,4 @@ backend/.stryker-tmp
 *.sln
 *.sw?
 test-websocket.js
+test-results/
