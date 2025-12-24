@@ -1760,6 +1760,8 @@ body.dark-theme {
   padding: 16px;
   padding-top: calc(var(--toolbar-height) + 16px);
   padding-bottom: calc(var(--nav-height) + 16px);
+  display: flex;
+  flex-direction: column;
 }
 
 /* Compact padding for narrow/short screens */
@@ -1775,6 +1777,11 @@ body.dark-theme {
 .room-content {
   width: 100%;
   max-width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .room-header-bar {
@@ -1861,9 +1868,10 @@ body.dark-theme {
 .light-tiles-grid {
   display: grid;
   gap: var(--light-tile-gap);
-  max-width: 100%;
   /* Default: 2 columns for narrow screens (iPhone) */
   grid-template-columns: repeat(2, 1fr);
+  justify-items: center;
+  align-content: center;
 }
 
 /* Wide screens: 4 columns (iPad landscape, Raspberry Pi, desktop) */
