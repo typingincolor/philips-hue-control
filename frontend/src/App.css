@@ -1755,22 +1755,14 @@ body.dark-theme {
 
 /* Main Panel */
 .main-panel {
-  flex: 1;
+  position: absolute;
+  top: var(--toolbar-height);
+  bottom: var(--nav-height);
+  left: 0;
+  right: 0;
   overflow-y: auto;
-  padding: 16px;
-  padding-top: calc(var(--toolbar-height) + 16px);
-  padding-bottom: calc(var(--nav-height) + 16px);
   display: flex;
   flex-direction: column;
-}
-
-/* Compact padding for narrow/short screens */
-@media (max-width: 500px), (max-height: 600px) {
-  .main-panel {
-    padding: 12px;
-    padding-top: calc(var(--toolbar-height) + 12px);
-    padding-bottom: calc(var(--nav-height) + 12px);
-  }
 }
 
 /* Room Content */
@@ -1781,6 +1773,7 @@ body.dark-theme {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .room-header-bar {
@@ -1863,14 +1856,18 @@ body.dark-theme {
    - iPhone 14 (390x844): 2 columns x 4 rows
    - Raspberry Pi 7" (800x480): 4 columns x 2 rows
    - Buttons fill available space, min 44px, always square
+   - Grid is vertically centered between toolbar and nav
 */
 .light-tiles-grid {
   --grid-cols: 2;
   --grid-rows: 4;
-  /* Extra 48px buffer for padding and safety margin */
-  --available-height: calc(100vh - var(--toolbar-height) - var(--nav-height) - 48px);
+  /* Available space (parent container is positioned between toolbar and nav) */
+  --available-height: calc(100vh - var(--toolbar-height) - var(--nav-height));
   --available-width: calc(100vw - 48px);
-  --tile-size-by-height: calc((var(--available-height) - (var(--grid-rows) - 1) * var(--light-tile-gap)) / var(--grid-rows));
+  /* Reserve space for vertical centering (half above, half below) */
+  --centering-buffer: 32px;
+  --grid-content-height: calc(var(--available-height) - var(--centering-buffer));
+  --tile-size-by-height: calc((var(--grid-content-height) - (var(--grid-rows) - 1) * var(--light-tile-gap)) / var(--grid-rows));
   --tile-size-by-width: calc((var(--available-width) - (var(--grid-cols) - 1) * var(--light-tile-gap)) / var(--grid-cols));
   /* Use the smaller of width or height constrained size */
   --tile-size: min(var(--tile-size-by-height), var(--tile-size-by-width));
@@ -1879,7 +1876,7 @@ body.dark-theme {
   gap: var(--light-tile-gap);
   grid-template-columns: repeat(var(--grid-cols), var(--tile-size));
   justify-content: center;
-  align-content: center;
+  /* Grid height matches content - parent flex centers it vertically */
 }
 
 /* Wide screens: 4 columns x 2 rows (iPad landscape, Raspberry Pi, desktop) */
@@ -1915,13 +1912,12 @@ body.dark-theme {
   }
 }
 
-/* Short screens (Raspberry Pi): compact gaps and direct tile sizing */
+/* Short screens (Raspberry Pi): compact gaps */
 @media (max-height: 600px) {
   .light-tiles-grid {
     --light-tile-gap: 8px;
-    /* Force recalculate with extra buffer to prevent overlap */
-    --tile-size: calc((100vh - 40px - 70px - 66px - var(--light-tile-gap)) / 2);
-    grid-template-columns: repeat(var(--grid-cols), var(--tile-size));
+    /* Smaller centering buffer for compact screens */
+    --centering-buffer: 16px;
   }
 }
 
@@ -2242,12 +2238,6 @@ body.dark-theme {
 
   .toolbar-stat-value {
     font-size: 0.9rem;
-  }
-
-  .main-panel {
-    padding: 12px;
-    padding-top: calc(var(--toolbar-height) + 12px);
-    padding-bottom: calc(var(--nav-height) + 12px);
   }
 
   .room-header-bar {

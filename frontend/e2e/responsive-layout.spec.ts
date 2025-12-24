@@ -299,6 +299,84 @@ test.describe('Button Size Constraints (All Devices)', () => {
   }
 });
 
+test.describe('Vertical Centering', () => {
+  // Tolerance for spacing comparison (pixels)
+  const SPACING_TOLERANCE = 10;
+
+  for (const [key, viewport] of Object.entries(VIEWPORTS)) {
+    const expectedRows = EXPECTED_LAYOUTS[key as keyof typeof EXPECTED_LAYOUTS].rows;
+    const expectedCols = EXPECTED_LAYOUTS[key as keyof typeof EXPECTED_LAYOUTS].columns;
+
+    test.describe(`${viewport.name}`, () => {
+      test.use({ viewport });
+
+      test(`should have equal spacing above and below button grid (${expectedRows} rows)`, async ({
+        page,
+      }) => {
+        await page.goto('/?demo=true');
+        await page.waitForSelector('.light-tile');
+
+        // Get toolbar bottom edge
+        const toolbar = page.locator('.top-toolbar');
+        const toolbarBox = await toolbar.boundingBox();
+        expect(toolbarBox).not.toBeNull();
+
+        // Get bottom nav top edge
+        const nav = page.locator('.bottom-nav');
+        const navBox = await nav.boundingBox();
+        expect(navBox).not.toBeNull();
+
+        // Get first tile (first row)
+        const tiles = page.locator('.light-tile');
+        const firstTile = tiles.first();
+        const firstTileBox = await firstTile.boundingBox();
+        expect(firstTileBox).not.toBeNull();
+
+        // Get last tile in the expected grid (last row)
+        // For 2 rows x 4 cols = 8 tiles, last row starts at index 4
+        // For 4 rows x 2 cols = 8 tiles, last row starts at index 6
+        const lastRowStartIndex = (expectedRows - 1) * expectedCols;
+        const lastRowTile = tiles.nth(lastRowStartIndex);
+        const lastRowTileBox = await lastRowTile.boundingBox();
+        expect(lastRowTileBox).not.toBeNull();
+
+        if (toolbarBox && navBox && firstTileBox && lastRowTileBox) {
+          // Calculate spacing
+          const topSpacing = firstTileBox.y - (toolbarBox.y + toolbarBox.height);
+          const bottomSpacing = navBox.y - (lastRowTileBox.y + lastRowTileBox.height);
+
+          // Log for debugging
+          console.log(`${viewport.name}: topSpacing=${topSpacing.toFixed(1)}px, bottomSpacing=${bottomSpacing.toFixed(1)}px`);
+
+          // Assert equal spacing within tolerance
+          expect(Math.abs(topSpacing - bottomSpacing)).toBeLessThanOrEqual(SPACING_TOLERANCE);
+        }
+      });
+
+      test(`should display exactly ${expectedRows} rows of buttons`, async ({ page }) => {
+        await page.goto('/?demo=true');
+        await page.waitForSelector('.light-tile');
+
+        const tiles = page.locator('.light-tile');
+        const count = await tiles.count();
+
+        // Get Y positions of all tiles to determine rows
+        const yPositions = new Set<number>();
+        for (let i = 0; i < Math.min(count, expectedRows * expectedCols); i++) {
+          const box = await tiles.nth(i).boundingBox();
+          if (box) {
+            // Round to handle sub-pixel differences
+            yPositions.add(Math.round(box.y));
+          }
+        }
+
+        // Number of unique Y positions = number of rows
+        expect(yPositions.size).toBe(expectedRows);
+      });
+    });
+  }
+});
+
 test.describe('Scene Drawer', () => {
   test.use({ viewport: VIEWPORTS.ipad });
 
