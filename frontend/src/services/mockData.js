@@ -1,4 +1,3 @@
- 
 // Mock data for testing without a Hue bridge
 
 export const mockLights = {

@@ -1,4 +1,3 @@
- 
 /**
  * Frontend logger utility
  * Provides structured logging with component prefixes

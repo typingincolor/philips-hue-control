@@ -61,7 +61,7 @@ export const LightbulbOn = (props) => (
 export const LightbulbOff = (props) => <Lightbulb {...defaultProps} {...props} />;
 
 // Loading spinner with rotation animation
- 
+
 export const Spinner = ({ className = '', ...props }) => (
   <Loader2 {...defaultProps} className={`icon-spin ${className}`} {...props} />
 );
@@ -209,10 +209,10 @@ export const getSceneIcon = (sceneName) => {
 };
 
 // Scene icon component that auto-selects icon based on name
- 
+
 export const SceneIcon = ({ name, ...props }) => {
   // Get the icon component constructor - this is a valid pattern for dynamic icon selection
   const IconComponent = getSceneIcon(name);
-   
+
   return <IconComponent {...defaultProps} {...props} />;
 };

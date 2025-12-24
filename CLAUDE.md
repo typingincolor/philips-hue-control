@@ -235,11 +235,12 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
    - Shows all zones with stats, scene selector, on/off toggle
 
 10. **LightControl/Icons.jsx**: Lucide icon wrappers
-   - Uses `lucide-react` package for all icons
-   - Consistent `strokeWidth: 1.5` styling
-   - Room-specific icons: Sofa, DiningTable, Saucepan, Bed, DeskLamp, Shower, Car, Tree, Door
-   - Scene icons: Sunrise, Sunset, Moon, Sun, Palette, Heart, Focus, Tv, UtensilsCrossed, etc.
-   - `getSceneIcon(sceneName)` function maps scene names to appropriate icons
+
+- Uses `lucide-react` package for all icons
+- Consistent `strokeWidth: 1.5` styling
+- Room-specific icons: Sofa, DiningTable, Saucepan, Bed, DeskLamp, Shower, Car, Tree, Door
+- Scene icons: Sunrise, Sunset, Moon, Sun, Palette, Heart, Focus, Tv, UtensilsCrossed, etc.
+- `getSceneIcon(sceneName)` function maps scene names to appropriate icons
 
 11. **LightControl/SceneSelector.jsx**: Scene icon buttons (used in ZonesView)
     - Renders icon buttons for each scene (not a dropdown)

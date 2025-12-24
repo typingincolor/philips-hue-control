@@ -180,7 +180,7 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
 
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectAttempts.current++;
-           
+
           connect();
         }, delay);
       } else if (reconnectAttempts.current >= maxReconnectAttempts) {
