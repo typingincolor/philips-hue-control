@@ -1,6 +1,6 @@
 import axios from 'axios';
 import https from 'https';
-import { CACHE_TTL_MS } from '../constants/timings.js';
+import { CACHE_TTL_MS, REQUEST_TIMEOUT_MS } from '../constants/timings.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('HUE_CLIENT');
@@ -77,6 +77,7 @@ class HueClient {
         'hue-application-key': username
       },
       httpsAgent: this.httpsAgent,
+      timeout: REQUEST_TIMEOUT_MS,
       validateStatus: () => true // Accept all status codes
     };
 

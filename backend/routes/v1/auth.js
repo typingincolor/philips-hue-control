@@ -6,6 +6,7 @@ import hueClient from '../../services/hueClient.js';
 import { requireSession } from '../../middleware/auth.js';
 import { MissingCredentialsError, BridgeConnectionError } from '../../utils/errors.js';
 import { createLogger } from '../../utils/logger.js';
+import { REQUEST_TIMEOUT_MS } from '../../constants/timings.js';
 
 const logger = createLogger('AUTH');
 const router = express.Router();
@@ -46,7 +47,7 @@ router.post('/pair', async (req, res, next) => {
     const response = await axios.post(
       `https://${bridgeIp}/api`,
       { devicetype: appName },
-      { httpsAgent, validateStatus: () => true }
+      { httpsAgent, timeout: REQUEST_TIMEOUT_MS, validateStatus: () => true }
     );
 
     // Check for errors
@@ -68,6 +69,20 @@ router.post('/pair', async (req, res, next) => {
 
     throw new Error('Unexpected response from bridge');
   } catch (error) {
+    // Handle timeout errors
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return res.status(504).json({
+        error: 'Bridge connection timed out. Check network and try again.',
+        type: 'timeout'
+      });
+    }
+    // Handle connection refused
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(502).json({
+        error: 'Cannot connect to bridge. Check IP address.',
+        type: 'connection_refused'
+      });
+    }
     next(error);
   }
 });

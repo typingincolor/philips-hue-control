@@ -17,3 +17,6 @@ export const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 // Scene settings
 export const SCENE_APPLY_DELAY_MS = 500; // 500ms for Hue Bridge to apply scene
+
+// HTTP request settings
+export const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
