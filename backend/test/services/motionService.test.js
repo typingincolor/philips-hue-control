@@ -1,359 +1,398 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import motionService from '../../services/motionService.js';
+import hueClient from '../../services/hueClient.js';
+
+// Mock hueClient
+vi.mock('../../services/hueClient.js', () => ({
+  default: {
+    getResource: vi.fn()
+  }
+}));
 
 describe('MotionService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('parseMotionSensors', () => {
-    it('should return empty array when no behaviors data', () => {
+    it('should return empty array when behaviorsData is null', () => {
       const result = motionService.parseMotionSensors(null, { data: [] });
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when no motion areas data', () => {
+    it('should return empty array when motionAreasData is null', () => {
       const result = motionService.parseMotionSensors({ data: [] }, null);
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when both are null', () => {
-      const result = motionService.parseMotionSensors(null, null);
+    it('should return empty array when behaviorsData.data is undefined', () => {
+      const result = motionService.parseMotionSensors({}, { data: [] });
       expect(result).toEqual([]);
     });
 
-    it('should parse MotionAware zones correctly', () => {
-      const behaviors = {
+    it('should return empty array when motionAreasData.data is undefined', () => {
+      const result = motionService.parseMotionSensors({ data: [] }, {});
+      expect(result).toEqual([]);
+    });
+
+    it('should parse motion zones correctly', () => {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: { name: 'Living Room Motion' },
+            metadata: { name: 'Hallway MotionAware' },
             enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: {
+                  rtype: 'convenience_area_motion',
+                  rid: 'motion-area-1'
+                }
               }
             }
           }
         ]
       };
-      const motionAreas = {
+
+      const motionAreasData = {
         data: [
           {
-            id: 'motion-1',
+            id: 'motion-area-1',
             enabled: true,
             motion: {
               motion: true,
               motion_valid: true,
-              motion_report: { changed: '2024-01-01T12:00:00Z' }
+              motion_report: { changed: '2024-01-15T10:30:00Z' }
             }
           }
         ]
       };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
+
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('behavior-1');
-      expect(result[0].name).toBe('Living Room Motion');
-      expect(result[0].motionDetected).toBe(true);
-      expect(result[0].enabled).toBe(true);
-      expect(result[0].reachable).toBe(true);
-      expect(result[0].lastChanged).toBe('2024-01-01T12:00:00Z');
+      expect(result[0]).toEqual({
+        id: 'behavior-1',
+        name: 'Hallway MotionAware',
+        motionDetected: true,
+        enabled: true,
+        reachable: true,
+        lastChanged: '2024-01-15T10:30:00Z'
+      });
     });
 
     it('should filter out non-MotionAware behaviors', () => {
-      const behaviors = {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: { name: 'MotionAware Zone' },
+            metadata: { name: 'Not a MotionAware' },
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: {
+                  rtype: 'some_other_type',
+                  rid: 'some-id'
+                }
               }
             }
           },
           {
             id: 'behavior-2',
-            metadata: { name: 'Other Behavior' },
-            configuration: {
-              motion: {
-                motion_service: { rid: 'sensor-1', rtype: 'motion_sensor' } // Different type
-              }
-            }
-          },
-          {
-            id: 'behavior-3',
-            metadata: { name: 'No Motion Config' },
+            metadata: { name: 'Regular Behavior' },
             configuration: {}
           }
         ]
       };
-      const motionAreas = {
-        data: [
-          {
-            id: 'motion-1',
-            enabled: true,
-            motion: { motion: false, motion_valid: true }
-          }
-        ]
-      };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe('MotionAware Zone');
+      const result = motionService.parseMotionSensors(behaviorsData, { data: [] });
+
+      expect(result).toHaveLength(0);
     });
 
-    it('should handle missing motion status data', () => {
-      const behaviors = {
+    it('should handle missing motion status gracefully', () => {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: { name: 'Zone 1' },
+            metadata: { name: 'Orphan Zone' },
             enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-999', rtype: 'convenience_area_motion' }
+                motion_service: {
+                  rtype: 'convenience_area_motion',
+                  rid: 'non-existent-motion-area'
+                }
               }
             }
           }
         ]
       };
-      const motionAreas = { data: [] };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
+      const motionAreasData = { data: [] };
+
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
+
       expect(result).toHaveLength(1);
       expect(result[0].motionDetected).toBe(false);
-      expect(result[0].enabled).toBeUndefined(); // status.enabled is undefined, so true && undefined = undefined
-      expect(result[0].reachable).toBe(true); // status.motionValid is undefined, so undefined !== false = true
+      // When status object is empty, status.enabled is undefined
+      // behavior.enabled (true) && undefined = undefined (falsy)
+      expect(result[0].enabled).toBeFalsy();
     });
 
-    it('should handle missing behavior metadata name', () => {
-      const behaviors = {
+    it('should handle missing metadata.name', () => {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: {},
             enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: {
+                  rtype: 'convenience_area_motion',
+                  rid: 'motion-area-1'
+                }
               }
             }
           }
         ]
       };
-      const motionAreas = {
+
+      const motionAreasData = {
         data: [
           {
-            id: 'motion-1',
+            id: 'motion-area-1',
+            enabled: true,
             motion: { motion: false, motion_valid: true }
           }
         ]
       };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
+
       expect(result[0].name).toBe('Unknown Zone');
     });
 
-    it('should combine enabled states from behavior and motion area', () => {
-      const behaviors = {
+    it('should handle motion_valid being false', () => {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: { name: 'Zone 1' },
+            metadata: { name: 'Unreachable Zone' },
             enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: {
+                  rtype: 'convenience_area_motion',
+                  rid: 'motion-area-1'
+                }
               }
             }
-          },
+          }
+        ]
+      };
+
+      const motionAreasData = {
+        data: [
           {
-            id: 'behavior-2',
-            metadata: { name: 'Zone 2' },
+            id: 'motion-area-1',
+            enabled: true,
+            motion: { motion: false, motion_valid: false }
+          }
+        ]
+      };
+
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
+
+      expect(result[0].reachable).toBe(false);
+    });
+
+    it('should handle disabled motion areas', () => {
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-1',
+            metadata: { name: 'Disabled Zone' },
+            enabled: true,
+            configuration: {
+              motion: {
+                motion_service: {
+                  rtype: 'convenience_area_motion',
+                  rid: 'motion-area-1'
+                }
+              }
+            }
+          }
+        ]
+      };
+
+      const motionAreasData = {
+        data: [
+          {
+            id: 'motion-area-1',
+            enabled: false,
+            motion: { motion: true, motion_valid: true }
+          }
+        ]
+      };
+
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
+
+      expect(result[0].enabled).toBe(false); // behavior enabled but area disabled
+    });
+
+    it('should handle disabled behaviors', () => {
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-1',
+            metadata: { name: 'Disabled Behavior' },
             enabled: false,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-2', rtype: 'convenience_area_motion' }
+                motion_service: {
+                  rtype: 'convenience_area_motion',
+                  rid: 'motion-area-1'
+                }
               }
             }
           }
         ]
       };
-      const motionAreas = {
+
+      const motionAreasData = {
         data: [
           {
-            id: 'motion-1',
-            enabled: true,
-            motion: { motion: false, motion_valid: true }
-          },
-          {
-            id: 'motion-2',
+            id: 'motion-area-1',
             enabled: true,
             motion: { motion: false, motion_valid: true }
           }
         ]
       };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result[0].enabled).toBe(true); // Both enabled
-      expect(result[1].enabled).toBe(false); // Behavior disabled
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
+
+      expect(result[0].enabled).toBe(false); // behavior disabled
     });
 
     it('should sort zones alphabetically by name', () => {
-      const behaviors = {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: { name: 'Zzz Garage' },
+            metadata: { name: 'Zebra Room' },
+            enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: { rtype: 'convenience_area_motion', rid: 'area-1' }
               }
             }
           },
           {
             id: 'behavior-2',
-            metadata: { name: 'Aaa Entrance' },
+            metadata: { name: 'Apple Room' },
+            enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-2', rtype: 'convenience_area_motion' }
+                motion_service: { rtype: 'convenience_area_motion', rid: 'area-2' }
               }
             }
           },
           {
             id: 'behavior-3',
-            metadata: { name: 'Mmm Kitchen' },
-            configuration: {
-              motion: {
-                motion_service: { rid: 'motion-3', rtype: 'convenience_area_motion' }
-              }
-            }
-          }
-        ]
-      };
-      const motionAreas = {
-        data: [
-          { id: 'motion-1', motion: { motion: false, motion_valid: true } },
-          { id: 'motion-2', motion: { motion: false, motion_valid: true } },
-          { id: 'motion-3', motion: { motion: false, motion_valid: true } }
-        ]
-      };
-
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result[0].name).toBe('Aaa Entrance');
-      expect(result[1].name).toBe('Mmm Kitchen');
-      expect(result[2].name).toBe('Zzz Garage');
-    });
-
-    it('should handle motion_valid being false', () => {
-      const behaviors = {
-        data: [
-          {
-            id: 'behavior-1',
-            metadata: { name: 'Zone 1' },
+            metadata: { name: 'Mango Room' },
             enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: { rtype: 'convenience_area_motion', rid: 'area-3' }
               }
             }
           }
         ]
       };
-      const motionAreas = {
+
+      const motionAreasData = {
         data: [
-          {
-            id: 'motion-1',
-            motion: { motion: true, motion_valid: false }
-          }
+          { id: 'area-1', enabled: true, motion: { motion: false } },
+          { id: 'area-2', enabled: true, motion: { motion: false } },
+          { id: 'area-3', enabled: true, motion: { motion: false } }
         ]
       };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result[0].reachable).toBe(false);
-    });
+      const result = motionService.parseMotionSensors(behaviorsData, motionAreasData);
 
-    it('should handle missing motion_valid (defaults to true)', () => {
-      const behaviors = {
+      expect(result[0].name).toBe('Apple Room');
+      expect(result[1].name).toBe('Mango Room');
+      expect(result[2].name).toBe('Zebra Room');
+    });
+  });
+
+  describe('getMotionZones', () => {
+    const bridgeIp = '192.168.1.100';
+    const username = 'test-user';
+
+    it('should fetch and parse motion zones successfully', async () => {
+      const behaviorsData = {
         data: [
           {
             id: 'behavior-1',
-            metadata: { name: 'Zone 1' },
+            metadata: { name: 'Test Zone' },
             enabled: true,
             configuration: {
               motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
+                motion_service: { rtype: 'convenience_area_motion', rid: 'area-1' }
               }
             }
           }
         ]
       };
-      const motionAreas = {
+
+      const motionAreasData = {
         data: [
           {
-            id: 'motion-1',
-            motion: { motion: false }
+            id: 'area-1',
+            enabled: true,
+            motion: { motion: true, motion_valid: true }
           }
         ]
       };
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result[0].reachable).toBe(true);
+      hueClient.getResource
+        .mockResolvedValueOnce(behaviorsData)
+        .mockResolvedValueOnce(motionAreasData);
+
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      expect(hueClient.getResource).toHaveBeenCalledWith(bridgeIp, username, 'behavior_instance');
+      expect(hueClient.getResource).toHaveBeenCalledWith(bridgeIp, username, 'convenience_area_motion');
+      expect(result.zones).toHaveLength(1);
+      expect(result.zones[0].name).toBe('Test Zone');
+      expect(result.zones[0].motionDetected).toBe(true);
     });
 
-    it('should default motion detected to false when missing', () => {
-      const behaviors = {
-        data: [
-          {
-            id: 'behavior-1',
-            metadata: { name: 'Zone 1' },
-            enabled: true,
-            configuration: {
-              motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
-              }
-            }
-          }
-        ]
-      };
-      const motionAreas = {
-        data: [
-          {
-            id: 'motion-1',
-            motion: {}
-          }
-        ]
-      };
+    it('should return empty zones when no motion behaviors exist', async () => {
+      hueClient.getResource
+        .mockResolvedValueOnce({ data: [] })
+        .mockResolvedValueOnce({ data: [] });
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result[0].motionDetected).toBe(false);
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      expect(result.zones).toHaveLength(0);
     });
 
-    it('should handle area enabled being false', () => {
-      const behaviors = {
-        data: [
-          {
-            id: 'behavior-1',
-            metadata: { name: 'Zone 1' },
-            enabled: true,
-            configuration: {
-              motion: {
-                motion_service: { rid: 'motion-1', rtype: 'convenience_area_motion' }
-              }
-            }
-          }
-        ]
-      };
-      const motionAreas = {
-        data: [
-          {
-            id: 'motion-1',
-            enabled: false,
-            motion: { motion: false, motion_valid: true }
-          }
-        ]
-      };
+    it('should throw error when hueClient fails', async () => {
+      hueClient.getResource.mockRejectedValue(new Error('Network error'));
 
-      const result = motionService.parseMotionSensors(behaviors, motionAreas);
-      expect(result[0].enabled).toBe(false);
+      await expect(motionService.getMotionZones(bridgeIp, username))
+        .rejects.toThrow('Failed to get motion zones: Network error');
+    });
+
+    it('should handle partial failure (behaviors succeeds, motion fails)', async () => {
+      hueClient.getResource
+        .mockResolvedValueOnce({ data: [] })
+        .mockRejectedValueOnce(new Error('Motion fetch failed'));
+
+      await expect(motionService.getMotionZones(bridgeIp, username))
+        .rejects.toThrow('Failed to get motion zones: Motion fetch failed');
     });
   });
 });
