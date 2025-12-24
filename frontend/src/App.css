@@ -1735,6 +1735,21 @@ body.dark-theme {
   background: #e74c3c;
 }
 
+.toolbar-status-dot.reconnecting {
+  background: var(--accent-primary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .toolbar-logout {
   display: flex;
   align-items: center;

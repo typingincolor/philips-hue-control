@@ -15,7 +15,15 @@ This is a **Philips Hue Light Control** web application built as a monorepo with
 - **Optimistic updates**: Frontend updates UI immediately on user actions, syncs with backend asynchronously
 - **Brightness minimum**: Lights display minimum 5% brightness when on (prevents 0% display artifacts)
 - **WebSocket cleanup**: Automatic cleanup of orphaned polling intervals, heartbeat monitoring, and stale connection removal
+- **WebSocket reconnection**: Automatic reconnection with exponential backoff (1s, 2s, 4s, 8s, 16s) up to 5 attempts; dead connection detection via ping/pong (90s timeout)
 - **Stats endpoint**: `/api/v1/stats/websocket` for debugging connection issues
+
+**Connection Status Indicator:**
+
+The TopToolbar displays real-time connection status with three states:
+- **Green dot + "Connected"**: WebSocket active and healthy
+- **Amber pulsing dot + "Reconnecting..."**: Connection lost, attempting to reconnect
+- **Red dot + "Disconnected"**: All reconnection attempts failed
 
 ## Development Commands
 

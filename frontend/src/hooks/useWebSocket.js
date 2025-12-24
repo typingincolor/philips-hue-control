@@ -12,12 +12,15 @@ const logger = createLogger('WebSocket');
  */
 export const useWebSocket = (sessionToken, username = null, enabled = true) => {
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState(null);
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const hasConnectedOnce = useRef(false);
+  const lastPongTime = useRef(Date.now());
 
   // Detect legacy mode (bridgeIp looks like an IP address)
   const isLegacyMode = sessionToken && sessionToken.includes('.');
@@ -101,7 +104,8 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
           break;
 
         case 'pong':
-          // Heartbeat response
+          // Heartbeat response - track last pong time
+          lastPongTime.current = Date.now();
           break;
 
         default:
@@ -128,8 +132,11 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
     ws.onopen = () => {
       logger.info('Connected');
       setIsConnected(true);
+      setIsReconnecting(false);
       setError(null);
       reconnectAttempts.current = 0;
+      hasConnectedOnce.current = true;
+      lastPongTime.current = Date.now();
 
       // Authenticate
       if (isLegacyMode) {
@@ -173,6 +180,11 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
 
       // Attempt to reconnect with exponential backoff
       if (enabled && reconnectAttempts.current < maxReconnectAttempts) {
+        // Only show "reconnecting" if we've connected at least once before
+        if (hasConnectedOnce.current) {
+          setIsReconnecting(true);
+        }
+
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
         logger.info(
           `Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${maxReconnectAttempts})`
@@ -184,6 +196,7 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
           connect();
         }, delay);
       } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+        setIsReconnecting(false);
         setError('Failed to connect after multiple attempts');
       }
     };
@@ -209,12 +222,21 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
     };
   }, [connect, sessionToken, username, enabled, isLegacyMode]);
 
-  // Heartbeat ping every 30 seconds
+  // Heartbeat ping every 30 seconds with dead connection detection
   useEffect(() => {
     if (!isConnected || !wsRef.current) return;
 
     const pingInterval = setInterval(() => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        // Check if we haven't received a pong in too long (90 seconds = 3 missed pongs)
+        const timeSinceLastPong = Date.now() - lastPongTime.current;
+        if (timeSinceLastPong > 90000) {
+          logger.warn('No pong received in 90s, connection may be dead');
+          // Force close to trigger reconnection
+          wsRef.current.close();
+          return;
+        }
+
         wsRef.current.send(JSON.stringify({ type: 'ping' }));
       }
     }, 30000);
@@ -224,6 +246,7 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
 
   return {
     isConnected,
+    isReconnecting,
     dashboard,
     error,
   };

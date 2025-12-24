@@ -20,6 +20,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
   // WebSocket connection (disabled in demo mode)
   const {
     isConnected: wsConnected,
+    isReconnecting: wsReconnecting,
     dashboard: wsDashboard,
     error: wsError,
   } = useWebSocket(sessionToken, null, !isDemoMode);
@@ -345,6 +346,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       <TopToolbar
         summary={dashboard?.summary || {}}
         isConnected={wsConnected || isDemoMode}
+        isReconnecting={wsReconnecting}
         isDemoMode={isDemoMode}
         onLogout={onLogout}
       />

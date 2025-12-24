@@ -2,8 +2,27 @@ import PropTypes from 'prop-types';
 import { UI_TEXT } from '../../constants/uiText';
 import { Logout, LightbulbOn, Home, Grid } from './Icons';
 
-export const TopToolbar = ({ summary = {}, isConnected = true, isDemoMode = false, onLogout }) => {
+export const TopToolbar = ({
+  summary = {},
+  isConnected = true,
+  isReconnecting = false,
+  isDemoMode = false,
+  onLogout,
+}) => {
   const { lightsOn = 0, roomCount = 0, sceneCount = 0 } = summary;
+
+  // Determine connection status text and style
+  const getConnectionStatus = () => {
+    if (isReconnecting) {
+      return { text: 'Reconnecting...', className: 'reconnecting' };
+    }
+    if (!isConnected) {
+      return { text: 'Disconnected', className: 'disconnected' };
+    }
+    return { text: UI_TEXT.STATUS_CONNECTED, className: '' };
+  };
+
+  const connectionStatus = getConnectionStatus();
 
   return (
     <div className="top-toolbar">
@@ -31,8 +50,8 @@ export const TopToolbar = ({ summary = {}, isConnected = true, isDemoMode = fals
           </span>
         )}
         <div className="toolbar-status">
-          <span className={`toolbar-status-dot ${!isConnected ? 'disconnected' : ''}`} />
-          <span>{isConnected ? UI_TEXT.STATUS_CONNECTED : 'Reconnecting...'}</span>
+          <span className={`toolbar-status-dot ${connectionStatus.className}`} />
+          <span>{connectionStatus.text}</span>
         </div>
         <button className="toolbar-logout" onClick={onLogout}>
           <Logout size={16} />
@@ -49,6 +68,7 @@ TopToolbar.propTypes = {
     sceneCount: PropTypes.number,
   }),
   isConnected: PropTypes.bool,
+  isReconnecting: PropTypes.bool,
   isDemoMode: PropTypes.bool,
   onLogout: PropTypes.func.isRequired,
 };
