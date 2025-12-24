@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { MotionZoneShape } from '../propTypes/shapes';
 import { useHueApi } from '../hooks/useHueApi';
 
 export const MotionZones = ({ sessionToken, motionZones }) => {
@@ -66,11 +67,5 @@ export const MotionZones = ({ sessionToken, motionZones }) => {
 
 MotionZones.propTypes = {
   sessionToken: PropTypes.string.isRequired,
-  motionZones: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    motionDetected: PropTypes.bool.isRequired,
-    enabled: PropTypes.bool,
-    reachable: PropTypes.bool
-  }))
+  motionZones: PropTypes.arrayOf(MotionZoneShape)
 };

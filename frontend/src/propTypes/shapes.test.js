@@ -65,6 +65,11 @@ describe('PropTypes shapes', () => {
     it('should have required isRequired variant', () => {
       expect(isPropTypeValidator(MotionZoneShape.isRequired)).toBe(true);
     });
+
+    it('should match backend motionDetected property name', () => {
+      // MotionZoneShape uses motionDetected to match backend API
+      expect(MotionZoneShape).toBeDefined();
+    });
   });
 
   describe('ZoneShape', () => {

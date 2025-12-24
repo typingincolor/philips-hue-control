@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { RoomShape } from '../../propTypes/shapes';
 import { LightButton } from './LightButton';
 import { SceneSelector } from './SceneSelector';
 
@@ -66,22 +67,7 @@ export const RoomCard = ({
 
 RoomCard.propTypes = {
   roomName: PropTypes.string.isRequired,
-  room: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    stats: PropTypes.shape({
-      lightsOnCount: PropTypes.number.isRequired,
-      totalLights: PropTypes.number.isRequired,
-      averageBrightness: PropTypes.number.isRequired
-    }).isRequired,
-    lights: PropTypes.arrayOf(PropTypes.object).isRequired,
-    scenes: PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        name: PropTypes.string.isRequired
-      })
-    ).isRequired
-  }).isRequired,
+  room: RoomShape.isRequired,
   onToggleLight: PropTypes.func.isRequired,
   onToggleRoom: PropTypes.func.isRequired,
   onActivateScene: PropTypes.func.isRequired,

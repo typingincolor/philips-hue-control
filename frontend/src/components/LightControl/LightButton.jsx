@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { LightShape } from '../../propTypes/shapes';
 
 export const LightButton = ({ light, onToggle, isToggling }) => {
   // Use pre-computed color and shadow from backend
@@ -31,15 +32,7 @@ export const LightButton = ({ light, onToggle, isToggling }) => {
 };
 
 LightButton.propTypes = {
-  light: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    on: PropTypes.bool.isRequired,
-    brightness: PropTypes.number.isRequired,
-    color: PropTypes.string, // Pre-computed CSS color (e.g., "rgb(255, 180, 120)")
-    shadow: PropTypes.string, // Pre-computed CSS shadow
-    colorSource: PropTypes.oneOf(['xy', 'temperature', 'fallback', null])
-  }).isRequired,
+  light: LightShape.isRequired,
   onToggle: PropTypes.func.isRequired,
   isToggling: PropTypes.bool
 };

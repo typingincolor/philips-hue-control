@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { SceneShape } from '../../propTypes/shapes';
 import { SceneIcon, Spinner } from './Icons';
 
 export const SceneSelector = ({ scenes, onActivate, isActivating }) => {
@@ -27,12 +28,7 @@ export const SceneSelector = ({ scenes, onActivate, isActivating }) => {
 };
 
 SceneSelector.propTypes = {
-  scenes: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired
-    })
-  ).isRequired,
+  scenes: PropTypes.arrayOf(SceneShape).isRequired,
   onActivate: PropTypes.func.isRequired,
   isActivating: PropTypes.bool
 };

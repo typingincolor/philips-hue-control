@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { ZoneShape } from '../../propTypes/shapes';
 import { SceneSelector } from './SceneSelector';
 
 export const ZoneCard = ({
@@ -51,22 +52,7 @@ export const ZoneCard = ({
 
 ZoneCard.propTypes = {
   zoneName: PropTypes.string.isRequired,
-  zone: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    stats: PropTypes.shape({
-      lightsOnCount: PropTypes.number.isRequired,
-      totalLights: PropTypes.number.isRequired,
-      averageBrightness: PropTypes.number.isRequired
-    }).isRequired,
-    lights: PropTypes.arrayOf(PropTypes.object).isRequired,
-    scenes: PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        name: PropTypes.string.isRequired
-      })
-    ).isRequired
-  }).isRequired,
+  zone: ZoneShape.isRequired,
   onToggleZone: PropTypes.func.isRequired,
   onActivateScene: PropTypes.func.isRequired,
   togglingLights: PropTypes.instanceOf(Set).isRequired,

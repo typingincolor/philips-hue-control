@@ -48,9 +48,9 @@ export const RoomShape = PropTypes.shape({
 export const MotionZoneShape = PropTypes.shape({
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
-  motion: PropTypes.bool.isRequired,
-  enabled: PropTypes.bool.isRequired,
-  motionValid: PropTypes.bool
+  motionDetected: PropTypes.bool.isRequired,
+  enabled: PropTypes.bool,
+  reachable: PropTypes.bool
 });
 
 /**

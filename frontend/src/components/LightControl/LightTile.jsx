@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { LightShape } from '../../propTypes/shapes';
 import { LightbulbOn, LightbulbOff, Spinner } from './Icons';
 
 export const LightTile = ({ light, onToggle, isToggling }) => {
@@ -104,14 +105,7 @@ function getContrastStyle(color, brightness) {
 }
 
 LightTile.propTypes = {
-  light: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string,
-    on: PropTypes.bool.isRequired,
-    brightness: PropTypes.number,
-    color: PropTypes.string,
-    shadow: PropTypes.string
-  }).isRequired,
+  light: LightShape.isRequired,
   onToggle: PropTypes.func.isRequired,
   isToggling: PropTypes.bool
 };
