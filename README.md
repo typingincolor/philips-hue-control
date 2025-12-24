@@ -31,6 +31,7 @@ A modern React web application for controlling Philips Hue lights locally using 
 - **Link Button Authentication**: Simple guided flow with visual feedback
 - **Persistent Sessions**: Sessions saved in browser localStorage with auto-recovery
 - **Session Auto-Refresh**: Tokens refresh automatically before expiration
+- **Multi-Client Support**: Second client connects instantly using server-stored credentials (no re-pairing needed)
 
 ### Technical Features
 
@@ -38,7 +39,7 @@ A modern React web application for controlling Philips Hue lights locally using 
 - **Multi-Machine Support**: Access from any device on your network
 - **Centralized Configuration**: All settings managed through config.json
 - **Modern API v2**: Uses the latest Philips Hue API for future-proof functionality
-- **Comprehensive Testing**: 332 tests (193 frontend + 139 backend) with integration test suite
+- **Comprehensive Testing**: 665 tests (241 frontend + 424 backend) with integration test suite
 
 ## Prerequisites
 
@@ -355,11 +356,11 @@ Runs mutation testing with Stryker (validates test quality)
 
 ## Testing
 
-The project includes comprehensive testing infrastructure with **332 tests total** (193 frontend + 139 backend) and mutation testing to ensure code quality.
+The project includes comprehensive testing infrastructure with **665 tests total** (241 frontend + 424 backend) and mutation testing to ensure code quality.
 
 ### Test Coverage
 
-**Frontend Tests (193 tests):**
+**Frontend Tests (241 tests):**
 
 - **Unit tests**: Utilities, hooks, and components
 - **Integration tests**: 11 end-to-end flow tests with MSW
@@ -367,12 +368,14 @@ The project includes comprehensive testing infrastructure with **332 tests total
 - **Testing Library** - React component testing with user-centric approach
 - **MSW** - Network-level API mocking for integration tests
 
-**Backend Tests (139 tests):**
+**Backend Tests (424 tests):**
 
 - **Service layer tests**: Color conversion, room hierarchy, motion sensors, statistics, WebSocket service
 - **Route tests**: API endpoint validation
 - **Session management tests**: Token handling and refresh logic
 - **Zone service tests**: Zone hierarchy and statistics
+- **Multi-client integration tests**: 10 tests for credential sharing flow
+- **Auth middleware tests**: 13 tests for credential extraction and storage
 
 **Test Quality:**
 
@@ -415,8 +418,12 @@ backend/test/
 │   ├── motionService.test.js       # 13 tests - Motion sensor parsing
 │   ├── statsService.test.js        # 10 tests - Dashboard statistics
 │   └── sessionManager.test.js      # 12 tests - Session management
+├── middleware/
+│   └── auth.test.js                # 13 tests - Credential extraction/storage
+├── integration/
+│   └── multiClient.test.js         # 10 tests - Multi-client credential sharing
 └── routes/
-    └── (various route tests)       # 27 tests - API endpoints
+    └── (various route tests)       # API endpoints
 ```
 
 ### Running Tests
@@ -550,6 +557,21 @@ The backend exposes a **simplified v1 REST API** that aggregates Hue API v2 data
   ```json
   Request: { "bridgeIp": "192.168.1.100", "username": "hue-username" }
   Response: { "sessionToken": "hue_sess_xyz789", "expiresIn": 86400, "bridgeIp": "..." }
+  ```
+
+- `POST /api/v1/auth/connect` - Connect using server-stored credentials (multi-client support)
+
+  ```json
+  Request: { "bridgeIp": "192.168.1.100" }
+  Response: { "sessionToken": "hue_sess_xyz789", "expiresIn": 86400, "bridgeIp": "..." }
+  Error 404: { "error": "No stored credentials", "requiresPairing": true }
+  ```
+
+- `GET /api/v1/auth/bridge-status` - Check if bridge has stored credentials
+
+  ```
+  Query: ?bridgeIp=192.168.1.100
+  Response: { "bridgeIp": "192.168.1.100", "hasCredentials": true }
   ```
 
 - `POST /api/v1/auth/refresh` - Refresh session token
@@ -762,14 +784,17 @@ PORT=8080 npm run start
 
 ## Version History
 
-### v3.0.0 (Current)
+### v1.0.0 (Current)
 
+- **Multi-client support** - Second client connects instantly using server-stored credentials (no re-pairing)
+- **Session restore improvements** - Validates session with server before showing dashboard, graceful fallbacks
+- **New auth endpoints** - `POST /connect` and `GET /bridge-status` for multi-client credential sharing
 - **Performance optimizations** - Backend caching for static resources (5-minute TTL), 15-second WebSocket polling
 - **Optimistic updates** - UI responds immediately to user actions without waiting for polling
 - **Brightness minimum** - Lights display minimum 5% when on (prevents 0% display artifacts)
 - **WebSocket cleanup** - Automatic cleanup of orphaned polling intervals, heartbeat monitoring, stale connection removal
 - **Stats endpoint** - New `/api/v1/stats/websocket` endpoint for debugging connection issues
-- **Test improvements** - 332 tests total (193 frontend + 139 backend)
+- **Test improvements** - 665 tests total (241 frontend + 424 backend) with multi-client integration tests
 
 ### v0.8.1
 

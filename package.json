@@ -1,7 +1,7 @@
 {
   "name": "philips-hue-connector",
   "private": true,
-  "version": "3.0.0",
+  "version": "1.0.0",
   "type": "module",
   "workspaces": [
     "frontend",

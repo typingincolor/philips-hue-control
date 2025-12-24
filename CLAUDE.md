@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Philips Hue Light Control** web application built as a monorepo with separated frontend (React) and backend (Express) workspaces. The app controls Philips Hue lights locally through the Hue Bridge API, featuring **true color display** with mathematical color space conversion, **information-dense UI** with brightness indicators and room statistics, **responsive design** optimized for iPhone 14+ and iPad, room organization, scene management, **MotionAware zone display** with real-time motion detection, and **WebSocket support** for live updates.
 
-**Architecture (v3.0.0):** Business logic resides in the backend, exposing a simplified v1 REST API with WebSocket support. The backend pre-computes colors, shadows, and statistics while pushing real-time updates via WebSocket, reducing frontend complexity by ~1,300 lines, API calls by 67-83%, and eliminating polling overhead. The legacy proxy has been completely removed in favor of controlled v1 endpoints. See `ARCHITECTURE_UPDATE.md` for migration details.
+**Architecture (v1.0.0):** Business logic resides in the backend, exposing a simplified v1 REST API with WebSocket support. The backend pre-computes colors, shadows, and statistics while pushing real-time updates via WebSocket, reducing frontend complexity by ~1,300 lines, API calls by 67-83%, and eliminating polling overhead. The legacy proxy has been completely removed in favor of controlled v1 endpoints. See `ARCHITECTURE_UPDATE.md` for migration details.
 
 **Performance Optimizations:**
 
@@ -466,9 +466,9 @@ getRoomLightStats(roomLights) {
 
 ### Test Organization
 
-The project includes comprehensive testing with **332 tests total** (139 backend + 193 frontend):
+The project includes comprehensive testing with **665 tests total** (424 backend + 241 frontend):
 
-**Backend Tests** (139 tests):
+**Backend Tests** (424 tests):
 
 ```
 backend/test/
@@ -477,13 +477,18 @@ backend/test/
 │   ├── roomService.test.js         # 23 tests - Room hierarchy, stats
 │   ├── motionService.test.js       # 13 tests - Motion sensor parsing
 │   ├── statsService.test.js        # 10 tests - Dashboard statistics
+│   ├── sessionManager.test.js      # 12 tests - Session + credential storage
 │   ├── websocketService.test.js    # 13 tests - WebSocket service
 │   └── zoneService.test.js         # 15 tests - Zone hierarchy, stats
+├── middleware/
+│   └── auth.test.js                # 13 tests - Credential extraction/storage
+├── integration/
+│   └── multiClient.test.js         # 10 tests - Multi-client credential sharing
 ├── utils/
-│   └── (colorConversion, validation)  # 39 tests - Utility functions
+│   └── (colorConversion, validation)  # Utility function tests
 ```
 
-**Frontend Tests** (193 tests):
+**Frontend Tests** (241 tests):
 
 ```
 frontend/src/

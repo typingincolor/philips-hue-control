@@ -20,6 +20,12 @@ export const openApiSpec = {
       1. **Session Token** (recommended): Get a session token from \`POST /api/v1/auth/session\`, then use \`Authorization: Bearer <token>\` header
       2. **Headers**: Use \`X-Bridge-IP\` and \`X-Hue-Username\` headers
       3. **Query Params** (legacy): Use \`bridgeIp\` and \`username\` query parameters
+
+      **Multi-Client Support:**
+      When one client pairs with a bridge, credentials are stored server-side. Other clients can then connect without re-pairing:
+      1. First client: \`POST /api/v1/auth/pair\` → \`POST /api/v1/auth/session\`
+      2. Subsequent clients: \`POST /api/v1/auth/connect\` (no pairing needed!)
+      3. Check availability: \`GET /api/v1/auth/bridge-status?bridgeIp=...\`
     `,
     contact: {
       name: 'API Support'
@@ -199,6 +205,188 @@ export const openApiSpec = {
     }
   },
   paths: {
+    '/auth/pair': {
+      post: {
+        summary: 'Pair with a Hue Bridge',
+        description:
+          'Initial pairing with a Hue Bridge. User must press the link button on the bridge before calling this endpoint.',
+        tags: ['Authentication'],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['bridgeIp'],
+                properties: {
+                  bridgeIp: {
+                    type: 'string',
+                    example: '192.168.1.100',
+                    description: 'Your Hue Bridge IP address'
+                  },
+                  appName: {
+                    type: 'string',
+                    example: 'hue_control_app',
+                    description: 'Application name for the Hue Bridge (optional)'
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Pairing successful',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    username: {
+                      type: 'string',
+                      example: 'KZLwQGOGUMwtFMpYMeRqA9gzSuYoRtRgVThntanx',
+                      description: 'Generated Hue API key'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          400: {
+            description: 'Link button not pressed or invalid bridge IP',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: 'link button not pressed' },
+                    type: { type: 'integer', example: 101 }
+                  }
+                }
+              }
+            }
+          },
+          504: {
+            description: 'Bridge connection timeout',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+          }
+        }
+      }
+    },
+    '/auth/connect': {
+      post: {
+        summary: 'Connect using stored credentials',
+        description:
+          'Connect to a bridge using server-side stored credentials. Use this when another client has already paired with the bridge. No pairing needed!',
+        tags: ['Authentication'],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['bridgeIp'],
+                properties: {
+                  bridgeIp: {
+                    type: 'string',
+                    example: '192.168.1.100',
+                    description: 'Your Hue Bridge IP address'
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Connected successfully using stored credentials',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    sessionToken: { type: 'string', example: 'hue_sess_abc123...' },
+                    expiresIn: { type: 'integer', example: 86400 },
+                    bridgeIp: { type: 'string', example: '192.168.1.100' }
+                  }
+                }
+              }
+            }
+          },
+          401: {
+            description: 'Stored credentials are no longer valid',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: {
+                      type: 'string',
+                      example: 'Stored credentials are no longer valid. Pairing required.'
+                    },
+                    requiresPairing: { type: 'boolean', example: true }
+                  }
+                }
+              }
+            }
+          },
+          404: {
+            description: 'No stored credentials for this bridge',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: {
+                      type: 'string',
+                      example: 'No stored credentials for this bridge. Pairing required.'
+                    },
+                    requiresPairing: { type: 'boolean', example: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/auth/bridge-status': {
+      get: {
+        summary: 'Check if bridge has stored credentials',
+        description: 'Check whether the server has stored credentials for a specific bridge IP',
+        tags: ['Authentication'],
+        parameters: [
+          {
+            name: 'bridgeIp',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Bridge IP to check',
+            example: '192.168.1.100'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Bridge status',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    bridgeIp: { type: 'string', example: '192.168.1.100' },
+                    hasCredentials: { type: 'boolean', example: true }
+                  }
+                }
+              }
+            }
+          },
+          400: {
+            description: 'Missing bridgeIp parameter',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+          }
+        }
+      }
+    },
     '/auth/session': {
       post: {
         summary: 'Create a new session',
@@ -302,6 +490,67 @@ export const openApiSpec = {
                   properties: {
                     success: { type: 'boolean', example: true },
                     message: { type: 'string', example: 'Session revoked' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/auth/refresh': {
+      post: {
+        summary: 'Refresh session token',
+        description: 'Extend the expiration of your current session by getting a new token',
+        tags: ['Authentication'],
+        security: [{ BearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Session refreshed',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    sessionToken: { type: 'string', example: 'hue_sess_new123...' },
+                    expiresIn: { type: 'integer', example: 86400 },
+                    bridgeIp: { type: 'string', example: '192.168.1.100' }
+                  }
+                }
+              }
+            }
+          },
+          401: {
+            description: 'Invalid or expired session',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+          }
+        }
+      }
+    },
+    '/auth/stats': {
+      get: {
+        summary: 'Get session statistics',
+        description: 'Get session statistics for monitoring and debugging',
+        tags: ['Authentication'],
+        responses: {
+          200: {
+            description: 'Session statistics',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    activeSessions: { type: 'integer', example: 5 },
+                    oldestSession: {
+                      type: 'integer',
+                      example: 3600000,
+                      description: 'Age in milliseconds'
+                    },
+                    newestSession: {
+                      type: 'integer',
+                      example: 300000,
+                      description: 'Age in milliseconds'
+                    }
                   }
                 }
               }
