@@ -500,6 +500,7 @@ test.describe('Zones View Layout', () => {
         const zoneCount = await zoneItems.count();
 
         for (let i = 0; i < zoneCount; i++) {
+          const sceneIcons = zoneItems.nth(i).locator('.scene-icons');
           const sceneButtons = zoneItems.nth(i).locator('.scene-icon-button');
           const sceneCount = await sceneButtons.count();
 
@@ -515,6 +516,21 @@ test.describe('Zones View Layout', () => {
               expect(box.width).toBeGreaterThanOrEqual(44);
               expect(box.height).toBeGreaterThanOrEqual(44);
             }
+          }
+
+          // Scroll to the last button and verify it becomes visible
+          const lastButton = sceneButtons.nth(5);
+          await lastButton.scrollIntoViewIfNeeded();
+
+          // After scrolling, the last button should be within the scene-icons container bounds
+          const containerBox = await sceneIcons.boundingBox();
+          const lastButtonBox = await lastButton.boundingBox();
+
+          if (containerBox && lastButtonBox) {
+            // The last button's right edge should be visible (within or near container)
+            expect(lastButtonBox.x + lastButtonBox.width).toBeLessThanOrEqual(
+              containerBox.x + containerBox.width + 5 // 5px tolerance
+            );
           }
         }
       });

@@ -2275,20 +2275,25 @@ body.dark-theme {
     align-items: flex-start;
   }
 
+  .zone-item-dark {
+    overflow: visible;
+  }
+
   .zone-item-controls {
     width: 100%;
-    justify-content: space-between;
     margin-top: 12px;
+    display: flex;
+    gap: 10px;
   }
 
   .zone-item-controls .scene-icons {
-    flex: 1;
-    min-width: 0;
-    overflow-x: auto;
+    /* Calculate width: 100% minus toggle button (~70px) minus gap (10px) */
+    width: calc(100% - 80px);
+    max-width: calc(100% - 80px);
+    overflow-x: scroll;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding-right: 10px;
   }
 
   .zone-item-controls .scene-icons::-webkit-scrollbar {
