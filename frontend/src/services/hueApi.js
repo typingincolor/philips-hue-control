@@ -5,6 +5,21 @@ const logger = createLogger('HueApi');
 // Use relative URLs - works with Vite proxy in dev and same-origin in production
 const PROXY_URL = '';
 
+// Check if demo mode from URL (cached for performance)
+let demoModeCache = null;
+const isDemoMode = () => {
+  if (demoModeCache === null) {
+    const params = new URLSearchParams(window.location.search);
+    demoModeCache = params.get('demo') === 'true';
+  }
+  return demoModeCache;
+};
+
+// Reset cache when needed (e.g., for testing)
+export const resetDemoModeCache = () => {
+  demoModeCache = null;
+};
+
 /**
  * Centralized request handler for Hue API calls
  * Handles HTTP errors, V2 API errors, and network errors consistently
@@ -15,12 +30,17 @@ const PROXY_URL = '';
  */
 const request = async (url, options = {}, sessionToken = null) => {
   try {
+    // Initialize headers object
+    options.headers = options.headers || {};
+
+    // Add demo mode header if in demo mode
+    if (isDemoMode()) {
+      options.headers['X-Demo-Mode'] = 'true';
+    }
+
     // Add session token to Authorization header if provided
     if (sessionToken) {
-      options.headers = {
-        ...options.headers,
-        Authorization: `Bearer ${sessionToken}`,
-      };
+      options.headers.Authorization = `Bearer ${sessionToken}`;
     }
 
     const response = await fetch(url, options);
@@ -89,16 +109,22 @@ export const hueApi = {
 
   /**
    * Connect to a bridge using stored server-side credentials (no pairing needed)
+   * In demo mode, returns a demo session automatically
    * @param {string} bridgeIp - The IP address of the bridge
    * @returns {Promise<Object>} Session info with token, or throws if pairing required
    */
   async connect(bridgeIp) {
     const url = `${PROXY_URL}/api/v1/auth/connect`;
-    logger.info('connect: trying stored credentials', { bridgeIp });
+    logger.info('connect: trying stored credentials', { bridgeIp, demoMode: isDemoMode() });
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (isDemoMode()) {
+      headers['X-Demo-Mode'] = 'true';
+    }
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ bridgeIp }),
     });
 
@@ -272,5 +298,81 @@ export const hueApi = {
   async revokeSession(sessionToken) {
     const url = `${PROXY_URL}/api/v1/auth/session`;
     return request(url, { method: 'DELETE' }, sessionToken);
+  },
+
+  // ============================================================
+  // Settings API Methods
+  // ============================================================
+
+  /**
+   * Get current settings (location, units)
+   * @param {string} sessionToken - Session token
+   * @returns {Promise<Object>} Settings { location, units }
+   */
+  async getSettings(sessionToken) {
+    const url = `${PROXY_URL}/api/v1/settings`;
+    return request(url, {}, sessionToken);
+  },
+
+  /**
+   * Update settings
+   * @param {string} sessionToken - Session token
+   * @param {Object} settings - Settings to update { location, units }
+   * @returns {Promise<Object>} Updated settings
+   */
+  async updateSettings(sessionToken, settings) {
+    const url = `${PROXY_URL}/api/v1/settings`;
+    return request(
+      url,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      },
+      sessionToken
+    );
+  },
+
+  /**
+   * Update location setting
+   * @param {string} sessionToken - Session token
+   * @param {Object} location - Location { lat, lon, name }
+   * @returns {Promise<Object>} Updated settings
+   */
+  async updateLocation(sessionToken, location) {
+    const url = `${PROXY_URL}/api/v1/settings/location`;
+    return request(
+      url,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(location),
+      },
+      sessionToken
+    );
+  },
+
+  /**
+   * Clear location setting
+   * @param {string} sessionToken - Session token
+   * @returns {Promise<Object>} Updated settings
+   */
+  async clearLocation(sessionToken) {
+    const url = `${PROXY_URL}/api/v1/settings/location`;
+    return request(url, { method: 'DELETE' }, sessionToken);
+  },
+
+  // ============================================================
+  // Weather API Methods
+  // ============================================================
+
+  /**
+   * Get weather for current location
+   * @param {string} sessionToken - Session token
+   * @returns {Promise<Object>} Weather data { current, forecast }
+   */
+  async getWeather(sessionToken) {
+    const url = `${PROXY_URL}/api/v1/weather`;
+    return request(url, {}, sessionToken);
   },
 };

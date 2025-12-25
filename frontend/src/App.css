@@ -1888,8 +1888,12 @@ body.dark-theme {
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --available-height: calc(100vh - var(--toolbar-height) - var(--nav-height) - var(--safe-top) - var(--safe-bottom));
-  --available-width: calc(100vw - var(--min-edge-spacing) * 2 - var(--safe-left) - var(--safe-right));
+  --available-height: calc(
+    100vh - var(--toolbar-height) - var(--nav-height) - var(--safe-top) - var(--safe-bottom)
+  );
+  --available-width: calc(
+    100vw - var(--min-edge-spacing) * 2 - var(--safe-left) - var(--safe-right)
+  );
   /* Reserve space for vertical centering (half above, half below) */
   --centering-buffer: 32px;
   --grid-content-height: calc(var(--available-height) - var(--centering-buffer));
@@ -2306,7 +2310,7 @@ body.dark-theme {
   }
 
   /* Hide demo mode label on mobile */
-  .toolbar-status[style*="color"] {
+  .toolbar-status[style*='color'] {
     display: none;
   }
 
@@ -2636,7 +2640,9 @@ body.dark-theme {
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: 10px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .toolbar-settings svg {

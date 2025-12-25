@@ -77,11 +77,7 @@ export const TopToolbar = ({
             onClick={onOpenSettings}
           />
           {showWeatherTooltip && weather && location && (
-            <WeatherTooltip
-              weather={weather}
-              location={location}
-              units={units}
-            />
+            <WeatherTooltip weather={weather} location={location} units={units} />
           )}
         </div>
 
@@ -120,12 +116,14 @@ TopToolbar.propTypes = {
       weatherCode: PropTypes.number,
       windSpeed: PropTypes.number,
     }),
-    forecast: PropTypes.arrayOf(PropTypes.shape({
-      date: PropTypes.string,
-      weatherCode: PropTypes.number,
-      high: PropTypes.number,
-      low: PropTypes.number,
-    })),
+    forecast: PropTypes.arrayOf(
+      PropTypes.shape({
+        date: PropTypes.string,
+        weatherCode: PropTypes.number,
+        high: PropTypes.number,
+        low: PropTypes.number,
+      })
+    ),
   }),
   weatherLoading: PropTypes.bool,
   weatherError: PropTypes.string,

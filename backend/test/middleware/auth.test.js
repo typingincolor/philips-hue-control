@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { extractCredentials, requireSession } from '../../middleware/auth.js';
+import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../../services/mockData.js';
 
 // Mock sessionManager
 vi.mock('../../services/sessionManager.js', () => ({
@@ -187,6 +188,88 @@ describe('Auth Middleware', () => {
       requireSession(req, res, next);
 
       expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+  });
+
+  describe('demo mode handling', () => {
+    describe('extractCredentials', () => {
+      it('should set demo credentials when demoMode is true', () => {
+        req.demoMode = true;
+
+        extractCredentials(req, res, next);
+
+        expect(req.hue).toEqual({
+          bridgeIp: DEMO_BRIDGE_IP,
+          username: DEMO_USERNAME,
+          authMethod: 'demo',
+        });
+        expect(next).toHaveBeenCalledWith();
+      });
+
+      it('should skip session lookup when demoMode is true', () => {
+        req.demoMode = true;
+        req.headers.authorization = `Bearer ${sessionToken}`;
+
+        extractCredentials(req, res, next);
+
+        expect(sessionManager.getSession).not.toHaveBeenCalled();
+        expect(req.hue.authMethod).toBe('demo');
+      });
+
+      it('should not store demo credentials in session manager', () => {
+        req.demoMode = true;
+
+        extractCredentials(req, res, next);
+
+        expect(sessionManager.storeBridgeCredentials).not.toHaveBeenCalled();
+      });
+
+      it('should use real auth when demoMode is false', () => {
+        req.demoMode = false;
+        req.headers['x-bridge-ip'] = bridgeIp;
+        req.headers['x-hue-username'] = username;
+        sessionManager.hasBridgeCredentials.mockReturnValue(true);
+
+        extractCredentials(req, res, next);
+
+        expect(req.hue.authMethod).toBe('headers');
+      });
+    });
+
+    describe('requireSession', () => {
+      it('should set demo credentials when demoMode is true', () => {
+        req.demoMode = true;
+
+        requireSession(req, res, next);
+
+        expect(req.hue).toEqual({
+          bridgeIp: DEMO_BRIDGE_IP,
+          username: DEMO_USERNAME,
+          authMethod: 'demo',
+          sessionToken: 'demo-session',
+        });
+        expect(next).toHaveBeenCalledWith();
+      });
+
+      it('should skip session validation when demoMode is true', () => {
+        req.demoMode = true;
+
+        requireSession(req, res, next);
+
+        expect(sessionManager.getSession).not.toHaveBeenCalled();
+      });
+
+      it('should use real session when demoMode is false', () => {
+        req.demoMode = false;
+        req.headers.authorization = `Bearer ${sessionToken}`;
+        sessionManager.getSession.mockReturnValue({ bridgeIp, username });
+        sessionManager.hasBridgeCredentials.mockReturnValue(true);
+
+        requireSession(req, res, next);
+
+        expect(sessionManager.getSession).toHaveBeenCalledWith(sessionToken);
+        expect(req.hue.authMethod).toBe('session');
+      });
     });
   });
 });

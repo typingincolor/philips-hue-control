@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import dashboardService from './dashboardService.js';
 import sessionManager from './sessionManager.js';
+import { DEMO_BRIDGE_IP, DEMO_USERNAME } from './mockData.js';
 import {
   WEBSOCKET_POLL_INTERVAL_MS,
   WEBSOCKET_HEARTBEAT_INTERVAL_MS,
@@ -191,13 +192,21 @@ class WebSocketService {
 
   /**
    * Handle client authentication
-   * Supports both session token and legacy bridgeIp/username auth
+   * Supports session token, demo mode, and legacy bridgeIp/username auth
    */
   async handleAuth(ws, data) {
     let bridgeIp, username;
 
-    // Method 1: Session token (preferred)
-    if (data.sessionToken) {
+    // Method 1: Demo mode (no credentials needed)
+    if (data.demoMode === true) {
+      bridgeIp = DEMO_BRIDGE_IP;
+      username = DEMO_USERNAME;
+      ws.authMethod = 'demo';
+      ws.demoMode = true;
+      logger.info('Client authenticated via demo mode');
+    }
+    // Method 2: Session token (preferred for real mode)
+    else if (data.sessionToken) {
       const session = sessionManager.getSession(data.sessionToken);
 
       if (!session) {
@@ -215,7 +224,7 @@ class WebSocketService {
       ws.authMethod = 'session';
       logger.info('Client authenticated via session token', { bridgeIp });
     }
-    // Method 2: Legacy bridgeIp + username
+    // Method 3: Legacy bridgeIp + username
     else if (data.bridgeIp && data.username) {
       bridgeIp = data.bridgeIp;
       username = data.username;
@@ -227,7 +236,8 @@ class WebSocketService {
       ws.send(
         JSON.stringify({
           type: 'error',
-          message: 'Missing authentication: provide sessionToken OR (bridgeIp + username)',
+          message:
+            'Missing authentication: provide demoMode, sessionToken, or (bridgeIp + username)',
         })
       );
       return;

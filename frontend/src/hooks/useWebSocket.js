@@ -3,6 +3,12 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('WebSocket');
 
+// Check if demo mode from URL
+const isDemoMode = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('demo') === 'true';
+};
+
 /**
  * WebSocket hook for real-time dashboard updates
  * Replaces polling with push-based updates from backend
@@ -116,15 +122,20 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
   );
 
   const connect = useCallback(() => {
-    if (!enabled || !sessionToken) return;
-    if (isLegacyMode && !username) return;
+    const demoMode = isDemoMode();
+
+    // In demo mode, we don't need sessionToken
+    if (!enabled) return;
+    if (!demoMode && !sessionToken) return;
+    if (!demoMode && isLegacyMode && !username) return;
 
     // Determine WebSocket URL (same host as current page)
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const wsUrl = `${protocol}//${host}/api/v1/ws`;
 
-    logger.info('Connecting to', wsUrl, isLegacyMode ? '(legacy mode)' : '(session mode)');
+    const modeStr = demoMode ? '(demo mode)' : isLegacyMode ? '(legacy mode)' : '(session mode)';
+    logger.info('Connecting to', wsUrl, modeStr);
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -138,8 +149,16 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
       hasConnectedOnce.current = true;
       lastPongTime.current = Date.now();
 
-      // Authenticate
-      if (isLegacyMode) {
+      // Authenticate based on mode
+      if (demoMode) {
+        // Demo mode: no credentials needed
+        ws.send(
+          JSON.stringify({
+            type: 'auth',
+            demoMode: true,
+          })
+        );
+      } else if (isLegacyMode) {
         // Legacy: send bridgeIp + username
         ws.send(
           JSON.stringify({
@@ -204,7 +223,12 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
 
   // Connect on mount and when credentials change
   useEffect(() => {
-    if (enabled && sessionToken) {
+    const demoMode = isDemoMode();
+
+    // In demo mode, connect immediately without needing credentials
+    if (enabled && demoMode) {
+      connect();
+    } else if (enabled && sessionToken) {
       if (!isLegacyMode || (isLegacyMode && username)) {
         connect();
       }

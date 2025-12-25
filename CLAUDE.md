@@ -21,20 +21,106 @@ This is a **Philips Hue Light Control** web application built as a monorepo with
 **Connection Status Indicator:**
 
 The TopToolbar displays real-time connection status with three states:
+
 - **Green dot + "Connected"**: WebSocket active and healthy
 - **Amber pulsing dot + "Reconnecting..."**: Connection lost, attempting to reconnect
 - **Red dot + "Disconnected"**: All reconnection attempts failed
 
-**Weather Forecast Feature:**
+**Demo Mode (Backend-Based):**
+
+Demo mode allows users to try the app without a real Hue Bridge. The demo is implemented entirely in the backend, enabling any client (web, mobile, CLI) to use it via a simple header.
+
+**How to use:**
+
+- Navigate to `http://localhost:5173/?demo=true` (development) or `http://server:3001/?demo=true` (production)
+- Frontend automatically detects the URL parameter and sends `X-Demo-Mode: true` header to all API requests
+- WebSocket connections authenticate with `{ type: 'auth', demoMode: true }`
+
+**Architecture:**
+
+```
+Request with X-Demo-Mode: true header
+         ↓
+┌─────────────────────────────┐
+│  demoMode middleware        │  ← Detects header, sets req.demoMode = true
+└─────────────────────────────┘
+         ↓
+┌─────────────────────────────┐
+│  extractCredentials         │  ← Uses demo credentials automatically
+└─────────────────────────────┘
+         ↓
+┌─────────────────────────────┐
+│  getHueClientForBridge()    │  ← Returns MockHueClient for demo
+└─────────────────────────────┘
+         ↓
+     Mock Data (persisted in memory)
+```
+
+**Key backend files:**
+
+- `backend/middleware/demoMode.js` - Detects `X-Demo-Mode: true` header
+- `backend/services/mockData.js` - Demo data (2 rooms, 6 lights, 4 scenes, 2 zones, 2 motion zones)
+- `backend/services/mockHueClient.js` - Mock implementation of HueClient (same interface)
+- `backend/services/hueClientFactory.js` - Factory returning real or mock HueClient
+- `backend/services/settingsService.js` - Per-session settings (location, units)
+- `backend/services/weatherService.js` - Weather API (mock for demo, real for production)
+
+**Demo mode features:**
+
+- State changes persist in memory (reset on server restart)
+- Toggle lights on/off, change brightness
+- Activate scenes
+- View motion zone status
+- Weather displays mock London data
+- Settings API returns demo defaults
+
+**API endpoints in demo mode:**
+| Endpoint | Demo Behavior |
+|----------|---------------|
+| `POST /api/v1/auth/connect` | Returns demo session automatically |
+| `GET /api/v1/dashboard` | Returns mock dashboard data |
+| `PUT /api/v1/lights/:id` | Updates mock light state |
+| `PUT /api/v1/rooms/:id/lights` | Updates all mock room lights |
+| `POST /api/v1/scenes/:id/activate` | Activates scene on mock lights |
+| `GET /api/v1/settings` | Returns mock settings (London, celsius) |
+| `GET /api/v1/weather` | Returns mock weather data |
+| WebSocket | Pushes mock updates every 15s |
+
+**Weather & Settings API (Backend):**
+
+Weather and settings are now managed by the backend:
+
+**Settings API:**
+
+- `GET /api/v1/settings` - Get current settings `{ location, units }`
+- `PUT /api/v1/settings` - Update all settings
+- `PUT /api/v1/settings/location` - Update location `{ lat, lon, name }`
+- `DELETE /api/v1/settings/location` - Clear location
+
+**Weather API:**
+
+- `GET /api/v1/weather` - Get weather for session's stored location
+- Returns 404 if no location is set
+- Demo mode returns mock weather data
+
+Key backend files:
+
+- `backend/services/settingsService.js` - Per-session settings storage
+- `backend/services/weatherService.js` - Open-Meteo integration with caching
+- `backend/routes/v1/settings.js` - Settings REST endpoints
+- `backend/routes/v1/weather.js` - Weather REST endpoint
+
+**Weather Forecast Feature (Legacy Frontend):**
 
 The TopToolbar displays current weather and a 5-day forecast using the Open-Meteo API:
+
 - **Weather Display**: Shows weather icon + temperature + location name (e.g., "☀️ 22° London")
 - **Weather Tooltip**: Appears on hover with current conditions, wind speed, and 5-day forecast
 - **Settings Drawer**: Hamburger menu opens settings for location detection and unit toggle (C/F)
 - **Location Detection**: Uses browser geolocation + Nominatim reverse geocoding for city names
-- **Demo Mode**: Uses mock weather data when in demo mode
 
-Key files:
+Key files (frontend, transitioning to backend):
+
 - `frontend/src/hooks/useSettings.js` - Manages units preference (celsius/fahrenheit) with localStorage
 - `frontend/src/hooks/useLocation.js` - Handles geolocation detection and persistence
 - `frontend/src/hooks/useWeather.js` - Fetches weather data with 15-minute polling
@@ -288,13 +374,21 @@ fetch('/api/hue/clip/v2/resource/light?bridgeIp={ip}', {
 
 - **localStorage**: Persists bridgeIp and username across sessions (keys from `constants/storage.js`)
 - **useHueBridge hook**: Manages bridge connection state
-- **useHueApi hook**: Selects between real and mock API based on demo mode
-- **useDemoMode hook**: Detects demo mode from URL parameters
+- **useDemoMode hook**: Detects demo mode from URL parameter (?demo=true) for UI badge
 - **usePolling hook**: Reusable interval-based polling with cleanup
-- **hueApi service**: All API calls go through this service layer
-- **mockData service**: Demo mode mock data (10 rooms, 35 lights, 14 scenes, 7 zones, 4 motion zones)
+- **hueApi service**: All API calls go through this service layer; adds `X-Demo-Mode: true` header when in demo mode
+- **useWebSocket hook**: Real-time updates; sends `{ type: 'auth', demoMode: true }` when in demo mode
 - **Utilities**: Pure functions for data transformation (color, rooms, validation, motion sensors)
 - **Constants**: Centralized configuration values (polling intervals, storage keys, colors, messages, UI text)
+
+**Backend Demo Mode Flow:**
+
+1. Frontend detects `?demo=true` URL parameter
+2. `hueApi.js` sends `X-Demo-Mode: true` header with all requests
+3. `useWebSocket.js` sends `{ type: 'auth', demoMode: true }` for WebSocket auth
+4. Backend middleware sets `req.demoMode = true`
+5. `hueClientFactory.js` returns `MockHueClient` instead of real `HueClient`
+6. Mock data is returned from `mockData.js` (state persists in memory)
 
 #### UI Text Constants
 
@@ -876,14 +970,14 @@ The MotionAware zones feature is **NOT** available through traditional motion se
 │   │   │   ├── uiText.js                # UI text constants
 │   │   │   └── weather.js               # Weather codes and config
 │   │   ├── services/
-│   │   │   ├── hueApi.js                # All API calls (v2 API only)
-│   │   │   ├── mockData.js              # Demo mode mock data
+│   │   │   ├── hueApi.js                # All API calls; adds X-Demo-Mode header
+│   │   │   ├── mockData.js              # (legacy) Frontend mock data
 │   │   │   ├── weatherApi.js            # Open-Meteo API integration
-│   │   │   └── mockWeatherData.js       # Demo mode weather data
+│   │   │   └── mockWeatherData.js       # (legacy) Frontend mock weather
 │   │   ├── hooks/                       # Custom React hooks (all tested)
 │   │   │   ├── useHueBridge.js          # Bridge connection state
-│   │   │   ├── useDemoMode.js           # Demo mode detection
-│   │   │   ├── useHueApi.js             # API selection (real vs mock)
+│   │   │   ├── useDemoMode.js           # Demo mode detection (URL param)
+│   │   │   ├── useWebSocket.js          # WebSocket with demo mode auth
 │   │   │   ├── usePolling.js            # Reusable polling hook
 │   │   │   ├── useSettings.js           # Weather settings persistence
 │   │   │   ├── useLocation.js           # Geolocation detection
@@ -892,7 +986,43 @@ The MotionAware zones feature is **NOT** available through traditional motion se
 │   │       └── setup.js                 # Global test setup
 │   └── vite.config.js                   # Reads config.json, sets up proxy
 └── backend/
-    ├── server.js                        # Express proxy + static file server
+    ├── server.js                        # Express server + static files
+    ├── middleware/
+    │   ├── auth.js                      # Session & demo mode auth
+    │   └── demoMode.js                  # X-Demo-Mode header detection
+    ├── services/
+    │   ├── hueClient.js                 # Real Hue Bridge client
+    │   ├── mockHueClient.js             # Mock client for demo mode
+    │   ├── mockData.js                  # Demo data (lights, rooms, etc.)
+    │   ├── hueClientFactory.js          # Returns real or mock client
+    │   ├── dashboardService.js          # Dashboard data aggregation
+    │   ├── roomService.js               # Room hierarchy building
+    │   ├── zoneService.js               # Zone hierarchy building
+    │   ├── motionService.js             # Motion zone handling
+    │   ├── statsService.js              # Statistics calculation
+    │   ├── sessionManager.js            # Session token management
+    │   ├── settingsService.js           # Per-session settings
+    │   ├── weatherService.js            # Weather API with caching
+    │   └── websocketService.js          # Real-time updates
+    ├── routes/v1/
+    │   ├── index.js                     # Route aggregator
+    │   ├── auth.js                      # Auth endpoints
+    │   ├── dashboard.js                 # Dashboard endpoint
+    │   ├── lights.js                    # Light control
+    │   ├── rooms.js                     # Room light control
+    │   ├── zones.js                     # Zone light control
+    │   ├── scenes.js                    # Scene activation
+    │   ├── settings.js                  # Settings API
+    │   └── weather.js                   # Weather API
+    ├── utils/
+    │   ├── colorConversion.js           # Color processing
+    │   ├── stateConversion.js           # State format conversion
+    │   ├── validation.js                # Input validation
+    │   ├── errors.js                    # Custom error classes
+    │   └── logger.js                    # Logging utility
+    ├── constants/
+    │   ├── timings.js                   # Intervals and timeouts
+    │   └── errorMessages.js             # Error message constants
     └── scripts/
         └── copy-frontend.js             # Build script for deployment
 ```

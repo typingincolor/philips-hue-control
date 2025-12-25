@@ -1,5 +1,5 @@
 import express from 'express';
-import hueClient from '../../services/hueClient.js';
+import { getHueClient } from '../../services/hueClientFactory.js';
 import { enrichLight } from '../../utils/colorConversion.js';
 import roomService from '../../services/roomService.js';
 import statsService from '../../services/statsService.js';
@@ -18,6 +18,7 @@ const router = express.Router();
 router.get('/', extractCredentials, async (req, res, next) => {
   try {
     const { bridgeIp, username } = req.hue;
+    const hueClient = getHueClient(req);
 
     logger.info('Fetching data', { bridgeIp, authMethod: req.hue.authMethod });
 

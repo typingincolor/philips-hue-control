@@ -27,25 +27,13 @@ describe('WeatherTooltip', () => {
 
   describe('current weather section', () => {
     it('should display location name', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       expect(screen.getByText('London')).toBeInTheDocument();
     });
 
     it('should display current temperature', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       // Check the main temp display has the current temperature
       const mainTemp = screen.getByText('22°', { selector: '.weather-tooltip__temp-main' });
@@ -53,13 +41,7 @@ describe('WeatherTooltip', () => {
     });
 
     it('should display wind speed', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       expect(screen.getByText(/15/)).toBeInTheDocument();
     });
@@ -67,38 +49,20 @@ describe('WeatherTooltip', () => {
 
   describe('forecast section', () => {
     it('should display forecast heading', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       expect(screen.getByText(UI_TEXT.WEATHER_FORECAST)).toBeInTheDocument();
     });
 
     it('should display 5 forecast days', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       const forecastItems = screen.getAllByTestId('forecast-day');
       expect(forecastItems).toHaveLength(5);
     });
 
     it('should display high and low temperatures for each day', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       // Check forecast has high/low temp elements
       const highTemps = screen.getAllByText(/\d+°/, { selector: '.weather-tooltip__day-high' });
@@ -108,13 +72,7 @@ describe('WeatherTooltip', () => {
     });
 
     it('should display day names', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       // Should have day abbreviations
       const forecastItems = screen.getAllByTestId('forecast-day');
@@ -125,11 +83,7 @@ describe('WeatherTooltip', () => {
   describe('no weather data', () => {
     it('should render nothing when no weather data', () => {
       const { container } = render(
-        <WeatherTooltip
-          weather={null}
-          location={mockLocation}
-          units="celsius"
-        />
+        <WeatherTooltip weather={null} location={mockLocation} units="celsius" />
       );
 
       expect(container.firstChild).toBeNull();
@@ -137,11 +91,7 @@ describe('WeatherTooltip', () => {
 
     it('should render nothing when no location', () => {
       const { container } = render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={null}
-          units="celsius"
-        />
+        <WeatherTooltip weather={mockWeather} location={null} units="celsius" />
       );
 
       expect(container.firstChild).toBeNull();
@@ -150,25 +100,13 @@ describe('WeatherTooltip', () => {
 
   describe('units display', () => {
     it('should show C for celsius', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="celsius"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="celsius" />);
 
       expect(screen.getByText(/km\/h/)).toBeInTheDocument();
     });
 
     it('should show mph for fahrenheit', () => {
-      render(
-        <WeatherTooltip
-          weather={mockWeather}
-          location={mockLocation}
-          units="fahrenheit"
-        />
-      );
+      render(<WeatherTooltip weather={mockWeather} location={mockLocation} units="fahrenheit" />);
 
       expect(screen.getByText(/mph/)).toBeInTheDocument();
     });

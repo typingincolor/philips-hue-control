@@ -5,7 +5,7 @@ export const openApiSpec = {
   openapi: '3.0.0',
   info: {
     title: 'Philips Hue Control API',
-    version: '1.0.0',
+    version: '1.4.0',
     description: `
       A simplified, client-friendly API for controlling Philips Hue lights.
 
@@ -15,11 +15,20 @@ export const openApiSpec = {
       - Room hierarchy already built
       - Session-based authentication
       - Header-based or query parameter auth
+      - Demo mode for testing without a real bridge
+      - Settings and weather API
 
       **Authentication Methods:**
       1. **Session Token** (recommended): Get a session token from \`POST /api/v1/auth/session\`, then use \`Authorization: Bearer <token>\` header
-      2. **Headers**: Use \`X-Bridge-IP\` and \`X-Hue-Username\` headers
-      3. **Query Params** (legacy): Use \`bridgeIp\` and \`username\` query parameters
+      2. **Demo Mode**: Add \`X-Demo-Mode: true\` header to use mock data (no bridge required)
+      3. **Headers**: Use \`X-Bridge-IP\` and \`X-Hue-Username\` headers
+      4. **Query Params** (legacy): Use \`bridgeIp\` and \`username\` query parameters
+
+      **Demo Mode:**
+      Try the API without a Hue Bridge by adding \`X-Demo-Mode: true\` header to any request.
+      - Returns mock data (2 rooms, 6 lights, 4 scenes, 2 zones)
+      - State changes persist in memory (reset on server restart)
+      - WebSocket: authenticate with \`{ type: 'auth', demoMode: true }\`
 
       **Multi-Client Support:**
       When one client pairs with a bridge, credentials are stored server-side. Other clients can then connect without re-pairing:
@@ -47,6 +56,12 @@ export const openApiSpec = {
         scheme: 'bearer',
         bearerFormat: 'Session Token',
         description: 'Session token from POST /api/v1/auth/session',
+      },
+      DemoMode: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Demo-Mode',
+        description: 'Set to "true" to use demo mode (no bridge required)',
       },
       HeaderAuth: {
         type: 'apiKey',
@@ -200,6 +215,76 @@ export const openApiSpec = {
           enabled: { type: 'boolean', example: true },
           reachable: { type: 'boolean', example: true },
           lastChanged: { type: 'string', format: 'date-time', example: '2025-12-23T10:30:00Z' },
+        },
+      },
+      Location: {
+        type: 'object',
+        description: 'Geographic location for weather',
+        properties: {
+          lat: { type: 'number', example: 51.5074, description: 'Latitude' },
+          lon: { type: 'number', example: -0.1278, description: 'Longitude' },
+          name: { type: 'string', example: 'London', description: 'Location name' },
+        },
+        required: ['lat', 'lon'],
+      },
+      Settings: {
+        type: 'object',
+        description: 'User settings for the session',
+        properties: {
+          location: {
+            oneOf: [{ $ref: '#/components/schemas/Location' }, { type: 'null' }],
+            description: 'Location for weather (null if not set)',
+          },
+          units: {
+            type: 'string',
+            enum: ['celsius', 'fahrenheit'],
+            example: 'celsius',
+            description: 'Temperature unit preference',
+          },
+        },
+      },
+      WeatherCurrent: {
+        type: 'object',
+        description: 'Current weather conditions',
+        properties: {
+          temperature: {
+            type: 'number',
+            example: 15,
+            description: 'Temperature in configured units',
+          },
+          condition: { type: 'string', example: 'Partly cloudy' },
+          humidity: { type: 'number', example: 65, description: 'Humidity percentage' },
+          windSpeed: { type: 'number', example: 12, description: 'Wind speed in km/h' },
+          icon: {
+            type: 'string',
+            example: 'partly-cloudy',
+            description: 'Weather icon identifier',
+          },
+        },
+      },
+      WeatherForecast: {
+        type: 'object',
+        description: 'Daily weather forecast',
+        properties: {
+          date: { type: 'string', format: 'date', example: '2025-01-15' },
+          high: { type: 'number', example: 18, description: 'High temperature' },
+          low: { type: 'number', example: 10, description: 'Low temperature' },
+          condition: { type: 'string', example: 'Sunny' },
+          icon: { type: 'string', example: 'sunny' },
+        },
+      },
+      Weather: {
+        type: 'object',
+        description: 'Weather data with current conditions and forecast',
+        properties: {
+          current: { $ref: '#/components/schemas/WeatherCurrent' },
+          forecast: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/WeatherForecast' },
+            description: '5-day forecast',
+          },
+          location: { type: 'string', example: 'London', description: 'Location name' },
+          units: { type: 'string', enum: ['celsius', 'fahrenheit'], example: 'celsius' },
         },
       },
     },
@@ -810,7 +895,7 @@ export const openApiSpec = {
         summary: 'Get motion zones',
         description: 'Returns all MotionAware zones with parsed motion status',
         tags: ['Motion'],
-        security: [{ BearerAuth: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
         responses: {
           200: {
             description: 'Motion zones',
@@ -822,6 +907,143 @@ export const openApiSpec = {
                     zones: {
                       type: 'array',
                       items: { $ref: '#/components/schemas/MotionZone' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/settings': {
+      get: {
+        summary: 'Get current settings',
+        description: 'Returns the current settings for this session (location and units)',
+        tags: ['Settings'],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
+        responses: {
+          200: {
+            description: 'Current settings',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Settings' },
+              },
+            },
+          },
+          401: {
+            description: 'Missing or invalid credentials',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+          },
+        },
+      },
+      put: {
+        summary: 'Update settings',
+        description: 'Update all settings (location and/or units)',
+        tags: ['Settings'],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  location: { $ref: '#/components/schemas/Location' },
+                  units: { type: 'string', enum: ['celsius', 'fahrenheit'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Settings updated',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Settings' },
+              },
+            },
+          },
+          400: {
+            description: 'Invalid settings',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+          },
+        },
+      },
+    },
+    '/settings/location': {
+      put: {
+        summary: 'Update location',
+        description: 'Update just the location setting',
+        tags: ['Settings'],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Location' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Location updated',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Settings' },
+              },
+            },
+          },
+          400: {
+            description: 'Invalid location',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+          },
+        },
+      },
+      delete: {
+        summary: 'Clear location',
+        description: 'Remove the stored location',
+        tags: ['Settings'],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
+        responses: {
+          200: {
+            description: 'Location cleared',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Settings' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/weather': {
+      get: {
+        summary: 'Get weather data',
+        description:
+          'Returns current weather and 5-day forecast for the stored location. Returns 404 if no location is set.',
+        tags: ['Weather'],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
+        responses: {
+          200: {
+            description: 'Weather data',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Weather' },
+              },
+            },
+          },
+          404: {
+            description: 'No location set',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: {
+                      type: 'string',
+                      example: 'No location set. Use PUT /settings/location first.',
                     },
                   },
                 },

@@ -1,5 +1,5 @@
 import express from 'express';
-import hueClient from '../../services/hueClient.js';
+import { getHueClient } from '../../services/hueClientFactory.js';
 import roomService from '../../services/roomService.js';
 import { enrichLight } from '../../utils/colorConversion.js';
 import { extractCredentials } from '../../middleware/auth.js';
@@ -20,6 +20,7 @@ router.put('/:id/lights', extractCredentials, async (req, res, next) => {
     const { id: roomId } = req.params;
     const { bridgeIp, username } = req.hue;
     const state = req.body;
+    const hueClient = getHueClient(req);
 
     logger.info('Updating lights in room', { roomId, authMethod: req.hue.authMethod });
 

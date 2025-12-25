@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import v1Routes from './routes/v1/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { detectDemoMode } from './middleware/demoMode.js';
 import { openApiSpec } from './openapi.js';
 import websocketService from './services/websocketService.js';
 import { createLogger } from './utils/logger.js';
@@ -50,6 +51,9 @@ app.use(
   })
 );
 
+// Demo mode detection (before v1 routes)
+app.use('/api/v1', detectDemoMode);
+
 // Mount v1 API routes
 app.use('/api/v1', v1Routes);
 
@@ -84,6 +88,9 @@ app.get('/health', (req, res) => {
       'auth-pairing',
       'session-auth',
       'websocket',
+      'demo-mode',
+      'settings',
+      'weather',
     ],
   });
 });

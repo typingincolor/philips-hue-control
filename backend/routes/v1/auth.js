@@ -2,11 +2,12 @@ import express from 'express';
 import axios from 'axios';
 import https from 'https';
 import sessionManager from '../../services/sessionManager.js';
-import hueClient from '../../services/hueClient.js';
+import { getHueClient } from '../../services/hueClientFactory.js';
 import { requireSession } from '../../middleware/auth.js';
 import { MissingCredentialsError, BridgeConnectionError } from '../../utils/errors.js';
 import { createLogger } from '../../utils/logger.js';
 import { REQUEST_TIMEOUT_MS } from '../../constants/timings.js';
+import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../../services/mockData.js';
 
 const logger = createLogger('AUTH');
 const router = express.Router();
@@ -119,6 +120,17 @@ router.post('/pair', async (req, res, next) => {
  */
 router.post('/connect', async (req, res, next) => {
   try {
+    // Demo mode - return demo session immediately
+    if (req.demoMode) {
+      logger.info('Demo mode connect request');
+      return res.json({
+        sessionToken: 'demo-session',
+        expiresIn: 86400,
+        bridgeIp: DEMO_BRIDGE_IP,
+        demoMode: true,
+      });
+    }
+
     const { bridgeIp } = req.body;
 
     if (!bridgeIp) {
@@ -144,6 +156,7 @@ router.post('/connect', async (req, res, next) => {
     }
 
     // Validate credentials still work
+    const hueClient = getHueClient(req);
     try {
       await hueClient.getLights(bridgeIp, username);
     } catch {
@@ -211,6 +224,17 @@ router.get('/bridge-status', (req, res) => {
  */
 router.post('/session', async (req, res, next) => {
   try {
+    // Demo mode - return demo session immediately
+    if (req.demoMode) {
+      logger.info('Demo mode session request');
+      return res.json({
+        sessionToken: 'demo-session',
+        expiresIn: 86400,
+        bridgeIp: DEMO_BRIDGE_IP,
+        demoMode: true,
+      });
+    }
+
     const { bridgeIp, username } = req.body;
 
     // Validate request
@@ -225,6 +249,7 @@ router.post('/session', async (req, res, next) => {
     logger.info('Creating session', { bridgeIp });
 
     // Validate credentials by making a test request to the bridge
+    const hueClient = getHueClient(req);
     try {
       await hueClient.getLights(bridgeIp, username);
     } catch (error) {

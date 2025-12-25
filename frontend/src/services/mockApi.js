@@ -1,13 +1,7 @@
 // Mock API service for demo mode
 // Provides the same interface as hueApi.js but returns mock data
 
-import {
-  mockLights,
-  mockRooms,
-  mockDevices,
-  mockScenes,
-  mockDashboard,
-} from './mockData';
+import { mockLights, mockRooms, mockDevices, mockScenes, mockDashboard } from './mockData';
 
 // Helper function to simulate network delay
 function delay(ms) {

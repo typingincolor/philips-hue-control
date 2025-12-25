@@ -5,14 +5,7 @@ import { UI_TEXT } from '../../constants/uiText';
  * Weather display component for the toolbar
  * Shows icon, temperature, and location name
  */
-export const WeatherDisplay = ({
-  weather,
-  location,
-  isLoading,
-  error,
-  units,
-  onClick,
-}) => {
+export const WeatherDisplay = ({ weather, location, isLoading, error, units, onClick }) => {
   // No location set - show setup prompt
   if (!location) {
     return (
@@ -26,7 +19,11 @@ export const WeatherDisplay = ({
   // Loading state
   if (isLoading) {
     return (
-      <button className="weather-display weather-display--loading" onClick={onClick} data-testid="weather-loading">
+      <button
+        className="weather-display weather-display--loading"
+        onClick={onClick}
+        data-testid="weather-loading"
+      >
         <Spinner size={16} />
         <span className="weather-display__text">{location.name}</span>
       </button>
@@ -36,7 +33,11 @@ export const WeatherDisplay = ({
   // Error state
   if (error) {
     return (
-      <button className="weather-display weather-display--error" onClick={onClick} data-testid="weather-error">
+      <button
+        className="weather-display weather-display--error"
+        onClick={onClick}
+        data-testid="weather-error"
+      >
         <MapPin size={16} />
         <span className="weather-display__text">{UI_TEXT.WEATHER_ERROR}</span>
       </button>

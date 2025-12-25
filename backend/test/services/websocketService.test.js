@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import websocketService from '../../services/websocketService.js';
+import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../../services/mockData.js';
 
 // Mock dependencies
 vi.mock('../../utils/logger.js', () => ({
@@ -956,7 +957,56 @@ describe('WebSocketService', () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({
           type: 'error',
-          message: 'Missing authentication: provide sessionToken OR (bridgeIp + username)',
+          message:
+            'Missing authentication: provide demoMode, sessionToken, or (bridgeIp + username)',
+        })
+      );
+    });
+
+    it('should authenticate with demo mode', async () => {
+      const mockWs = { send: vi.fn() };
+
+      await websocketService.handleAuth(mockWs, { demoMode: true });
+
+      expect(mockWs.bridgeIp).toBe(DEMO_BRIDGE_IP);
+      expect(mockWs.username).toBe(DEMO_USERNAME);
+      expect(mockWs.authMethod).toBe('demo');
+      expect(mockWs.demoMode).toBe(true);
+    });
+
+    it('should add demo connection to connections map', async () => {
+      const mockWs = { send: vi.fn() };
+
+      await websocketService.handleAuth(mockWs, { demoMode: true });
+
+      expect(websocketService.connections.has(DEMO_BRIDGE_IP)).toBe(true);
+      expect(websocketService.connections.get(DEMO_BRIDGE_IP).has(mockWs)).toBe(true);
+    });
+
+    it('should send initial state for demo mode', async () => {
+      const mockWs = { send: vi.fn() };
+
+      await websocketService.handleAuth(mockWs, { demoMode: true });
+
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'initial_state',
+          data: mockDashboard,
+        })
+      );
+    });
+
+    it('should not authenticate demo mode when demoMode is false', async () => {
+      const mockWs = { send: vi.fn() };
+
+      // Without other credentials, this should fail
+      await websocketService.handleAuth(mockWs, { demoMode: false });
+
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'error',
+          message:
+            'Missing authentication: provide demoMode, sessionToken, or (bridgeIp + username)',
         })
       );
     });

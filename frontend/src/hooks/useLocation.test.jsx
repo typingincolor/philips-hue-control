@@ -95,7 +95,10 @@ describe('useLocation', () => {
 
     it('should handle partial localStorage data', () => {
       // Missing name - should still load what's there
-      localStorage.setItem(STORAGE_KEYS.WEATHER_LOCATION, JSON.stringify({ lat: 51.5074, lon: -0.1278 }));
+      localStorage.setItem(
+        STORAGE_KEYS.WEATHER_LOCATION,
+        JSON.stringify({ lat: 51.5074, lon: -0.1278 })
+      );
 
       const { result } = renderHook(() => useLocation());
 

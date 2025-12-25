@@ -42,7 +42,7 @@ test.describe('Layout Spacing - Desktop', () => {
       expect(topGap).toBeGreaterThanOrEqual(1);
 
       // Button should have at least 1px spacing from toolbar bottom (amber line)
-      const bottomGap = (toolbarBox.y + toolbarBox.height) - (buttonBox.y + buttonBox.height);
+      const bottomGap = toolbarBox.y + toolbarBox.height - (buttonBox.y + buttonBox.height);
       expect(bottomGap).toBeGreaterThanOrEqual(1);
     }
   });
@@ -319,7 +319,7 @@ test.describe('Layout Spacing - Raspberry Pi 7" (800x480)', () => {
       expect(topGap).toBeGreaterThanOrEqual(1);
 
       // Button should have spacing from toolbar bottom (amber line)
-      const bottomGap = (toolbarBox.y + toolbarBox.height) - (buttonBox.y + buttonBox.height);
+      const bottomGap = toolbarBox.y + toolbarBox.height - (buttonBox.y + buttonBox.height);
       expect(bottomGap).toBeGreaterThanOrEqual(1);
 
       // Button should fit entirely within toolbar

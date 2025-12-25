@@ -34,6 +34,7 @@ A modern React web application for controlling Philips Hue lights locally using 
 - **Persistent Sessions**: Sessions saved in browser localStorage with auto-recovery
 - **Session Auto-Refresh**: Tokens refresh automatically before expiration
 - **Multi-Client Support**: Second client connects instantly using server-stored credentials (no re-pairing needed)
+- **Demo Mode**: Try the app without a Hue Bridge using `?demo=true` URL parameter
 
 ### Technical Features
 
@@ -41,7 +42,7 @@ A modern React web application for controlling Philips Hue lights locally using 
 - **Multi-Machine Support**: Access from any device on your network
 - **Centralized Configuration**: All settings managed through config.json
 - **Modern API v2**: Uses the latest Philips Hue API for future-proof functionality
-- **Comprehensive Testing**: 665 tests (241 frontend + 424 backend) with integration test suite
+- **Comprehensive Testing**: 952 tests (395 frontend + 557 backend) with integration test suite
 
 ## Prerequisites
 
@@ -115,6 +116,32 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 4. **Session Created**: A session token is automatically created and saved
 5. **Control Your Lights**: View and control all your lights organized by room with real-time WebSocket updates
 
+### 6. Demo Mode (No Bridge Required)
+
+Try the app without a Hue Bridge:
+
+```
+http://localhost:5173/?demo=true     # Development
+http://192.168.1.100:3001/?demo=true # Production (use your server IP)
+```
+
+**Demo mode features:**
+
+- 2 rooms with 6 lights (Living Room, Bedroom)
+- 4 scenes (Bright, Relax, Energize, Nightlight)
+- 2 zones (Downstairs, Upstairs)
+- 2 motion zones with simulated detection
+- Mock weather data (London)
+- Full interactivity: toggle lights, change brightness, activate scenes
+- State persists in memory (resets on server restart)
+
+**How it works:**
+
+- Frontend detects `?demo=true` and sends `X-Demo-Mode: true` header
+- Backend returns mock data instead of connecting to a real bridge
+- WebSocket receives mock updates every 15 seconds
+- All API endpoints work identically to real mode
+
 ## Architecture
 
 ### Monorepo Structure
@@ -170,26 +197,45 @@ philips-hue-connector/
 └── backend/                    # Express backend workspace
     ├── package.json
     ├── server.js              # Express server (v1 API + WebSocket + static files)
-    ├── routes/                # v1 API routes
+    ├── middleware/            # Express middleware
+    │   ├── auth.js            # Session & demo mode authentication
+    │   └── demoMode.js        # X-Demo-Mode header detection
+    ├── routes/v1/             # v1 API routes
     │   ├── auth.js            # Authentication endpoints
     │   ├── dashboard.js       # Dashboard data endpoint
-    │   ├── motionZones.js     # Motion zones endpoint
     │   ├── lights.js          # Light control endpoints
     │   ├── rooms.js           # Room control endpoints
-    │   └── scenes.js          # Scene activation endpoint
+    │   ├── zones.js           # Zone control endpoints
+    │   ├── scenes.js          # Scene activation endpoint
+    │   ├── settings.js        # Settings API endpoints
+    │   └── weather.js         # Weather API endpoint
     ├── services/              # Business logic layer
-    │   ├── hueClient.js       # Hue Bridge API client
-    │   ├── colorService.js    # Color conversion & warm dim blending
+    │   ├── hueClient.js       # Real Hue Bridge API client
+    │   ├── mockHueClient.js   # Mock client for demo mode
+    │   ├── mockData.js        # Demo mode mock data
+    │   ├── hueClientFactory.js # Returns real or mock client
+    │   ├── dashboardService.js # Dashboard data aggregation
     │   ├── roomService.js     # Room hierarchy & statistics
+    │   ├── zoneService.js     # Zone hierarchy & statistics
     │   ├── motionService.js   # Motion sensor parsing
     │   ├── statsService.js    # Dashboard statistics
-    │   └── sessionManager.js  # Session token management
-    ├── websocket/
-    │   └── websocketService.js  # WebSocket server & state updates
+    │   ├── sessionManager.js  # Session token management
+    │   ├── settingsService.js # Per-session settings storage
+    │   ├── weatherService.js  # Weather API with caching
+    │   └── websocketService.js # WebSocket server & state updates
+    ├── utils/                 # Utility functions
+    │   ├── colorConversion.js # Color space conversion
+    │   ├── stateConversion.js # State format conversion
+    │   ├── validation.js      # Input validation
+    │   └── errors.js          # Custom error classes
+    ├── constants/             # Backend constants
+    │   ├── timings.js         # Intervals and timeouts
+    │   └── errorMessages.js   # Error message constants
     ├── scripts/
     │   └── copy-frontend.js   # Build script
     ├── test/                  # Backend tests
     │   ├── services/          # Service layer tests
+    │   ├── middleware/        # Middleware tests
     │   └── routes/            # API route tests
     └── public/                # Served frontend (gitignored)
 ```
@@ -358,11 +404,11 @@ Runs mutation testing with Stryker (validates test quality)
 
 ## Testing
 
-The project includes comprehensive testing infrastructure with **665 tests total** (241 frontend + 424 backend) and mutation testing to ensure code quality.
+The project includes comprehensive testing infrastructure with **952 tests total** (395 frontend + 557 backend) and mutation testing to ensure code quality.
 
 ### Test Coverage
 
-**Frontend Tests (241 tests):**
+**Frontend Tests (395 tests):**
 
 - **Unit tests**: Utilities, hooks, and components
 - **Integration tests**: 11 end-to-end flow tests with MSW
@@ -370,14 +416,16 @@ The project includes comprehensive testing infrastructure with **665 tests total
 - **Testing Library** - React component testing with user-centric approach
 - **MSW** - Network-level API mocking for integration tests
 
-**Backend Tests (424 tests):**
+**Backend Tests (557 tests):**
 
 - **Service layer tests**: Color conversion, room hierarchy, motion sensors, statistics, WebSocket service
 - **Route tests**: API endpoint validation
 - **Session management tests**: Token handling and refresh logic
 - **Zone service tests**: Zone hierarchy and statistics
 - **Multi-client integration tests**: 10 tests for credential sharing flow
-- **Auth middleware tests**: 13 tests for credential extraction and storage
+- **Auth middleware tests**: Demo mode and credential extraction
+- **Demo mode tests**: MockHueClient, mock data, demo middleware, hueClientFactory
+- **Settings & Weather tests**: Settings service, weather service, API routes
 
 **Test Quality:**
 
@@ -657,15 +705,81 @@ The backend exposes a **simplified v1 REST API** that aggregates Hue API v2 data
   Response: { "affectedLights": [ /* lights affected by scene */ ] }
   ```
 
+**Settings Endpoints:**
+
+- `GET /api/v1/settings` - Get current settings
+
+  ```
+  Header: Authorization: Bearer {sessionToken}
+  Response: { "location": { "lat": 51.5, "lon": -0.1, "name": "London" }, "units": "celsius" }
+  ```
+
+- `PUT /api/v1/settings` - Update all settings
+
+  ```
+  Header: Authorization: Bearer {sessionToken}
+  Body: { "location": { "lat": 51.5, "lon": -0.1, "name": "London" }, "units": "fahrenheit" }
+  Response: { "location": {...}, "units": "fahrenheit" }
+  ```
+
+- `PUT /api/v1/settings/location` - Update location only
+
+  ```
+  Header: Authorization: Bearer {sessionToken}
+  Body: { "lat": 51.5, "lon": -0.1, "name": "London" }
+  Response: { "location": {...}, "units": "celsius" }
+  ```
+
+- `DELETE /api/v1/settings/location` - Clear location
+  ```
+  Header: Authorization: Bearer {sessionToken}
+  Response: { "location": null, "units": "celsius" }
+  ```
+
+**Weather Endpoints:**
+
+- `GET /api/v1/weather` - Get weather for stored location
+  ```
+  Header: Authorization: Bearer {sessionToken}
+  Response: {
+    "current": { "temperature": 15, "condition": "Partly cloudy", "humidity": 65, "windSpeed": 12 },
+    "forecast": [ { "date": "2024-01-15", "high": 18, "low": 10, "condition": "Sunny" }, ... ]
+  }
+  Error 404: { "error": "No location set" }
+  ```
+
 **WebSocket:**
 
 - `WS /api/v1/ws` - WebSocket connection for real-time updates
+
   ```
+  // Session authentication
   Connect → Send: { "type": "auth", "sessionToken": "hue_sess_..." }
+
+  // Demo mode authentication (no credentials needed)
+  Connect → Send: { "type": "auth", "demoMode": true }
+
+  // Responses
   Receive: { "type": "initial_state", "data": { /* dashboard */ } }
-  Receive: { "type": "light_state_changed", "light": { /* updated light */ } }
-  Receive: { "type": "motion_detected", "zone": { /* motion zone */ } }
+  Receive: { "type": "state_update", "changes": [ /* light/room/zone changes */ ] }
   ```
+
+**Demo Mode Header:**
+
+All endpoints support demo mode via the `X-Demo-Mode: true` header:
+
+```
+GET /api/v1/dashboard
+Header: X-Demo-Mode: true
+Response: { /* mock dashboard data */ }
+```
+
+When demo mode is enabled:
+
+- No bridge connection or credentials required
+- Returns mock data (2 rooms, 6 lights, 4 scenes, 2 zones)
+- State changes persist in memory
+- WebSocket pushes mock updates every 15 seconds
 
 **Utility Endpoints:**
 
@@ -786,7 +900,18 @@ PORT=8080 npm run start
 
 ## Version History
 
-### v1.0.0 (Current)
+### v1.4.0 (Current)
+
+- **Backend Demo Mode** - Demo mode moved from frontend to backend for multi-client support
+- **Demo via header** - Use `X-Demo-Mode: true` header or `?demo=true` URL parameter
+- **MockHueClient** - Full mock implementation of HueClient with state persistence
+- **Settings API** - New `/api/v1/settings` endpoints for location and unit preferences
+- **Weather API** - New `/api/v1/weather` endpoint (uses Open-Meteo, mock for demo)
+- **HueClient Factory** - Pattern for selecting real vs mock client based on request context
+- **WebSocket demo auth** - Authenticate with `{ type: 'auth', demoMode: true }`
+- **Test improvements** - 952 tests total (395 frontend + 557 backend)
+
+### v1.0.0
 
 - **Multi-client support** - Second client connects instantly using server-stored credentials (no re-pairing)
 - **Session restore improvements** - Validates session with server before showing dashboard, graceful fallbacks

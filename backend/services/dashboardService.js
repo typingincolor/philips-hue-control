@@ -1,4 +1,4 @@
-import hueClient from './hueClient.js';
+import { getHueClientForBridge } from './hueClientFactory.js';
 import { enrichLight } from '../utils/colorConversion.js';
 import roomService from './roomService.js';
 import statsService from './statsService.js';
@@ -21,6 +21,9 @@ class DashboardService {
    */
   async getDashboard(bridgeIp, username) {
     logger.debug('Fetching data', { bridgeIp });
+
+    // Get the appropriate client (mock for demo, real otherwise)
+    const hueClient = getHueClientForBridge(bridgeIp);
 
     // Step 1: Fetch all data in parallel (including motion zones and zones)
     const [lightsData, roomsData, devicesData, scenesData, zonesData, motionZonesResult] =

@@ -37,7 +37,9 @@ export const WeatherTooltip = ({ weather, location, units }) => {
         </div>
         <div className="weather-tooltip__wind">
           <Wind size={14} />
-          <span>{current.windSpeed} {windUnit}</span>
+          <span>
+            {current.windSpeed} {windUnit}
+          </span>
         </div>
       </div>
 
@@ -46,7 +48,11 @@ export const WeatherTooltip = ({ weather, location, units }) => {
         <div className="weather-tooltip__forecast-title">{UI_TEXT.WEATHER_FORECAST}</div>
         <div className="weather-tooltip__forecast-list">
           {forecast?.map((day, index) => (
-            <div key={day.date} className="weather-tooltip__forecast-day" data-testid="forecast-day">
+            <div
+              key={day.date}
+              className="weather-tooltip__forecast-day"
+              data-testid="forecast-day"
+            >
               <span className="weather-tooltip__day-name">{formatDay(day.date)}</span>
               <WeatherIcon code={day.weatherCode} size={16} />
               <span className="weather-tooltip__day-high">{day.high}°</span>

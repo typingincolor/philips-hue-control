@@ -1,4 +1,4 @@
-import hueClient from './hueClient.js';
+import { getHueClientForBridge } from './hueClientFactory.js';
 
 /**
  * MotionService - Motion sensor and MotionAware zone handling
@@ -57,6 +57,9 @@ class MotionService {
    */
   async getMotionZones(bridgeIp, username) {
     try {
+      // Get the appropriate client (mock for demo, real otherwise)
+      const hueClient = getHueClientForBridge(bridgeIp);
+
       // Fetch both endpoints in parallel
       const [behaviorsData, motionAreasData] = await Promise.all([
         hueClient.getResource(bridgeIp, username, 'behavior_instance'),

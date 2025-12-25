@@ -108,7 +108,10 @@ describe('SettingsDrawer', () => {
 
     it('should show fahrenheit as selected when units is fahrenheit', () => {
       render(
-        <SettingsDrawer {...defaultProps} settings={{ units: 'fahrenheit', weatherEnabled: true }} />
+        <SettingsDrawer
+          {...defaultProps}
+          settings={{ units: 'fahrenheit', weatherEnabled: true }}
+        />
       );
 
       const fahrenheitButton = screen.getByRole('button', { name: UI_TEXT.SETTINGS_FAHRENHEIT });

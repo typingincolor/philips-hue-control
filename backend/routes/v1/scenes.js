@@ -1,5 +1,5 @@
 import express from 'express';
-import hueClient from '../../services/hueClient.js';
+import { getHueClient } from '../../services/hueClientFactory.js';
 import roomService from '../../services/roomService.js';
 import { enrichLight } from '../../utils/colorConversion.js';
 import { extractCredentials } from '../../middleware/auth.js';
@@ -19,6 +19,7 @@ router.post('/:id/activate', extractCredentials, async (req, res, next) => {
   try {
     const { id: sceneId } = req.params;
     const { bridgeIp, username } = req.hue;
+    const hueClient = getHueClient(req);
 
     logger.info('Activating scene', { sceneId, authMethod: req.hue.authMethod });
 

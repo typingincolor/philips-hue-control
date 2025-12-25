@@ -22,9 +22,7 @@ vi.mock('../services/mockWeatherData', () => ({
       windSpeed: 12,
       time: '2024-01-01T12:00:00Z',
     },
-    forecast: [
-      { date: '2024-01-01', weatherCode: 2, high: 20, low: 14 },
-    ],
+    forecast: [{ date: '2024-01-01', weatherCode: 2, high: 20, low: 14 }],
   },
 }));
 
@@ -72,9 +70,7 @@ describe('useWeather', () => {
     it('should start loading when location is provided', () => {
       weatherApi.getWeatherData.mockReturnValue(new Promise(() => {})); // Never resolves
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       expect(result.current.isLoading).toBe(true);
     });
@@ -84,9 +80,7 @@ describe('useWeather', () => {
     it('should fetch weather data when location is provided', async () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       await waitFor(() => {
         expect(result.current.weather).toEqual(mockWeatherResponse);
@@ -113,9 +107,7 @@ describe('useWeather', () => {
     it('should set error on API failure', async () => {
       weatherApi.getWeatherData.mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       await waitFor(() => {
         expect(result.current.error).toBe('Failed to fetch weather data');
@@ -130,9 +122,7 @@ describe('useWeather', () => {
       mockDemoModeValue = { isDemoMode: true };
       mockWeatherApi.getWeatherData.mockResolvedValue(mockWeatherData);
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
@@ -146,9 +136,7 @@ describe('useWeather', () => {
       mockDemoModeValue = { isDemoMode: false };
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
@@ -163,9 +151,7 @@ describe('useWeather', () => {
     it('should provide refetch function', async () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
@@ -252,9 +238,7 @@ describe('useWeather', () => {
       const setIntervalSpy = vi.spyOn(global, 'setInterval');
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();

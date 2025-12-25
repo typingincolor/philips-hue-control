@@ -38,11 +38,9 @@ export const weatherApi = {
       const daily = response.daily();
 
       // Build forecast array
-      const dailyTimes = range(
-        Number(daily.time()),
-        Number(daily.timeEnd()),
-        daily.interval()
-      ).map((t) => new Date((t + utcOffsetSeconds) * 1000));
+      const dailyTimes = range(Number(daily.time()), Number(daily.timeEnd()), daily.interval()).map(
+        (t) => new Date((t + utcOffsetSeconds) * 1000)
+      );
 
       const forecast = dailyTimes.map((date, index) => ({
         date: date.toISOString().split('T')[0],

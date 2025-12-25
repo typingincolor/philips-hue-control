@@ -82,9 +82,7 @@ export const SettingsDrawer = ({
                 )}
               </button>
             </div>
-            {locationError && (
-              <div className="settings-error">{locationError}</div>
-            )}
+            {locationError && <div className="settings-error">{locationError}</div>}
           </div>
 
           {/* Units Section */}

@@ -1,12 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { hueApi } from './hueApi';
+import { hueApi, resetDemoModeCache } from './hueApi';
 
 // Mock global fetch
 global.fetch = vi.fn();
 
+// Helper to mock demo mode via URL
+const mockDemoModeURL = (isDemoMode) => {
+  Object.defineProperty(window, 'location', {
+    value: {
+      search: isDemoMode ? '?demo=true' : '',
+      protocol: 'http:',
+      host: 'localhost:5173',
+    },
+    writable: true,
+  });
+};
+
 describe('hueApi', () => {
   beforeEach(() => {
     fetch.mockClear();
+    resetDemoModeCache();
+    mockDemoModeURL(false); // Default to non-demo mode
   });
 
   afterEach(() => {
@@ -448,6 +462,212 @@ describe('hueApi', () => {
       await hueApi.checkBridgeStatus('192.168.1.100');
 
       expect(fetch).toHaveBeenCalledWith(expect.stringContaining('bridgeIp=192.168.1.100'));
+    });
+  });
+
+  describe('demo mode', () => {
+    it('should add X-Demo-Mode header when in demo mode', async () => {
+      mockDemoModeURL(true);
+      resetDemoModeCache();
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ summary: {}, rooms: [] }),
+      });
+
+      await hueApi.getDashboard('test-token');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/dashboard',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Demo-Mode': 'true',
+          }),
+        })
+      );
+    });
+
+    it('should not add X-Demo-Mode header when not in demo mode', async () => {
+      mockDemoModeURL(false);
+      resetDemoModeCache();
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ summary: {}, rooms: [] }),
+      });
+
+      await hueApi.getDashboard('test-token');
+
+      const headers = fetch.mock.calls[0][1].headers;
+      expect(headers['X-Demo-Mode']).toBeUndefined();
+    });
+
+    it('should add X-Demo-Mode header to connect endpoint', async () => {
+      mockDemoModeURL(true);
+      resetDemoModeCache();
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            sessionToken: 'demo-session',
+            bridgeIp: 'demo-bridge',
+          }),
+      });
+
+      await hueApi.connect('demo-bridge');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/auth/connect',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Demo-Mode': 'true',
+          }),
+        })
+      );
+    });
+  });
+
+  describe('settings API', () => {
+    it('getSettings should fetch settings with authorization', async () => {
+      const mockSettings = { location: null, units: 'celsius' };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockSettings),
+      });
+
+      const result = await hueApi.getSettings('test-token');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/settings',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-token',
+          }),
+        })
+      );
+
+      expect(result).toEqual(mockSettings);
+    });
+
+    it('updateSettings should send PUT request with settings', async () => {
+      const newSettings = { location: { lat: 51.5, lon: -0.1, name: 'London' }, units: 'celsius' };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(newSettings),
+      });
+
+      const result = await hueApi.updateSettings('test-token', newSettings);
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/settings',
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer test-token',
+          }),
+          body: JSON.stringify(newSettings),
+        })
+      );
+
+      expect(result).toEqual(newSettings);
+    });
+
+    it('updateLocation should send PUT request to location endpoint', async () => {
+      const location = { lat: 51.5, lon: -0.1, name: 'London' };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ location, units: 'celsius' }),
+      });
+
+      await hueApi.updateLocation('test-token', location);
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/settings/location',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify(location),
+        })
+      );
+    });
+
+    it('clearLocation should send DELETE request to location endpoint', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ location: null, units: 'celsius' }),
+      });
+
+      await hueApi.clearLocation('test-token');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/settings/location',
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      );
+    });
+  });
+
+  describe('weather API', () => {
+    it('getWeather should fetch weather with authorization', async () => {
+      const mockWeather = {
+        current: { temperature: 15, condition: 'Partly cloudy' },
+        forecast: [],
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockWeather),
+      });
+
+      const result = await hueApi.getWeather('test-token');
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/weather',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-token',
+          }),
+        })
+      );
+
+      expect(result).toEqual(mockWeather);
+    });
+  });
+
+  describe('updateZoneLights', () => {
+    it('should send PUT request with correct parameters', async () => {
+      const mockResponse = {
+        updatedLights: [
+          { id: 'light-1', on: true },
+          { id: 'light-2', on: true },
+        ],
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await hueApi.updateZoneLights('hue_sess_test123', 'zone-1', { on: true });
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/zones/zone-1/lights',
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer hue_sess_test123',
+          }),
+          body: JSON.stringify({ on: true }),
+        })
+      );
+
+      expect(result).toEqual(mockResponse);
     });
   });
 });

@@ -1,9 +1,11 @@
 import sessionManager from '../services/sessionManager.js';
 import { MissingCredentialsError, InvalidSessionError } from '../utils/errors.js';
+import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../services/mockData.js';
 
 /**
  * Extract bridge credentials from request
  * Supports multiple auth methods in priority order:
+ * 0. Demo mode (req.demoMode = true) - uses mock credentials
  * 1. Session token (Authorization: Bearer <token>)
  * 2. Headers (X-Bridge-IP + X-Hue-Username)
  * 3. Query params (bridgeIp + username) - legacy support
@@ -11,6 +13,16 @@ import { MissingCredentialsError, InvalidSessionError } from '../utils/errors.js
 export function extractCredentials(req, res, next) {
   try {
     let bridgeIp, username, authMethod;
+
+    // Method 0: Demo mode - bypass all auth
+    if (req.demoMode) {
+      req.hue = {
+        bridgeIp: DEMO_BRIDGE_IP,
+        username: DEMO_USERNAME,
+        authMethod: 'demo',
+      };
+      return next();
+    }
 
     // Method 1: Session token
     const authHeader = req.headers.authorization;
@@ -75,9 +87,21 @@ export function extractCredentials(req, res, next) {
 /**
  * Require session-based authentication (stricter)
  * Use this for endpoints that should only work with sessions
+ * Demo mode bypasses session validation
  */
 export function requireSession(req, res, next) {
   try {
+    // Demo mode - bypass session validation
+    if (req.demoMode) {
+      req.hue = {
+        bridgeIp: DEMO_BRIDGE_IP,
+        username: DEMO_USERNAME,
+        authMethod: 'demo',
+        sessionToken: 'demo-session',
+      };
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

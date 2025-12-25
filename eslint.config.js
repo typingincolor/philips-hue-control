@@ -38,6 +38,7 @@ export default [
         URL: 'readonly',
         URLSearchParams: 'readonly',
         alert: 'readonly',
+        navigator: 'readonly',
       },
     },
     settings: {

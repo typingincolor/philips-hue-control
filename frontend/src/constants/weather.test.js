@@ -8,9 +8,7 @@ describe('weather constants', () => {
     });
 
     it('should have geocoding API URL', () => {
-      expect(WEATHER_CONFIG.GEOCODING_API_URL).toBe(
-        'https://nominatim.openstreetmap.org/reverse'
-      );
+      expect(WEATHER_CONFIG.GEOCODING_API_URL).toBe('https://nominatim.openstreetmap.org/reverse');
     });
 
     it('should have polling interval of 15 minutes', () => {
