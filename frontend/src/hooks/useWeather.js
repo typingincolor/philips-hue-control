@@ -2,16 +2,18 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { weatherApi } from '../services/weatherApi';
 import { mockWeatherApi } from '../services/mockWeatherData';
 import { WEATHER_CONFIG } from '../constants/weather';
+import { useDemoMode } from '../context/DemoModeContext';
 
 /**
  * Hook for fetching and managing weather data
+ * Gets demo mode state from DemoModeContext
  * @param {object} options - Hook options
  * @param {object|null} options.location - Location object with lat, lon, name
- * @param {boolean} options.isDemoMode - Whether to use mock data
  * @param {string} options.units - Temperature units ('celsius' or 'fahrenheit')
  * @returns {object} { weather, isLoading, error, refetch }
  */
-export const useWeather = ({ location, isDemoMode, units }) => {
+export const useWeather = ({ location, units }) => {
+  const { isDemoMode } = useDemoMode();
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);

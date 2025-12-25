@@ -28,6 +28,15 @@ vi.mock('../services/mockWeatherData', () => ({
   },
 }));
 
+// Mock DemoModeContext - default to non-demo mode
+let mockDemoModeValue = {
+  isDemoMode: false,
+};
+
+vi.mock('../context/DemoModeContext', () => ({
+  useDemoMode: () => mockDemoModeValue,
+}));
+
 describe('useWeather', () => {
   const mockLocation = { lat: 51.5074, lon: -0.1278, name: 'London' };
   const mockWeatherResponse = {
@@ -45,11 +54,15 @@ describe('useWeather', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset demo mode mock to default (non-demo mode)
+    mockDemoModeValue = {
+      isDemoMode: false,
+    };
   });
 
   describe('initialization', () => {
     it('should return null weather when no location provided', () => {
-      const { result } = renderHook(() => useWeather({ location: null, isDemoMode: false, units: 'celsius' }));
+      const { result } = renderHook(() => useWeather({ location: null, units: 'celsius' }));
 
       expect(result.current.weather).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -60,7 +73,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockReturnValue(new Promise(() => {})); // Never resolves
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       expect(result.current.isLoading).toBe(true);
@@ -72,7 +85,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       await waitFor(() => {
@@ -87,7 +100,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'fahrenheit' })
+        useWeather({ location: mockLocation, units: 'fahrenheit' })
       );
 
       await waitFor(() => {
@@ -101,7 +114,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       await waitFor(() => {
@@ -112,12 +125,13 @@ describe('useWeather', () => {
     });
   });
 
-  describe('demo mode', () => {
-    it('should use mock API in demo mode', async () => {
+  describe('demo mode (via context)', () => {
+    it('should use mock API when context isDemoMode is true', async () => {
+      mockDemoModeValue = { isDemoMode: true };
       mockWeatherApi.getWeatherData.mockResolvedValue(mockWeatherData);
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: true, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       await waitFor(() => {
@@ -127,6 +141,22 @@ describe('useWeather', () => {
       expect(mockWeatherApi.getWeatherData).toHaveBeenCalled();
       expect(weatherApi.getWeatherData).not.toHaveBeenCalled();
     });
+
+    it('should use real API when context isDemoMode is false', async () => {
+      mockDemoModeValue = { isDemoMode: false };
+      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+
+      const { result } = renderHook(() =>
+        useWeather({ location: mockLocation, units: 'celsius' })
+      );
+
+      await waitFor(() => {
+        expect(result.current.weather).not.toBeNull();
+      });
+
+      expect(weatherApi.getWeatherData).toHaveBeenCalled();
+      expect(mockWeatherApi.getWeatherData).not.toHaveBeenCalled();
+    });
   });
 
   describe('refetch', () => {
@@ -134,7 +164,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       await waitFor(() => {
@@ -156,7 +186,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result, rerender } = renderHook(
-        ({ location }) => useWeather({ location, isDemoMode: false, units: 'celsius' }),
+        ({ location }) => useWeather({ location, units: 'celsius' }),
         { initialProps: { location: mockLocation } }
       );
 
@@ -178,7 +208,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result, rerender } = renderHook(
-        ({ location }) => useWeather({ location, isDemoMode: false, units: 'celsius' }),
+        ({ location }) => useWeather({ location, units: 'celsius' }),
         { initialProps: { location: mockLocation } }
       );
 
@@ -199,7 +229,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result, rerender } = renderHook(
-        ({ units }) => useWeather({ location: mockLocation, isDemoMode: false, units }),
+        ({ units }) => useWeather({ location: mockLocation, units }),
         { initialProps: { units: 'celsius' } }
       );
 
@@ -223,7 +253,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       await waitFor(() => {
@@ -240,7 +270,7 @@ describe('useWeather', () => {
       weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
 
       const { result, unmount } = renderHook(() =>
-        useWeather({ location: mockLocation, isDemoMode: false, units: 'celsius' })
+        useWeather({ location: mockLocation, units: 'celsius' })
       );
 
       await waitFor(() => {
