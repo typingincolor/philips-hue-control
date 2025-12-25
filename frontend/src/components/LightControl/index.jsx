@@ -17,7 +17,7 @@ import { SettingsDrawer } from './SettingsDrawer';
 const logger = createLogger('Dashboard');
 
 export const LightControl = ({ sessionToken, onLogout }) => {
-  const { isDemoMode, api, subscribeToMotion } = useDemoMode();
+  const { isDemoMode, api } = useDemoMode();
 
   // WebSocket connection (disabled in demo mode)
   const {
@@ -134,23 +134,6 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       document.body.classList.remove('dark-theme');
     };
   }, []);
-
-  // Subscribe to motion updates in demo mode
-  useEffect(() => {
-    if (!isDemoMode || !subscribeToMotion) return;
-
-    const unsubscribe = subscribeToMotion((updatedMotionZones) => {
-      setLocalDashboard((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          motionZones: updatedMotionZones,
-        };
-      });
-    });
-
-    return unsubscribe;
-  }, [isDemoMode, subscribeToMotion]);
 
   // Helper: Get light by UUID from dashboard
   const getLightByUuid = (uuid) => {

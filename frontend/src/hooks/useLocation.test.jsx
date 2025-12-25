@@ -14,12 +14,18 @@ vi.mock('../services/weatherApi', () => ({
 // Mock DemoModeContext - default to non-demo mode
 let mockDemoModeValue = {
   isDemoMode: false,
-  demoLocation: null,
 };
 
 vi.mock('../context/DemoModeContext', () => ({
   useDemoMode: () => mockDemoModeValue,
 }));
+
+// Expected demo location (same as defined in useLocation.js)
+const DEMO_LOCATION = {
+  lat: 51.5074,
+  lon: -0.1278,
+  name: 'London',
+};
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -59,7 +65,6 @@ describe('useLocation', () => {
     // Reset demo mode mock to default (non-demo mode)
     mockDemoModeValue = {
       isDemoMode: false,
-      demoLocation: null,
     };
   });
 
@@ -403,27 +408,23 @@ describe('useLocation', () => {
     });
   });
 
-  describe('demo mode (via context)', () => {
-    const demoLocation = { lat: 51.5074, lon: -0.1278, name: 'London' };
-
-    it('should use demoLocation from context when in demo mode and no stored location', () => {
+  describe('demo mode', () => {
+    it('should use default DEMO_LOCATION when in demo mode and no stored location', () => {
       mockDemoModeValue = {
         isDemoMode: true,
-        demoLocation,
       };
 
       const { result } = renderHook(() => useLocation());
 
-      expect(result.current.location).toEqual(demoLocation);
+      expect(result.current.location).toEqual(DEMO_LOCATION);
     });
 
-    it('should use stored location over demoLocation when available', () => {
+    it('should use stored location over demo location when available', () => {
       const storedLocation = { lat: 48.8566, lon: 2.3522, name: 'Paris' };
       localStorage.setItem(STORAGE_KEYS.WEATHER_LOCATION, JSON.stringify(storedLocation));
 
       mockDemoModeValue = {
         isDemoMode: true,
-        demoLocation,
       };
 
       const { result } = renderHook(() => useLocation());
@@ -434,7 +435,6 @@ describe('useLocation', () => {
     it('should return null when not in demo mode and no stored location', () => {
       mockDemoModeValue = {
         isDemoMode: false,
-        demoLocation: null,
       };
 
       const { result } = renderHook(() => useLocation());
@@ -445,7 +445,6 @@ describe('useLocation', () => {
     it('should use geolocation when not in demo mode', async () => {
       mockDemoModeValue = {
         isDemoMode: false,
-        demoLocation: null,
       };
 
       const mockPosition = {

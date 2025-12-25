@@ -1,18 +1,9 @@
 import { createContext, useContext, useMemo } from 'react';
 import { hueApi } from '../services/hueApi';
-import { mockApi } from '../services/mockApi';
-
-/**
- * Demo location for demo mode (London)
- */
-const DEMO_LOCATION = {
-  lat: 51.5074,
-  lon: -0.1278,
-  name: 'London',
-};
 
 /**
  * Context for demo mode state and services
+ * Demo mode is now handled by backend via X-Demo-Mode header
  */
 const DemoModeContext = createContext(null);
 
@@ -26,7 +17,8 @@ const detectDemoMode = () => {
 
 /**
  * Provider component for demo mode context
- * Centralizes all demo-specific behavior and provides appropriate services
+ * Demo mode is handled by the backend - frontend just detects mode for UI badge
+ * and passes X-Demo-Mode header (handled automatically by hueApi)
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - Child components
@@ -36,14 +28,10 @@ export const DemoModeProvider = ({ children }) => {
     const isDemoMode = detectDemoMode();
 
     return {
-      // Whether demo mode is active
+      // Whether demo mode is active (for UI badge display)
       isDemoMode,
-      // API to use (mockApi in demo mode, hueApi otherwise)
-      api: isDemoMode ? mockApi : hueApi,
-      // Demo location (London) for demo mode, null otherwise
-      demoLocation: isDemoMode ? DEMO_LOCATION : null,
-      // Motion subscription function for demo mode simulation
-      subscribeToMotion: isDemoMode ? mockApi.subscribeToMotion : null,
+      // Always use hueApi - it sends X-Demo-Mode header when in demo mode
+      api: hueApi,
     };
   }, []);
 
@@ -55,10 +43,8 @@ export const DemoModeProvider = ({ children }) => {
  * Must be used within a DemoModeProvider
  *
  * @returns {object} Demo mode context value
- * @property {boolean} isDemoMode - Whether demo mode is active
- * @property {object} api - The API to use (mockApi or hueApi)
- * @property {object|null} demoLocation - Demo location object or null
- * @property {function|null} subscribeToMotion - Motion subscription function or null
+ * @property {boolean} isDemoMode - Whether demo mode is active (for UI display)
+ * @property {object} api - The API to use (always hueApi, which handles demo mode via header)
  */
 export const useDemoMode = () => {
   const context = useContext(DemoModeContext);

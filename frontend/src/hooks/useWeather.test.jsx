@@ -1,38 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useWeather } from './useWeather';
 import { weatherApi } from '../services/weatherApi';
-import { mockWeatherApi, mockWeatherData } from '../services/mockWeatherData';
 
-// Mock weather APIs
+// Mock weather API
 vi.mock('../services/weatherApi', () => ({
   weatherApi: {
     getWeatherData: vi.fn(),
   },
-}));
-
-vi.mock('../services/mockWeatherData', () => ({
-  mockWeatherApi: {
-    getWeatherData: vi.fn(),
-  },
-  mockWeatherData: {
-    current: {
-      temperature: 18,
-      weatherCode: 2,
-      windSpeed: 12,
-      time: '2024-01-01T12:00:00Z',
-    },
-    forecast: [{ date: '2024-01-01', weatherCode: 2, high: 20, low: 14 }],
-  },
-}));
-
-// Mock DemoModeContext - default to non-demo mode
-let mockDemoModeValue = {
-  isDemoMode: false,
-};
-
-vi.mock('../context/DemoModeContext', () => ({
-  useDemoMode: () => mockDemoModeValue,
 }));
 
 describe('useWeather', () => {
@@ -52,10 +27,6 @@ describe('useWeather', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset demo mode mock to default (non-demo mode)
-    mockDemoModeValue = {
-      isDemoMode: false,
-    };
   });
 
   describe('initialization', () => {
@@ -114,36 +85,6 @@ describe('useWeather', () => {
       });
 
       expect(result.current.isLoading).toBe(false);
-    });
-  });
-
-  describe('demo mode (via context)', () => {
-    it('should use mock API when context isDemoMode is true', async () => {
-      mockDemoModeValue = { isDemoMode: true };
-      mockWeatherApi.getWeatherData.mockResolvedValue(mockWeatherData);
-
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
-
-      await waitFor(() => {
-        expect(result.current.weather).not.toBeNull();
-      });
-
-      expect(mockWeatherApi.getWeatherData).toHaveBeenCalled();
-      expect(weatherApi.getWeatherData).not.toHaveBeenCalled();
-    });
-
-    it('should use real API when context isDemoMode is false', async () => {
-      mockDemoModeValue = { isDemoMode: false };
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
-
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
-
-      await waitFor(() => {
-        expect(result.current.weather).not.toBeNull();
-      });
-
-      expect(weatherApi.getWeatherData).toHaveBeenCalled();
-      expect(mockWeatherApi.getWeatherData).not.toHaveBeenCalled();
     });
   });
 

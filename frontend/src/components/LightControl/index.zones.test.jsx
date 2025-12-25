@@ -10,7 +10,6 @@ let mockApi = {
   updateRoomLights: vi.fn(),
   updateZoneLights: vi.fn(),
   activateSceneV1: vi.fn(),
-  subscribeToMotion: vi.fn().mockReturnValue(() => {}),
 };
 let mockDashboardData;
 
@@ -64,8 +63,6 @@ vi.mock('../../context/DemoModeContext', () => ({
   useDemoMode: () => ({
     isDemoMode: true,
     api: mockApi,
-    subscribeToMotion: mockApi.subscribeToMotion,
-    demoLocation: { lat: 51.5074, lon: -0.1278, name: 'London' },
   }),
 }));
 

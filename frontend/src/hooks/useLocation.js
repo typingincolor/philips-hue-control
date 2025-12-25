@@ -4,6 +4,15 @@ import { weatherApi } from '../services/weatherApi';
 import { useDemoMode } from '../context/DemoModeContext';
 
 /**
+ * Default demo location (London) for demo mode
+ */
+const DEMO_LOCATION = {
+  lat: 51.5074,
+  lon: -0.1278,
+  name: 'London',
+};
+
+/**
  * Load location from localStorage
  * @returns {object|null} Location object or null
  */
@@ -39,29 +48,29 @@ const getGeolocationErrorMessage = (code) => {
 
 /**
  * Hook for managing user location with geolocation detection and localStorage persistence
- * Gets demo mode state and location from DemoModeContext
+ * In demo mode, uses default London location as fallback
  * @returns {object} { location, isDetecting, error, detectLocation, setManualLocation, clearLocation }
  */
 export const useLocation = () => {
-  const { isDemoMode, demoLocation } = useDemoMode();
+  const { isDemoMode } = useDemoMode();
 
   const [location, setLocation] = useState(() => {
     const stored = loadLocation();
-    // In demo mode, use demoLocation from context as fallback if nothing stored
-    if (!stored && isDemoMode && demoLocation) {
-      return demoLocation;
+    // In demo mode, use DEMO_LOCATION as fallback if nothing stored
+    if (!stored && isDemoMode) {
+      return DEMO_LOCATION;
     }
     return stored;
   });
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Update location if demo mode changes
+  // Update location if demo mode changes and no location set
   useEffect(() => {
-    if (isDemoMode && demoLocation && !location) {
-      setLocation(demoLocation);
+    if (isDemoMode && !location) {
+      setLocation(DEMO_LOCATION);
     }
-  }, [isDemoMode, demoLocation, location]);
+  }, [isDemoMode, location]);
 
   /**
    * Detect location using browser geolocation API

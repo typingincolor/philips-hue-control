@@ -10,7 +10,6 @@ let mockApi = {
   updateRoomLights: vi.fn(),
   updateZoneLights: vi.fn(),
   activateSceneV1: vi.fn(),
-  subscribeToMotion: vi.fn().mockReturnValue(() => {}),
 };
 let mockDashboardData;
 let mockWebSocketState;
@@ -78,8 +77,6 @@ vi.mock('../../context/DemoModeContext', () => ({
   useDemoMode: () => ({
     isDemoMode: mockIsDemoMode,
     api: mockApi,
-    subscribeToMotion: mockApi.subscribeToMotion,
-    demoLocation: mockIsDemoMode ? { lat: 51.5074, lon: -0.1278, name: 'London' } : null,
   }),
 }));
 
@@ -125,7 +122,6 @@ describe('LightControl', () => {
           ],
         })
       ),
-      subscribeToMotion: vi.fn().mockReturnValue(() => {}),
     };
   });
 
@@ -186,16 +182,6 @@ describe('LightControl', () => {
 
       await waitFor(() => {
         expect(mockApi.getDashboard).toHaveBeenCalledWith('test-token');
-      });
-    });
-
-    it('should subscribe to motion updates in demo mode', async () => {
-      mockIsDemoMode = true;
-
-      render(<LightControl sessionToken="test-token" />);
-
-      await waitFor(() => {
-        expect(mockApi.subscribeToMotion).toHaveBeenCalled();
       });
     });
   });

@@ -1,19 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { weatherApi } from '../services/weatherApi';
-import { mockWeatherApi } from '../services/mockWeatherData';
 import { WEATHER_CONFIG } from '../constants/weather';
-import { useDemoMode } from '../context/DemoModeContext';
 
 /**
  * Hook for fetching and managing weather data
- * Gets demo mode state from DemoModeContext
+ * Always uses weatherApi (Open-Meteo) - no mock data in frontend
  * @param {object} options - Hook options
  * @param {object|null} options.location - Location object with lat, lon, name
  * @param {string} options.units - Temperature units ('celsius' or 'fahrenheit')
  * @returns {object} { weather, isLoading, error, refetch }
  */
 export const useWeather = ({ location, units }) => {
-  const { isDemoMode } = useDemoMode();
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,15 +26,14 @@ export const useWeather = ({ location, units }) => {
     setError(null);
 
     try {
-      const api = isDemoMode ? mockWeatherApi : weatherApi;
-      const data = await api.getWeatherData(location.lat, location.lon, units);
+      const data = await weatherApi.getWeatherData(location.lat, location.lon, units);
       setWeather(data);
     } catch {
       setError('Failed to fetch weather data');
     } finally {
       setIsLoading(false);
     }
-  }, [location?.lat, location?.lon, isDemoMode, units]);
+  }, [location?.lat, location?.lon, units]);
 
   // Fetch on mount and when dependencies change
   useEffect(() => {

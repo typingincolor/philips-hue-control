@@ -1,17 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { DemoModeProvider, useDemoMode } from './DemoModeContext';
 
-// Mock the API modules
+// Mock the API module
 vi.mock('../services/hueApi', () => ({
   hueApi: { name: 'hueApi' },
-}));
-
-vi.mock('../services/mockApi', () => ({
-  mockApi: {
-    name: 'mockApi',
-    subscribeToMotion: vi.fn(() => vi.fn()),
-  },
 }));
 
 describe('DemoModeContext', () => {
@@ -63,51 +56,18 @@ describe('DemoModeContext', () => {
   });
 
   describe('api', () => {
-    it('should return hueApi when not in demo mode', async () => {
+    it('should always return hueApi (demo mode handled via header)', async () => {
       window.location.search = '';
       const { hueApi } = await import('../services/hueApi');
       const { result } = renderHook(() => useDemoMode(), { wrapper });
       expect(result.current.api).toBe(hueApi);
     });
 
-    it('should return mockApi when in demo mode', async () => {
+    it('should return hueApi in demo mode (backend handles demo via X-Demo-Mode header)', async () => {
       window.location.search = '?demo=true';
-      const { mockApi } = await import('../services/mockApi');
+      const { hueApi } = await import('../services/hueApi');
       const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.api).toBe(mockApi);
-    });
-  });
-
-  describe('demoLocation', () => {
-    it('should return null when not in demo mode', () => {
-      window.location.search = '';
-      const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.demoLocation).toBeNull();
-    });
-
-    it('should return London coordinates when in demo mode', () => {
-      window.location.search = '?demo=true';
-      const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.demoLocation).toEqual({
-        lat: 51.5074,
-        lon: -0.1278,
-        name: 'London',
-      });
-    });
-  });
-
-  describe('subscribeToMotion', () => {
-    it('should return null when not in demo mode', () => {
-      window.location.search = '';
-      const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.subscribeToMotion).toBeNull();
-    });
-
-    it('should return mockApi.subscribeToMotion when in demo mode', async () => {
-      window.location.search = '?demo=true';
-      const { mockApi } = await import('../services/mockApi');
-      const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.subscribeToMotion).toBe(mockApi.subscribeToMotion);
+      expect(result.current.api).toBe(hueApi);
     });
   });
 
