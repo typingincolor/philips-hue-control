@@ -1,6 +1,26 @@
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+
+// Mock hooks that make network calls - prevents "Failed to parse URL" warnings
+// Individual test files can override these mocks as needed
+vi.mock('../hooks/useSettings', () => ({
+  useSettings: () => ({
+    settings: { units: 'celsius', location: null },
+    isLoading: false,
+    error: null,
+    updateSettings: vi.fn(),
+  }),
+}));
+
+vi.mock('../hooks/useWeather', () => ({
+  useWeather: () => ({
+    weather: null,
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
 
 // Setup localStorage mock if not available (jsdom should provide it)
 if (typeof global.localStorage === 'undefined') {

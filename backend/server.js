@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
-import https from 'https';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -28,12 +27,6 @@ const HOST = process.env.HOST || config.server.host;
 
 // API version
 const API_VERSION = '2.0.0';
-
-// Create an HTTPS agent that accepts self-signed certificates
-// Note: Currently unused as hueClient handles its own agent, kept for potential future use
-const _httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
 
 // Enable CORS for all routes
 app.use(cors());

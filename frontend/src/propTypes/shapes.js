@@ -23,26 +23,6 @@ export const SceneShape = PropTypes.shape({
 });
 
 /**
- * PropTypes shape for room statistics
- */
-export const RoomStatsShape = PropTypes.shape({
-  lightsOnCount: PropTypes.number.isRequired,
-  totalLights: PropTypes.number.isRequired,
-  averageBrightness: PropTypes.number.isRequired,
-});
-
-/**
- * PropTypes shape for a room object with lights and scenes
- */
-export const RoomShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  stats: RoomStatsShape.isRequired,
-  lights: PropTypes.arrayOf(LightShape).isRequired,
-  scenes: PropTypes.arrayOf(SceneShape).isRequired,
-});
-
-/**
  * PropTypes shape for a motion zone
  */
 export const MotionZoneShape = PropTypes.shape({
@@ -51,25 +31,4 @@ export const MotionZoneShape = PropTypes.shape({
   motionDetected: PropTypes.bool.isRequired,
   enabled: PropTypes.bool,
   reachable: PropTypes.bool,
-});
-
-/**
- * PropTypes shape for a zone (light grouping)
- */
-export const ZoneShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  stats: RoomStatsShape.isRequired,
-  lights: PropTypes.arrayOf(LightShape).isRequired,
-  scenes: PropTypes.arrayOf(SceneShape).isRequired,
-});
-
-/**
- * PropTypes shape for dashboard summary
- */
-export const DashboardSummaryShape = PropTypes.shape({
-  lightsOn: PropTypes.number.isRequired,
-  totalLights: PropTypes.number.isRequired,
-  roomCount: PropTypes.number.isRequired,
-  sceneCount: PropTypes.number.isRequired,
 });

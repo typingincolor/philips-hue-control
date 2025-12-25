@@ -50,7 +50,10 @@ const request = async (url, options = {}, sessionToken = null) => {
       if (response.status === 401) {
         throw new Error('Session expired. Please log in again.');
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Create error with status for caller to handle
+      const error = new Error(`HTTP error! status: ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
 
     const data = await response.json();
@@ -62,7 +65,13 @@ const request = async (url, options = {}, sessionToken = null) => {
 
     return data;
   } catch (error) {
-    logger.error('Request failed:', error);
+    // Don't log expected HTTP statuses as errors:
+    // - 401: Session expired (triggers recovery flow)
+    // - 404: Resource not found (e.g., weather with no location, auth requiring pairing)
+    const expectedStatuses = [401, 404];
+    if (!expectedStatuses.includes(error.status)) {
+      logger.error('Request failed:', error);
+    }
 
     // Network error detection
     if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {

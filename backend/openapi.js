@@ -5,7 +5,7 @@ export const openApiSpec = {
   openapi: '3.0.0',
   info: {
     title: 'Philips Hue Control API',
-    version: '1.4.0',
+    version: '2.0.0',
     description: `
       A simplified, client-friendly API for controlling Philips Hue lights.
 
@@ -14,15 +14,13 @@ export const openApiSpec = {
       - Unified dashboard endpoint (1 call instead of 4-6)
       - Room hierarchy already built
       - Session-based authentication
-      - Header-based or query parameter auth
       - Demo mode for testing without a real bridge
       - Settings and weather API
+      - Real-time updates via WebSocket
 
       **Authentication Methods:**
-      1. **Session Token** (recommended): Get a session token from \`POST /api/v1/auth/session\`, then use \`Authorization: Bearer <token>\` header
+      1. **Session Token**: Get a session token from \`POST /api/v1/auth/session\`, then use \`Authorization: Bearer <token>\` header
       2. **Demo Mode**: Add \`X-Demo-Mode: true\` header to use mock data (no bridge required)
-      3. **Headers**: Use \`X-Bridge-IP\` and \`X-Hue-Username\` headers
-      4. **Query Params** (legacy): Use \`bridgeIp\` and \`username\` query parameters
 
       **Demo Mode:**
       Try the API without a Hue Bridge by adding \`X-Demo-Mode: true\` header to any request.
@@ -35,6 +33,11 @@ export const openApiSpec = {
       1. First client: \`POST /api/v1/auth/pair\` → \`POST /api/v1/auth/session\`
       2. Subsequent clients: \`POST /api/v1/auth/connect\` (no pairing needed!)
       3. Check availability: \`GET /api/v1/auth/bridge-status?bridgeIp=...\`
+
+      **WebSocket API:**
+      Connect to \`/api/v1/ws\` for real-time updates. Authenticate with:
+      - Session: \`{ type: 'auth', sessionToken: '<token>' }\`
+      - Demo: \`{ type: 'auth', demoMode: true }\`
     `,
     contact: {
       name: 'API Support',
@@ -62,18 +65,6 @@ export const openApiSpec = {
         in: 'header',
         name: 'X-Demo-Mode',
         description: 'Set to "true" to use demo mode (no bridge required)',
-      },
-      HeaderAuth: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'X-Bridge-IP',
-        description: 'Bridge IP address (combine with X-Hue-Username header)',
-      },
-      QueryAuth: {
-        type: 'apiKey',
-        in: 'query',
-        name: 'bridgeIp',
-        description: 'Bridge IP address (combine with username query param)',
       },
     },
     schemas: {
@@ -650,7 +641,7 @@ export const openApiSpec = {
         description:
           'Returns all data needed to render the dashboard in a single request with pre-computed colors and stats',
         tags: ['Dashboard'],
-        security: [{ BearerAuth: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
         responses: {
           200: {
             description: 'Dashboard data',
@@ -698,7 +689,7 @@ export const openApiSpec = {
       put: {
         summary: 'Update a light',
         tags: ['Lights'],
-        security: [{ BearerAuth: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
         parameters: [
           {
             name: 'id',
@@ -749,7 +740,7 @@ export const openApiSpec = {
         summary: 'Update all lights in a room',
         description: 'Toggle all lights in a room on or off',
         tags: ['Rooms'],
-        security: [{ BearerAuth: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
         parameters: [
           {
             name: 'id',
@@ -802,7 +793,7 @@ export const openApiSpec = {
         summary: 'Update all lights in a zone',
         description: 'Toggle all lights in a zone on or off',
         tags: ['Zones'],
-        security: [{ BearerAuth: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
         parameters: [
           {
             name: 'id',
@@ -855,7 +846,7 @@ export const openApiSpec = {
         summary: 'Activate a scene',
         description: 'Activate a Hue scene by its UUID',
         tags: ['Scenes'],
-        security: [{ BearerAuth: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
         parameters: [
           {
             name: 'id',
@@ -895,7 +886,7 @@ export const openApiSpec = {
         summary: 'Get motion zones',
         description: 'Returns all MotionAware zones with parsed motion status',
         tags: ['Motion'],
-        security: [{ BearerAuth: [] }, { DemoMode: [] }, { HeaderAuth: [] }, { QueryAuth: [] }],
+        security: [{ BearerAuth: [] }, { DemoMode: [] }],
         responses: {
           200: {
             description: 'Motion zones',

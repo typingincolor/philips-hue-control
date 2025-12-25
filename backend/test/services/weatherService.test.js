@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import WeatherService from '../../services/weatherService.js';
-import { getMockWeather, getMockSettings } from '../../services/mockData.js';
 
 // Mock logger
 vi.mock('../../utils/logger.js', () => ({

@@ -66,41 +66,25 @@ describe('useWebSocket', () => {
 
   describe('Connection', () => {
     it('should not connect when disabled', () => {
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, false));
+      const { result } = renderHook(() => useWebSocket('test-session-token', false));
 
       expect(result.current.isConnected).toBe(false);
     });
 
     it('should not connect when no session token', () => {
-      const { result } = renderHook(() => useWebSocket(null, null, true));
+      const { result } = renderHook(() => useWebSocket(null, true));
 
       expect(result.current.isConnected).toBe(false);
     });
 
     it('should connect with session token', async () => {
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0); // Trigger connection
       });
 
       expect(result.current.isConnected).toBe(true);
-    });
-
-    it('should connect in legacy mode with bridgeIp and username', async () => {
-      const { result } = renderHook(() => useWebSocket('192.168.1.100', 'test-username', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0); // Trigger connection
-      });
-
-      expect(result.current.isConnected).toBe(true);
-    });
-
-    it('should not connect in legacy mode without username', () => {
-      const { result } = renderHook(() => useWebSocket('192.168.1.100', null, true));
-
-      expect(result.current.isConnected).toBe(false);
     });
 
     it('should determine WebSocket URL from window.location', async () => {
@@ -108,7 +92,7 @@ describe('useWebSocket', () => {
       delete window.location;
       window.location = { protocol: 'http:', host: 'localhost:5173' };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -128,7 +112,7 @@ describe('useWebSocket', () => {
       delete window.location;
       window.location = { protocol: 'https:', host: 'example.com' };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -155,7 +139,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -164,31 +148,6 @@ describe('useWebSocket', () => {
       expect(ws.sentMessages).toContainEqual({
         type: 'auth',
         sessionToken: 'test-session-token',
-      });
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should send bridgeIp and username in legacy mode', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      renderHook(() => useWebSocket('192.168.1.100', 'test-username', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      expect(ws.sentMessages).toContainEqual({
-        type: 'auth',
-        bridgeIp: '192.168.1.100',
-        username: 'test-username',
       });
 
       global.WebSocket = originalWebSocket;
@@ -206,7 +165,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -239,7 +198,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -285,7 +244,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -326,7 +285,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -369,7 +328,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -397,7 +356,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -421,7 +380,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -449,7 +408,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -479,7 +438,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -528,7 +487,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -582,7 +541,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -633,7 +592,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -686,7 +645,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -737,7 +696,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -792,7 +751,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -827,7 +786,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -860,7 +819,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { unmount } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { unmount } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -885,7 +844,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { unmount } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { unmount } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -916,7 +875,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -941,7 +900,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      renderHook(() => useWebSocket('test-session-token', null, true));
+      renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);
@@ -970,7 +929,7 @@ describe('useWebSocket', () => {
         }
       };
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', null, true));
+      const { result } = renderHook(() => useWebSocket('test-session-token', true));
 
       await act(async () => {
         vi.advanceTimersByTime(0);

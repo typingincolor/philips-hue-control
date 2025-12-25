@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
+
+// Unmock the hook we're testing (globally mocked in setup.js)
+vi.unmock('./useSettings');
+
 import { useSettings } from './useSettings';
 import { hueApi } from '../services/hueApi';
 

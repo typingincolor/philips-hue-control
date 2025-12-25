@@ -936,19 +936,6 @@ describe('WebSocketService', () => {
       );
     });
 
-    it('should authenticate with legacy credentials', async () => {
-      const mockWs = { send: vi.fn() };
-
-      await websocketService.handleAuth(mockWs, {
-        bridgeIp: '192.168.1.100',
-        username: 'legacy-user',
-      });
-
-      expect(mockWs.bridgeIp).toBe('192.168.1.100');
-      expect(mockWs.username).toBe('legacy-user');
-      expect(mockWs.authMethod).toBe('legacy');
-    });
-
     it('should reject missing authentication', async () => {
       const mockWs = { send: vi.fn() };
 
@@ -957,8 +944,7 @@ describe('WebSocketService', () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({
           type: 'error',
-          message:
-            'Missing authentication: provide demoMode, sessionToken, or (bridgeIp + username)',
+          message: 'Missing authentication: provide demoMode or sessionToken',
         })
       );
     });
@@ -1005,8 +991,7 @@ describe('WebSocketService', () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({
           type: 'error',
-          message:
-            'Missing authentication: provide demoMode, sessionToken, or (bridgeIp + username)',
+          message: 'Missing authentication: provide demoMode or sessionToken',
         })
       );
     });
@@ -1014,11 +999,12 @@ describe('WebSocketService', () => {
     it('should add connection to map for new bridge', async () => {
       const mockWs = { send: vi.fn() };
       const bridgeIp = '192.168.1.200';
-
-      await websocketService.handleAuth(mockWs, {
+      sessionManager.getSession.mockReturnValue({
         bridgeIp,
         username: 'test-user',
       });
+
+      await websocketService.handleAuth(mockWs, { sessionToken: 'new-session-token' });
 
       expect(websocketService.connections.has(bridgeIp)).toBe(true);
       expect(websocketService.connections.get(bridgeIp).has(mockWs)).toBe(true);
@@ -1028,12 +1014,13 @@ describe('WebSocketService', () => {
       const bridgeIp = '192.168.1.100';
       const existingWs = { send: vi.fn() };
       websocketService.connections.set(bridgeIp, new Set([existingWs]));
-
-      const newWs = { send: vi.fn() };
-      await websocketService.handleAuth(newWs, {
+      sessionManager.getSession.mockReturnValue({
         bridgeIp,
         username: 'test-user',
       });
+
+      const newWs = { send: vi.fn() };
+      await websocketService.handleAuth(newWs, { sessionToken: 'another-session-token' });
 
       const connections = websocketService.connections.get(bridgeIp);
       expect(connections.size).toBe(2);
@@ -1045,23 +1032,25 @@ describe('WebSocketService', () => {
       const startPollingSpy = vi.spyOn(websocketService, 'startPolling').mockResolvedValue();
       const mockWs = { send: vi.fn() };
       const bridgeIp = '192.168.1.150';
-
-      await websocketService.handleAuth(mockWs, {
+      sessionManager.getSession.mockReturnValue({
         bridgeIp,
         username: 'test-user',
       });
+
+      await websocketService.handleAuth(mockWs, { sessionToken: 'test-session' });
 
       expect(startPollingSpy).toHaveBeenCalledWith(bridgeIp, 'test-user');
     });
 
     it('should send error when dashboard fetch fails', async () => {
       const mockWs = { send: vi.fn() };
-      dashboardService.getDashboard.mockRejectedValue(new Error('Network error'));
-
-      await websocketService.handleAuth(mockWs, {
+      sessionManager.getSession.mockReturnValue({
         bridgeIp: '192.168.1.100',
         username: 'test-user',
       });
+      dashboardService.getDashboard.mockRejectedValue(new Error('Network error'));
+
+      await websocketService.handleAuth(mockWs, { sessionToken: 'fail-session' });
 
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({

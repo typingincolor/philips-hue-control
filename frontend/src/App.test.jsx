@@ -3,9 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import { STORAGE_KEYS } from './constants/storage';
 
-// Mock hooks
-vi.mock('./hooks/useDemoMode', () => ({
-  useDemoMode: vi.fn(() => false),
+// Mock DemoModeContext
+vi.mock('./context/DemoModeContext', () => ({
+  DemoModeProvider: ({ children }) => children,
+  useDemoMode: vi.fn(() => ({ isDemoMode: false, api: null })),
 }));
 
 // Mock hueApi for session validation

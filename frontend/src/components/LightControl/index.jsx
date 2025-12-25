@@ -25,7 +25,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     isReconnecting: wsReconnecting,
     dashboard: wsDashboard,
     error: wsError,
-  } = useWebSocket(sessionToken, null, !isDemoMode);
+  } = useWebSocket(sessionToken, !isDemoMode);
 
   // Settings from backend (includes location and units)
   const { settings, updateSettings } = useSettings(sessionToken);
@@ -40,11 +40,11 @@ export const LightControl = ({ sessionToken, onLogout }) => {
   );
 
   // Location detection hook
-  const { isDetecting, error: locationError, detectLocation } = useLocation(
-    sessionToken,
-    settings.location,
-    handleLocationUpdate
-  );
+  const {
+    isDetecting,
+    error: locationError,
+    detectLocation,
+  } = useLocation(sessionToken, settings.location, handleLocationUpdate);
 
   // Weather from backend (uses session's location and units)
   const {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { errorHandler, notFoundHandler, asyncHandler } from '../../middleware/errorHandler.js';
+import { errorHandler, notFoundHandler } from '../../middleware/errorHandler.js';
 import {
   ApiError,
   AuthenticationError,
@@ -203,40 +203,6 @@ describe('errorHandler middleware', () => {
         message: 'Route POST /api/v1/nonexistent not found',
         suggestion: 'Check the API documentation at /api/v1/docs',
       });
-    });
-  });
-
-  describe('asyncHandler', () => {
-    it('should pass resolved values through', async () => {
-      const handler = asyncHandler(async (req, res) => {
-        res.json({ success: true });
-      });
-
-      await handler(req, res, next);
-
-      expect(res.json).toHaveBeenCalledWith({ success: true });
-      expect(next).not.toHaveBeenCalled();
-    });
-
-    it('should call next with rejected errors', async () => {
-      const error = new Error('Async error');
-      const handler = asyncHandler(async () => {
-        throw error;
-      });
-
-      await handler(req, res, next);
-
-      expect(next).toHaveBeenCalledWith(error);
-    });
-
-    it('should handle synchronous errors in async functions', async () => {
-      const handler = asyncHandler(async () => {
-        throw new ValidationError('field', 'invalid');
-      });
-
-      await handler(req, res, next);
-
-      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
     });
   });
 });

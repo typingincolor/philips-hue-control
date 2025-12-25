@@ -55,12 +55,3 @@ export function notFoundHandler(req, res) {
     suggestion: 'Check the API documentation at /api/v1/docs',
   });
 }
-
-/**
- * Async route wrapper to catch promise rejections
- */
-export function asyncHandler(fn) {
-  return (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-}

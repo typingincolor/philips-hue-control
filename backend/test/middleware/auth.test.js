@@ -85,50 +85,6 @@ describe('Auth Middleware', () => {
       });
     });
 
-    describe('header auth', () => {
-      it('should extract credentials from headers', () => {
-        req.headers['x-bridge-ip'] = bridgeIp;
-        req.headers['x-hue-username'] = username;
-        sessionManager.hasBridgeCredentials.mockReturnValue(true);
-
-        extractCredentials(req, res, next);
-
-        expect(req.hue).toEqual({
-          bridgeIp,
-          username,
-          authMethod: 'headers',
-        });
-        expect(next).toHaveBeenCalledWith();
-      });
-
-      it('should store credentials from header auth if not stored', () => {
-        req.headers['x-bridge-ip'] = bridgeIp;
-        req.headers['x-hue-username'] = username;
-        sessionManager.hasBridgeCredentials.mockReturnValue(false);
-
-        extractCredentials(req, res, next);
-
-        expect(sessionManager.storeBridgeCredentials).toHaveBeenCalledWith(bridgeIp, username);
-      });
-    });
-
-    describe('query param auth', () => {
-      it('should extract credentials from query params', () => {
-        req.query.bridgeIp = bridgeIp;
-        req.query.username = username;
-        sessionManager.hasBridgeCredentials.mockReturnValue(true);
-
-        extractCredentials(req, res, next);
-
-        expect(req.hue).toEqual({
-          bridgeIp,
-          username,
-          authMethod: 'query',
-        });
-        expect(next).toHaveBeenCalledWith();
-      });
-    });
-
     describe('missing credentials', () => {
       it('should call next with error when no credentials provided', () => {
         extractCredentials(req, res, next);
@@ -226,13 +182,13 @@ describe('Auth Middleware', () => {
 
       it('should use real auth when demoMode is false', () => {
         req.demoMode = false;
-        req.headers['x-bridge-ip'] = bridgeIp;
-        req.headers['x-hue-username'] = username;
+        req.headers.authorization = `Bearer ${sessionToken}`;
+        sessionManager.getSession.mockReturnValue({ bridgeIp, username });
         sessionManager.hasBridgeCredentials.mockReturnValue(true);
 
         extractCredentials(req, res, next);
 
-        expect(req.hue.authMethod).toBe('headers');
+        expect(req.hue.authMethod).toBe('session');
       });
     });
 

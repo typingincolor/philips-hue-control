@@ -23,17 +23,21 @@ npm run deploy           # Build and start production
 ## Key Architecture
 
 ### Monorepo Structure
+
 - **Root:** Workspace manager, `config.json` (ports, settings)
 - **Frontend:** React 18 + Vite 6 (`frontend/`)
 - **Backend:** Express 5 (`backend/`)
 
 ### API Proxy Pattern
+
 Backend proxies Hue Bridge requests (CORS + self-signed cert handling):
+
 - Frontend: `/api/*` → Backend → Hue Bridge
 - Bridge IP via query param: `?bridgeIp={ip}`
 - Auth via header: `hue-application-key: {username}`
 
 ### Dual-Mode Serving
+
 - **Development:** Vite (5173) + Express (3001) separate
 - **Production:** Express serves static files from `backend/public/`
 
@@ -44,6 +48,7 @@ Uses **v2 API exclusively** (`/clip/v2/resource/{type}`).
 ### Critical Pattern: Room→Device→Light Hierarchy
 
 V2 API has indirect relationships. To get lights in a room:
+
 1. Fetch rooms, devices, lights
 2. Build device→lights map from `device.services`
 3. Walk `room.children` to find device refs
@@ -56,6 +61,7 @@ V2 API has indirect relationships. To get lights in a room:
 ```
 
 ### Key Resources
+
 - `light` - Light state, color, brightness
 - `room` - Contains device children
 - `device` - Contains light service refs
@@ -66,35 +72,38 @@ V2 API has indirect relationships. To get lights in a room:
 ## Demo Mode
 
 Backend-based demo allows testing without Hue Bridge:
+
 - URL param: `?demo=true`
 - Header: `X-Demo-Mode: true` (auto-added by frontend)
 - WebSocket auth: `{ type: 'auth', demoMode: true }`
 
 **Key files:**
+
 - `backend/middleware/demoMode.js` - Detects header
 - `backend/services/mockData.js` - Demo data
 - `backend/services/mockHueClient.js` - Mock Hue client
 
 ## Backend Services
 
-| Service | Purpose |
-|---------|---------|
-| `hueClient.js` | Real Hue Bridge client |
-| `mockHueClient.js` | Mock client for demo |
+| Service               | Purpose                     |
+| --------------------- | --------------------------- |
+| `hueClient.js`        | Real Hue Bridge client      |
+| `mockHueClient.js`    | Mock client for demo        |
 | `hueClientFactory.js` | Returns real or mock client |
-| `dashboardService.js` | Dashboard data aggregation |
-| `roomService.js` | Room hierarchy building |
-| `zoneService.js` | Zone hierarchy building |
-| `motionService.js` | Motion zone handling |
-| `statsService.js` | Statistics calculation |
-| `sessionManager.js` | Session token management |
-| `settingsService.js` | Per-session settings |
-| `weatherService.js` | Weather API (Open-Meteo) |
-| `websocketService.js` | Real-time updates |
+| `dashboardService.js` | Dashboard data aggregation  |
+| `roomService.js`      | Room hierarchy building     |
+| `zoneService.js`      | Zone hierarchy building     |
+| `motionService.js`    | Motion zone handling        |
+| `statsService.js`     | Statistics calculation      |
+| `sessionManager.js`   | Session token management    |
+| `settingsService.js`  | Per-session settings        |
+| `weatherService.js`   | Weather API (Open-Meteo)    |
+| `websocketService.js` | Real-time updates           |
 
 ## Frontend Components
 
 ### Main Flow
+
 1. **App.jsx** - 3-step auth flow: Discovery → Authentication → LightControl
 2. **LightControl/index.jsx** - Main UI container
 3. **TopToolbar.jsx** - Header with motion dots, stats, weather, logout
@@ -106,6 +115,7 @@ Backend-based demo allows testing without Hue Bridge:
 9. **ZonesView.jsx** - All zones list
 
 ### Data Flow
+
 - **localStorage:** Bridge IP, username persistence
 - **useHueBridge:** Bridge connection state
 - **useDemoMode:** URL param detection
@@ -113,6 +123,7 @@ Backend-based demo allows testing without Hue Bridge:
 - **hueApi:** API calls with demo mode header
 
 ### UI Text Constants
+
 All user-facing text centralized in `constants/uiText.js`. Tests use these constants to prevent brittleness.
 
 ## CSS Architecture
@@ -120,6 +131,7 @@ All user-facing text centralized in `constants/uiText.js`. Tests use these const
 Single file: `frontend/src/App.css` (dark theme only)
 
 **Key variables:**
+
 - `--bg-primary: #1a1a1a`, `--bg-secondary: #2d2d2d`
 - `--accent-primary: #f59e0b` (amber)
 - `--text-primary: #ffffff`, `--text-secondary: #a0a0a0`
@@ -127,6 +139,7 @@ Single file: `frontend/src/App.css` (dark theme only)
 **Layout:** Fixed top toolbar + bottom nav, main panel between them.
 
 **Responsive breakpoints:**
+
 - `max-width: 500px` - Phone (2×4 grid)
 - `min-width: 600px` - Tablet/Pi (4×2 grid)
 
@@ -135,11 +148,13 @@ Single file: `frontend/src/App.css` (dark theme only)
 See `frontend/TESTING.md` for detailed testing documentation.
 
 ### Test Suites
-- **Backend:** 424 tests (services, middleware, utils)
-- **Frontend:** 241 tests (hooks, components, integration)
+
+- **Backend:** 501 tests (services, middleware, utils)
+- **Frontend:** 257 tests (hooks, components, integration)
 - **E2E:** 158 tests (Playwright, demo mode)
 
 ### Running Tests
+
 ```bash
 npm run test              # Watch mode
 npm run test:run          # CI mode
@@ -149,7 +164,9 @@ npm run test:e2e          # E2E tests (Playwright)
 ```
 
 ### E2E Test Ports
+
 E2E tests run on isolated ports to avoid dev server conflicts:
+
 - Frontend: 5174 (not 5173)
 - Backend: 3002 (not 3001)
 
@@ -158,33 +175,42 @@ Playwright auto-starts and stops both servers.
 ## API Endpoints
 
 ### Auth
+
 - `POST /api/v1/auth/connect` - Connect to bridge
 
 ### Dashboard
+
 - `GET /api/v1/dashboard` - Full dashboard data
 
 ### Lights
+
 - `PUT /api/v1/lights/:id` - Update light state
 
 ### Rooms
+
 - `PUT /api/v1/rooms/:id/lights` - Update all room lights
 
 ### Zones
+
 - `PUT /api/v1/zones/:id/lights` - Update all zone lights
 
 ### Scenes
+
 - `POST /api/v1/scenes/:id/activate` - Activate scene
 
 ### Settings
+
 - `GET /api/v1/settings` - Get settings
 - `PUT /api/v1/settings` - Update settings
 - `PUT /api/v1/settings/location` - Update location
 - `DELETE /api/v1/settings/location` - Clear location
 
 ### Weather
+
 - `GET /api/v1/weather` - Get weather for stored location
 
 ### WebSocket
+
 - Connect: `/api/v1/ws`
 - Auth: `{ type: 'auth', sessionToken, demoMode? }`
 - Events: `initial_state`, `light_update`, `motion_update`
@@ -228,16 +254,19 @@ Playwright auto-starts and stops both servers.
 ## Common Tasks
 
 ### Adding a New API Endpoint
+
 1. Add route in `backend/routes/v1/`
 2. Add to route aggregator `backend/routes/v1/index.js`
 3. Add frontend method in `frontend/src/services/hueApi.js`
 
 ### Adding a New Component
+
 1. Create in `frontend/src/components/`
 2. Add UI text to `frontend/src/constants/uiText.js`
 3. Add tests in same directory
 
 ### Debugging
+
 ```bash
 curl http://localhost:3001/api/health  # Check backend
 ```
@@ -253,6 +282,7 @@ Backend logs all proxied requests. Check port 5173 for Vite dev server.
 ## MotionAware Zones
 
 Uses v2 API only (not traditional `/sensors` endpoint):
+
 1. Fetch `behavior_instance` for zone names
 2. Fetch `convenience_area_motion` for motion status
 3. Match via `configuration.motion.motion_service.rid`

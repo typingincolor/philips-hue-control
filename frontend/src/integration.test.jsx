@@ -425,7 +425,6 @@ describe('Integration Tests', () => {
       // Verify localStorage has session
       expect(localStorage.getItem('hue_session_token')).toBe(mockSessionToken);
       expect(localStorage.getItem('hue_bridge_ip')).toBe(mockBridgeIp);
-      expect(localStorage.getItem('hue_username')).toBe(mockUsername);
       expect(localStorage.getItem('hue_session_expires_at')).toBeTruthy();
     });
 
@@ -434,7 +433,6 @@ describe('Integration Tests', () => {
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours from now
       localStorage.setItem('hue_session_token', mockSessionToken);
       localStorage.setItem('hue_bridge_ip', mockBridgeIp);
-      localStorage.setItem('hue_username', mockUsername);
       localStorage.setItem('hue_session_expires_at', expiresAt.toString());
 
       render(<App />);
@@ -448,31 +446,6 @@ describe('Integration Tests', () => {
       );
 
       // Should NOT show authentication screen
-      expect(screen.queryByText(/Press the Link Button/i)).not.toBeInTheDocument();
-    });
-
-    it('auto-recovers session after server restart', async () => {
-      // Pre-populate localStorage with expired session but valid username
-      const expiresAt = Date.now() - 1000; // Expired 1 second ago
-      localStorage.setItem('hue_session_token', 'old_expired_token');
-      localStorage.setItem('hue_bridge_ip', mockBridgeIp);
-      localStorage.setItem('hue_username', mockUsername);
-      localStorage.setItem('hue_session_expires_at', expiresAt.toString());
-
-      render(<App />);
-
-      // Should automatically create new session using saved username
-      await waitFor(
-        () => {
-          expect(screen.getByText('Living Room')).toBeInTheDocument();
-        },
-        { timeout: 10000 }
-      );
-
-      // Should have new session token
-      expect(localStorage.getItem('hue_session_token')).toBe(mockSessionToken);
-
-      // Should NOT require button press
       expect(screen.queryByText(/Press the Link Button/i)).not.toBeInTheDocument();
     });
   });

@@ -36,7 +36,6 @@ export const useHueBridge = () => {
     return {
       step: initialStep, // Initialize based on existing session
       bridgeIp: initialBridgeIp,
-      username: null, // Legacy, kept for compatibility
       lights: null,
       loading: false,
       error: null,
@@ -50,33 +49,6 @@ export const useHueBridge = () => {
     clearSession,
     isValid,
   } = useSession();
-
-  // Helper to migrate from legacy auth to session auth
-  const migrateToSession = async (bridgeIp, username) => {
-    setState((prev) => ({ ...prev, loading: true }));
-    try {
-      const sessionInfo = await hueApi.createSession(bridgeIp, username);
-      createSession(sessionInfo.sessionToken, bridgeIp, sessionInfo.expiresIn, username);
-      setState((prev) => ({
-        ...prev,
-        bridgeIp,
-        loading: false,
-        step: 'connected',
-      }));
-      logger.info('Successfully auto-recovered session');
-    } catch (error) {
-      logger.error('Failed to auto-recover session:', error);
-      // Clear invalid credentials and require re-authentication
-      localStorage.removeItem(STORAGE_KEYS.USERNAME);
-      setState((prev) => ({
-        ...prev,
-        bridgeIp,
-        loading: false,
-        step: 'authentication',
-        error: 'Session recovery failed. Please authenticate again.',
-      }));
-    }
-  };
 
   // Handle session restoration on mount
   useEffect(() => {
@@ -120,18 +92,10 @@ export const useHueBridge = () => {
           return;
         } catch (error) {
           if (error.message === 'PAIRING_REQUIRED') {
-            logger.info('No stored server credentials, checking for username...');
+            logger.info('No stored server credentials, pairing required');
           } else {
             logger.error('Connect failed', error.message);
           }
-        }
-
-        // Try legacy username-based recovery
-        const savedUsername = localStorage.getItem(STORAGE_KEYS.USERNAME);
-        if (savedUsername) {
-          logger.info('Found saved username, auto-recovering session...');
-          await migrateToSession(savedIp, savedUsername);
-          return;
         }
 
         // No recovery options, go to authentication
@@ -152,21 +116,6 @@ export const useHueBridge = () => {
     restoreSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Run when step or sessionToken changes
   }, [state.step, sessionToken, isValid]);
-
-  // Handle legacy recovery on mount (when session is expired but username exists)
-  useEffect(() => {
-    // Only run on mount when starting at 'discovery'
-    if (state.step !== 'discovery') return;
-
-    const savedIp = localStorage.getItem(STORAGE_KEYS.BRIDGE_IP);
-    const savedUsername = localStorage.getItem(STORAGE_KEYS.USERNAME);
-
-    if (savedIp && savedUsername) {
-      logger.info('Found saved credentials (expired session), auto-recovering...');
-      migrateToSession(savedIp, savedUsername);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run only on mount
-  }, []);
 
   const setBridgeIp = async (ip) => {
     localStorage.setItem(STORAGE_KEYS.BRIDGE_IP, ip);
@@ -224,7 +173,7 @@ export const useHueBridge = () => {
 
       // Step 2: Create session token
       const sessionInfo = await hueApi.createSession(state.bridgeIp, username);
-      createSession(sessionInfo.sessionToken, state.bridgeIp, sessionInfo.expiresIn, username);
+      createSession(sessionInfo.sessionToken, state.bridgeIp, sessionInfo.expiresIn);
 
       setState((prev) => ({
         ...prev,
@@ -249,24 +198,13 @@ export const useHueBridge = () => {
     }
   }, [state.bridgeIp, createSession]);
 
-  const testConnection = async () => {
-    // Connection testing is now handled by ConnectionTest component
-    // This function is kept for compatibility but does nothing
-    setState((prev) => ({ ...prev, loading: false, error: null }));
-  };
-
   const reset = () => {
-    // Clear session
     clearSession();
-
-    // Clear legacy storage (for migration)
     localStorage.removeItem(STORAGE_KEYS.BRIDGE_IP);
-    localStorage.removeItem(STORAGE_KEYS.USERNAME);
 
     setState({
       step: 'discovery',
       bridgeIp: null,
-      username: null,
       lights: null,
       loading: false,
       error: null,
@@ -277,10 +215,9 @@ export const useHueBridge = () => {
 
   return {
     ...state,
-    sessionToken, // Expose session token for API calls
+    sessionToken,
     setBridgeIp,
     authenticate,
-    testConnection,
     reset,
   };
 };

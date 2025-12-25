@@ -192,12 +192,12 @@ class WebSocketService {
 
   /**
    * Handle client authentication
-   * Supports session token, demo mode, and legacy bridgeIp/username auth
+   * Supports session token and demo mode
    */
   async handleAuth(ws, data) {
     let bridgeIp, username;
 
-    // Method 1: Demo mode (no credentials needed)
+    // Demo mode (no credentials needed)
     if (data.demoMode === true) {
       bridgeIp = DEMO_BRIDGE_IP;
       username = DEMO_USERNAME;
@@ -205,7 +205,7 @@ class WebSocketService {
       ws.demoMode = true;
       logger.info('Client authenticated via demo mode');
     }
-    // Method 2: Session token (preferred for real mode)
+    // Session token
     else if (data.sessionToken) {
       const session = sessionManager.getSession(data.sessionToken);
 
@@ -224,20 +224,12 @@ class WebSocketService {
       ws.authMethod = 'session';
       logger.info('Client authenticated via session token', { bridgeIp });
     }
-    // Method 3: Legacy bridgeIp + username
-    else if (data.bridgeIp && data.username) {
-      bridgeIp = data.bridgeIp;
-      username = data.username;
-      ws.authMethod = 'legacy';
-      logger.info('Client authenticated via legacy credentials', { bridgeIp });
-    }
     // Error: No valid auth provided
     else {
       ws.send(
         JSON.stringify({
           type: 'error',
-          message:
-            'Missing authentication: provide demoMode, sessionToken, or (bridgeIp + username)',
+          message: 'Missing authentication: provide demoMode or sessionToken',
         })
       );
       return;

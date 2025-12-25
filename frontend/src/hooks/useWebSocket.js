@@ -12,11 +12,10 @@ const isDemoMode = () => {
 /**
  * WebSocket hook for real-time dashboard updates
  * Replaces polling with push-based updates from backend
- * @param {string} sessionToken - Session token (preferred) OR bridgeIp (legacy)
- * @param {string} username - Username (only needed for legacy mode)
+ * @param {string} sessionToken - Session token for authentication
  * @param {boolean} enabled - Whether WebSocket is enabled
  */
-export const useWebSocket = (sessionToken, username = null, enabled = true) => {
+export const useWebSocket = (sessionToken, enabled = true) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [dashboard, setDashboard] = useState(null);
@@ -27,9 +26,7 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
   const maxReconnectAttempts = 5;
   const hasConnectedOnce = useRef(false);
   const lastPongTime = useRef(Date.now());
-
-  // Detect legacy mode (bridgeIp looks like an IP address)
-  const isLegacyMode = sessionToken && sessionToken.includes('.');
+  const isClosingRef = useRef(false); // Track intentional closes (e.g., StrictMode cleanup)
 
   const applyChanges = useCallback((changes) => {
     if (!changes || changes.length === 0) return;
@@ -124,18 +121,19 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
   const connect = useCallback(() => {
     const demoMode = isDemoMode();
 
+    // Reset closing flag for new connection
+    isClosingRef.current = false;
+
     // In demo mode, we don't need sessionToken
     if (!enabled) return;
     if (!demoMode && !sessionToken) return;
-    if (!demoMode && isLegacyMode && !username) return;
 
     // Determine WebSocket URL (same host as current page)
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const wsUrl = `${protocol}//${host}/api/v1/ws`;
 
-    const modeStr = demoMode ? '(demo mode)' : isLegacyMode ? '(legacy mode)' : '(session mode)';
-    logger.info('Connecting to', wsUrl, modeStr);
+    logger.info('Connecting to', wsUrl, demoMode ? '(demo mode)' : '(session mode)');
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -151,30 +149,9 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
 
       // Authenticate based on mode
       if (demoMode) {
-        // Demo mode: no credentials needed
-        ws.send(
-          JSON.stringify({
-            type: 'auth',
-            demoMode: true,
-          })
-        );
-      } else if (isLegacyMode) {
-        // Legacy: send bridgeIp + username
-        ws.send(
-          JSON.stringify({
-            type: 'auth',
-            bridgeIp: sessionToken,
-            username,
-          })
-        );
+        ws.send(JSON.stringify({ type: 'auth', demoMode: true }));
       } else {
-        // Session mode: send sessionToken
-        ws.send(
-          JSON.stringify({
-            type: 'auth',
-            sessionToken,
-          })
-        );
+        ws.send(JSON.stringify({ type: 'auth', sessionToken }));
       }
     };
 
@@ -188,14 +165,27 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
     };
 
     ws.onerror = (event) => {
-      logger.error('Error:', event);
-      setError('WebSocket connection error');
+      // Don't log error if this isn't the current WebSocket (e.g., stale from StrictMode cleanup)
+      if (wsRef.current === ws && !isClosingRef.current) {
+        logger.error('Error:', event);
+        setError('WebSocket connection error');
+      }
     };
 
     ws.onclose = () => {
+      // Ignore close events from stale WebSocket instances (e.g., StrictMode cleanup)
+      if (wsRef.current !== ws && wsRef.current !== null) {
+        return;
+      }
+
       logger.info('Disconnected');
       setIsConnected(false);
       wsRef.current = null;
+
+      // Don't attempt reconnect if we're intentionally closing
+      if (isClosingRef.current) {
+        return;
+      }
 
       // Attempt to reconnect with exponential backoff
       if (enabled && reconnectAttempts.current < maxReconnectAttempts) {
@@ -219,32 +209,35 @@ export const useWebSocket = (sessionToken, username = null, enabled = true) => {
         setError('Failed to connect after multiple attempts');
       }
     };
-  }, [sessionToken, username, enabled, isLegacyMode, handleMessage]);
+  }, [sessionToken, enabled, handleMessage]);
 
   // Connect on mount and when credentials change
   useEffect(() => {
     const demoMode = isDemoMode();
 
     // In demo mode, connect immediately without needing credentials
-    if (enabled && demoMode) {
+    if (enabled && (demoMode || sessionToken)) {
       connect();
-    } else if (enabled && sessionToken) {
-      if (!isLegacyMode || (isLegacyMode && username)) {
-        connect();
-      }
     }
 
     return () => {
       if (wsRef.current) {
-        logger.info('Closing connection');
-        wsRef.current.close();
+        // Mark as intentionally closing to suppress error logs
+        isClosingRef.current = true;
+        const ws = wsRef.current;
+        // Clear ref first so stale callbacks won't match
         wsRef.current = null;
+        // Only log if connection was established (not just connecting)
+        if (ws.readyState === WebSocket.OPEN) {
+          logger.info('Closing connection');
+        }
+        ws.close();
       }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [connect, sessionToken, username, enabled, isLegacyMode]);
+  }, [connect, sessionToken, enabled]);
 
   // Heartbeat ping every 30 seconds with dead connection detection
   useEffect(() => {

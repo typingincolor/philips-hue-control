@@ -7,7 +7,7 @@ import { requireSession } from '../../middleware/auth.js';
 import { MissingCredentialsError, BridgeConnectionError } from '../../utils/errors.js';
 import { createLogger } from '../../utils/logger.js';
 import { REQUEST_TIMEOUT_MS } from '../../constants/timings.js';
-import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../../services/mockData.js';
+import { DEMO_BRIDGE_IP } from '../../services/mockData.js';
 
 const logger = createLogger('AUTH');
 const router = express.Router();

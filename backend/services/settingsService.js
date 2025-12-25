@@ -77,10 +77,9 @@ class SettingsService {
    * Update settings for a session
    * @param {string} sessionId - Session identifier
    * @param {object} updates - Settings updates (location, units)
-   * @param {boolean} demoMode - Whether in demo mode (unused, kept for API compatibility)
    * @returns {object} Updated settings
    */
-  updateSettings(sessionId, updates, demoMode = false) {
+  updateSettings(sessionId, updates) {
     // Validate updates
     if (updates.units !== undefined) {
       validateUnits(updates.units);
@@ -112,21 +111,19 @@ class SettingsService {
    * Update location only
    * @param {string} sessionId - Session identifier
    * @param {object} location - Location object { lat, lon, name? }
-   * @param {boolean} demoMode - Whether in demo mode
    * @returns {object} Updated settings
    */
-  updateLocation(sessionId, location, demoMode = false) {
-    return this.updateSettings(sessionId, { location }, demoMode);
+  updateLocation(sessionId, location) {
+    return this.updateSettings(sessionId, { location });
   }
 
   /**
    * Clear location for a session
    * @param {string} sessionId - Session identifier
-   * @param {boolean} demoMode - Whether in demo mode
    * @returns {object} Updated settings
    */
-  clearLocation(sessionId, demoMode = false) {
-    return this.updateSettings(sessionId, { location: null }, demoMode);
+  clearLocation(sessionId) {
+    return this.updateSettings(sessionId, { location: null });
   }
 
   /**

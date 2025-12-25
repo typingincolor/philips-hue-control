@@ -37,16 +37,15 @@ router.get('/', requireSession, async (req, res, next) => {
 router.put('/', requireSession, async (req, res, next) => {
   try {
     const { sessionToken } = req.hue;
-    const demoMode = req.demoMode || false;
     const { location, units } = req.body;
 
-    logger.debug('Updating settings', { sessionToken, demoMode, hasLocation: !!location, units });
+    logger.debug('Updating settings', { sessionToken, hasLocation: !!location, units });
 
     const updates = {};
     if (location !== undefined) updates.location = location;
     if (units !== undefined) updates.units = units;
 
-    const settings = settingsService.updateSettings(sessionToken, updates, demoMode);
+    const settings = settingsService.updateSettings(sessionToken, updates);
 
     res.json(settings);
   } catch (error) {
@@ -67,15 +66,14 @@ router.put('/', requireSession, async (req, res, next) => {
 router.put('/location', requireSession, async (req, res, next) => {
   try {
     const { sessionToken } = req.hue;
-    const demoMode = req.demoMode || false;
     const { lat, lon, name } = req.body;
 
-    logger.debug('Updating location', { sessionToken, demoMode, lat, lon, name });
+    logger.debug('Updating location', { sessionToken, lat, lon, name });
 
     const location = { lat, lon };
     if (name) location.name = name;
 
-    const settings = settingsService.updateLocation(sessionToken, location, demoMode);
+    const settings = settingsService.updateLocation(sessionToken, location);
 
     res.json(settings);
   } catch (error) {
@@ -95,11 +93,10 @@ router.put('/location', requireSession, async (req, res, next) => {
 router.delete('/location', requireSession, async (req, res, next) => {
   try {
     const { sessionToken } = req.hue;
-    const demoMode = req.demoMode || false;
 
-    logger.debug('Clearing location', { sessionToken, demoMode });
+    logger.debug('Clearing location', { sessionToken });
 
-    const settings = settingsService.clearLocation(sessionToken, demoMode);
+    const settings = settingsService.clearLocation(sessionToken);
 
     res.json(settings);
   } catch (error) {

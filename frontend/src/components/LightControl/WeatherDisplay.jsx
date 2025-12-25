@@ -5,7 +5,7 @@ import { UI_TEXT } from '../../constants/uiText';
  * Weather display component for the toolbar
  * Shows icon, temperature, and location name
  */
-export const WeatherDisplay = ({ weather, location, isLoading, error, units, onClick }) => {
+export const WeatherDisplay = ({ weather, location, isLoading, error, _units, onClick }) => {
   // No location set - show setup prompt
   if (!location) {
     return (

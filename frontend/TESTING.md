@@ -49,21 +49,18 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (241 tests)
+### Unit Test Results (257 tests)
 
 #### Utilities
 
-- **validation.js**: 8 tests
-  - IP address format validation
-  - Octet range validation (0-255)
-  - Edge cases and boundary values
+- **validation.js**: 8 tests - IP address validation
 
 #### Hooks
 
 - **useDemoMode.js**: 9 tests - URL parameter parsing
-- **useHueApi.js**: 4 tests - API selection (real vs mock)
-- **usePolling.js**: 10 tests - Interval polling
 - **useSession.js**: 25 tests - Session management
+- **useSettings.js**: 10 tests - Settings API
+- **useWeather.js**: 10 tests - Weather API
 - **useWebSocket.js**: 31 tests - WebSocket connection
 
 #### Services
@@ -76,16 +73,16 @@ View mutation report: `open reports/mutation/html/index.html`
 - **MotionZones.jsx**: 9 tests - Motion zone alerts
 - **DashboardSummary.jsx**: 5 tests - Statistics rendering
 - **SceneSelector.jsx**: 8 tests - Scene icon buttons
-- **LightButton.jsx**: 15 tests - Light button rendering
-- **RoomCard.jsx**: 16 tests - Room card component
-- **ZoneCard.jsx**: 14 tests - Zone bar component
+- **SettingsDrawer.jsx**: 16 tests - Settings drawer
+- **WeatherDisplay.jsx**: 11 tests - Weather display
+- **LightControl/index.jsx**: 18 tests - Main control component
 - **index.zones.test.jsx**: 9 tests - Zone integration tests
 
 #### Integration
 
 - **integration.test.jsx**: 11 tests - Full app flow tests
 
-**Note:** Business logic tests (colorConversion, roomUtils, motionSensors) are in the backend test suite (424 tests).
+**Note:** Business logic tests (colorConversion, roomUtils, motionSensors) are in the backend test suite (501 tests).
 
 ## Mutation Testing Results
 
@@ -152,7 +149,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 241 tests run in <6 seconds
+   - 257 tests run in <5 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 
@@ -163,13 +160,12 @@ Some mutants survive because they don't produce observable differences:
 ```
 src/
 ├── utils/
-│   ├── validation.js
 │   └── validation.test.js
 ├── hooks/
 │   ├── useDemoMode.test.js
-│   ├── useHueApi.test.js
-│   ├── usePolling.test.js
 │   ├── useSession.test.js
+│   ├── useSettings.test.js
+│   ├── useWeather.test.jsx
 │   └── useWebSocket.test.js
 ├── services/
 │   └── hueApi.test.js
@@ -179,13 +175,13 @@ src/
 │   └── LightControl/
 │       ├── DashboardSummary.test.jsx
 │       ├── SceneSelector.test.jsx
-│       ├── LightButton.test.jsx
-│       ├── RoomCard.test.jsx
-│       ├── ZoneCard.test.jsx
+│       ├── SettingsDrawer.test.jsx
+│       ├── WeatherDisplay.test.jsx
+│       ├── index.test.jsx
 │       └── index.zones.test.jsx
 ├── integration.test.jsx
 └── test/
-    └── setup.js                    ← Global setup
+    └── setup.js                    ← Global setup (includes hook mocks)
 ```
 
 ## Adding New Tests
@@ -317,10 +313,10 @@ Some mutations are OK to survive:
 
 E2E tests use **Playwright** with automatic server management. Tests run on **isolated ports** to avoid conflicts with dev servers:
 
-| Server | Dev Port | E2E Port |
-|--------|----------|----------|
-| Frontend | 5173 | 5174 |
-| Backend | 3001 | 3002 |
+| Server   | Dev Port | E2E Port |
+| -------- | -------- | -------- |
+| Frontend | 5173     | 5174     |
+| Backend  | 3001     | 3002     |
 
 Playwright automatically starts and stops both servers for each test run.
 

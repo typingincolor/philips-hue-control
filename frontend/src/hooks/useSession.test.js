@@ -119,26 +119,6 @@ describe('useSession', () => {
       expect(localStorage.getItem(STORAGE_KEYS.SESSION_EXPIRES_AT)).toBeTruthy();
     });
 
-    it('should store username when provided', () => {
-      const { result } = renderHook(() => useSession());
-
-      act(() => {
-        result.current.createSession('new-token', '192.168.1.100', 86400, 'test-username');
-      });
-
-      expect(localStorage.getItem(STORAGE_KEYS.USERNAME)).toBe('test-username');
-    });
-
-    it('should not store username when not provided', () => {
-      const { result } = renderHook(() => useSession());
-
-      act(() => {
-        result.current.createSession('new-token', '192.168.1.100', 86400);
-      });
-
-      expect(localStorage.getItem(STORAGE_KEYS.USERNAME)).toBeNull();
-    });
-
     it('should calculate expiry time correctly', () => {
       const { result } = renderHook(() => useSession());
       const beforeCreate = Date.now();
