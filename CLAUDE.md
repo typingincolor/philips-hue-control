@@ -25,6 +25,25 @@ The TopToolbar displays real-time connection status with three states:
 - **Amber pulsing dot + "Reconnecting..."**: Connection lost, attempting to reconnect
 - **Red dot + "Disconnected"**: All reconnection attempts failed
 
+**Weather Forecast Feature:**
+
+The TopToolbar displays current weather and a 5-day forecast using the Open-Meteo API:
+- **Weather Display**: Shows weather icon + temperature + location name (e.g., "☀️ 22° London")
+- **Weather Tooltip**: Appears on hover with current conditions, wind speed, and 5-day forecast
+- **Settings Drawer**: Hamburger menu opens settings for location detection and unit toggle (C/F)
+- **Location Detection**: Uses browser geolocation + Nominatim reverse geocoding for city names
+- **Demo Mode**: Uses mock weather data when in demo mode
+
+Key files:
+- `frontend/src/hooks/useSettings.js` - Manages units preference (celsius/fahrenheit) with localStorage
+- `frontend/src/hooks/useLocation.js` - Handles geolocation detection and persistence
+- `frontend/src/hooks/useWeather.js` - Fetches weather data with 15-minute polling
+- `frontend/src/services/weatherApi.js` - Open-Meteo SDK integration using FlatBuffers
+- `frontend/src/constants/weather.js` - Weather codes, icons, and configuration
+- `frontend/src/components/LightControl/WeatherDisplay.jsx` - Toolbar weather button
+- `frontend/src/components/LightControl/WeatherTooltip.jsx` - Hover forecast panel
+- `frontend/src/components/LightControl/SettingsDrawer.jsx` - Settings slide-out drawer
+
 ## Development Commands
 
 ### Start Development (Both Servers)
@@ -832,9 +851,12 @@ The MotionAware zones feature is **NOT** available through traditional motion se
 │   │   │       ├── MainPanel.jsx        # Content switcher (room/zones)
 │   │   │       ├── RoomContent.jsx      # Light tiles grid for room
 │   │   │       ├── SceneDrawer.jsx      # Slide-out drawer for scenes
+│   │   │       ├── SettingsDrawer.jsx   # Weather settings drawer
+│   │   │       ├── WeatherDisplay.jsx   # Toolbar weather button
+│   │   │       ├── WeatherTooltip.jsx   # Hover forecast panel
 │   │   │       ├── LightTile.jsx        # Large light button with fill
 │   │   │       ├── ZonesView.jsx        # All zones list
-│   │   │       ├── Icons.jsx            # Lucide icon wrappers
+│   │   │       ├── Icons.jsx            # Lucide + weather icons
 │   │   │       ├── SceneSelector.jsx    # Scene dropdown
 │   │   │       ├── DashboardSummary.jsx # Statistics summary
 │   │   │       ├── RoomCard.jsx         # (legacy) Room card display
@@ -850,15 +872,22 @@ The MotionAware zones feature is **NOT** available through traditional motion se
 │   │   │   ├── storage.js               # localStorage keys
 │   │   │   ├── colors.js                # Color configuration
 │   │   │   ├── validation.js            # Validation constants
-│   │   │   └── messages.js              # Error messages
+│   │   │   ├── messages.js              # Error messages
+│   │   │   ├── uiText.js                # UI text constants
+│   │   │   └── weather.js               # Weather codes and config
 │   │   ├── services/
 │   │   │   ├── hueApi.js                # All API calls (v2 API only)
-│   │   │   └── mockData.js              # Demo mode mock data
+│   │   │   ├── mockData.js              # Demo mode mock data
+│   │   │   ├── weatherApi.js            # Open-Meteo API integration
+│   │   │   └── mockWeatherData.js       # Demo mode weather data
 │   │   ├── hooks/                       # Custom React hooks (all tested)
 │   │   │   ├── useHueBridge.js          # Bridge connection state
 │   │   │   ├── useDemoMode.js           # Demo mode detection
 │   │   │   ├── useHueApi.js             # API selection (real vs mock)
-│   │   │   └── usePolling.js            # Reusable polling hook
+│   │   │   ├── usePolling.js            # Reusable polling hook
+│   │   │   ├── useSettings.js           # Weather settings persistence
+│   │   │   ├── useLocation.js           # Geolocation detection
+│   │   │   └── useWeather.js            # Weather data fetching
 │   │   └── test/
 │   │       └── setup.js                 # Global test setup
 │   └── vite.config.js                   # Reads config.json, sets up proxy
