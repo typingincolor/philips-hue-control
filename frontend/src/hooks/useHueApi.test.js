@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useHueApi } from './useHueApi';
 import { hueApi } from '../services/hueApi';
-import { mockApi } from '../services/mockData';
+import { mockApi } from '../services/mockApi';
 
 // Mock the dependencies
 vi.mock('./useDemoMode', () => ({
@@ -13,7 +13,7 @@ vi.mock('../services/hueApi', () => ({
   hueApi: { name: 'hueApi' },
 }));
 
-vi.mock('../services/mockData', () => ({
+vi.mock('../services/mockApi', () => ({
   mockApi: { name: 'mockApi' },
 }));
 
