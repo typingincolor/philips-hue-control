@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -42,82 +42,42 @@ import App from './App';
 import { UI_TEXT } from './constants/uiText';
 import { ERROR_MESSAGES } from './constants/messages';
 
-// Mock WebSocket since MSW doesn't support WebSocket yet
-class MockWebSocket {
-  static CONNECTING = 0;
-  static OPEN = 1;
-  static CLOSING = 2;
-  static CLOSED = 3;
+// Mock socket.io-client for integration tests
+let mockSocketHandlers = {};
+let mockDashboardData = null;
 
-  constructor(url) {
-    this.url = url;
-    this.readyState = MockWebSocket.CONNECTING;
-    this.onopen = null;
-    this.onmessage = null;
-    this.onerror = null;
-    this.onclose = null;
-    this.authenticated = false;
+const createMockSocket = () => ({
+  on: vi.fn((event, handler) => {
+    mockSocketHandlers[event] = handler;
+  }),
+  emit: vi.fn((event, data) => {
+    if (event === 'auth') {
+      // Simulate successful auth - send initial_state after auth
+      setTimeout(() => {
+        if (mockSocketHandlers.initial_state && mockDashboardData) {
+          mockSocketHandlers.initial_state(mockDashboardData);
+        }
+      }, 10);
+    }
+  }),
+  disconnect: vi.fn(),
+  connected: true,
+});
 
-    // Simulate connection (faster for tests)
+let mockSocket = createMockSocket();
+
+vi.mock('socket.io-client', () => ({
+  io: vi.fn(() => {
+    mockSocket = createMockSocket();
+    // Simulate connection after socket creation
     setTimeout(() => {
-      this.readyState = MockWebSocket.OPEN;
-      if (this.onopen) this.onopen({ type: 'open' });
+      if (mockSocketHandlers.connect) {
+        mockSocketHandlers.connect();
+      }
     }, 10);
-  }
-
-  send(data) {
-    const message = JSON.parse(data);
-
-    // Respond to auth
-    if (message.type === 'auth') {
-      this.authenticated = true;
-      // Send initial state immediately after auth
-      setTimeout(() => {
-        if (this.onmessage) {
-          this.onmessage({
-            data: JSON.stringify({
-              type: 'initial_state',
-              data: mockDashboard,
-            }),
-          });
-        }
-      }, 10);
-    }
-
-    // Respond to ping
-    if (message.type === 'ping') {
-      setTimeout(() => {
-        if (this.onmessage) {
-          this.onmessage({
-            data: JSON.stringify({ type: 'pong' }),
-          });
-        }
-      }, 10);
-    }
-  }
-
-  close() {
-    this.readyState = MockWebSocket.CLOSED;
-    if (this.onclose) this.onclose({ type: 'close' });
-  }
-
-  // Add addEventListener/removeEventListener for compatibility with MSW
-  addEventListener(event, handler) {
-    if (event === 'open') this.onopen = handler;
-    if (event === 'message') this.onmessage = handler;
-    if (event === 'error') this.onerror = handler;
-    if (event === 'close') this.onclose = handler;
-  }
-
-  removeEventListener(event, handler) {
-    if (event === 'open' && this.onopen === handler) this.onopen = null;
-    if (event === 'message' && this.onmessage === handler) this.onmessage = null;
-    if (event === 'error' && this.onerror === handler) this.onerror = null;
-    if (event === 'close' && this.onclose === handler) this.onclose = null;
-  }
-}
-
-global.WebSocket = MockWebSocket;
+    return mockSocket;
+  }),
+}));
 
 // Mock data
 const mockBridgeIp = '192.168.1.100';
@@ -307,7 +267,7 @@ const server = setupServer(
 beforeAll(() =>
   server.listen({
     onUnhandledRequest: (req) => {
-      // Bypass WebSocket connections - they're handled by MockWebSocket
+      // Bypass WebSocket connections - they're handled by socket.io mock
       if (req.url.includes('/ws')) {
         return;
       }
@@ -316,11 +276,20 @@ beforeAll(() =>
     },
   })
 );
+
+beforeEach(() => {
+  // Reset socket handlers and set mock dashboard data for WebSocket
+  mockSocketHandlers = {};
+  mockDashboardData = mockDashboard;
+});
+
 afterEach(() => {
   server.resetHandlers();
   localStorage.clear();
   vi.clearAllMocks();
+  mockSocketHandlers = {};
 });
+
 afterAll(() => server.close());
 
 describe('Integration Tests', () => {

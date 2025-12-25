@@ -101,6 +101,21 @@ describe('SessionManager', () => {
       expect(result).toBeNull();
     });
 
+    it('should return session when age equals exactly SESSION_EXPIRY (boundary)', () => {
+      // This tests the > vs >= boundary condition
+      const created = sessionManager.createSession(bridgeIp, username);
+      const session = sessionManager.sessions.get(created.sessionToken);
+
+      // Set age to exactly SESSION_EXPIRY (not expired yet)
+      session.createdAt = Date.now() - sessionManager.SESSION_EXPIRY;
+
+      const result = sessionManager.getSession(created.sessionToken);
+
+      // Session should still be valid at exactly the expiry threshold
+      expect(result).not.toBeNull();
+      expect(result.bridgeIp).toBe(bridgeIp);
+    });
+
     it('should delete expired session from storage', () => {
       const created = sessionManager.createSession(bridgeIp, username);
 

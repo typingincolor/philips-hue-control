@@ -1,959 +1,269 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useWebSocket } from './useWebSocket';
+import { io } from 'socket.io-client';
 
-// Mock WebSocket
-class MockWebSocket {
-  static CONNECTING = 0;
-  static OPEN = 1;
-  static CLOSING = 2;
-  static CLOSED = 3;
+// Mock socket.io-client
+const mockSocket = {
+  on: vi.fn(),
+  emit: vi.fn(),
+  disconnect: vi.fn(),
+  connected: false,
+};
 
-  constructor(url) {
-    this.url = url;
-    this.readyState = MockWebSocket.CONNECTING;
-    this.onopen = null;
-    this.onmessage = null;
-    this.onerror = null;
-    this.onclose = null;
-    this.sentMessages = [];
+vi.mock('socket.io-client', () => ({
+  io: vi.fn(() => mockSocket),
+}));
 
-    // Simulate connection after a tick
-    setTimeout(() => {
-      this.readyState = MockWebSocket.OPEN;
-      if (this.onopen) this.onopen({ type: 'open' });
-    }, 0);
+// Helper to mock demo mode via URL
+const mockDemoModeURL = (isDemoMode) => {
+  Object.defineProperty(window, 'location', {
+    value: {
+      search: isDemoMode ? '?demo=true' : '',
+      protocol: 'http:',
+      host: 'localhost:5173',
+    },
+    writable: true,
+  });
+};
+
+// Helper to trigger socket events
+const triggerSocketEvent = (event, data) => {
+  const callback = mockSocket.on.mock.calls.find((call) => call[0] === event)?.[1];
+  if (callback) {
+    act(() => callback(data));
   }
-
-  send(data) {
-    this.sentMessages.push(JSON.parse(data));
-  }
-
-  close() {
-    this.readyState = MockWebSocket.CLOSED;
-    if (this.onclose) this.onclose({ type: 'close' });
-  }
-
-  // Helper to simulate receiving a message
-  simulateMessage(data) {
-    if (this.onmessage) {
-      this.onmessage({ data: JSON.stringify(data) });
-    }
-  }
-
-  // Helper to simulate an error
-  simulateError(error) {
-    if (this.onerror) {
-      this.onerror(error);
-    }
-  }
-}
-
-global.WebSocket = MockWebSocket;
+};
 
 describe('useWebSocket', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.clearAllMocks();
+    mockDemoModeURL(false);
+    mockSocket.connected = false;
   });
 
   afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Connection', () => {
     it('should not connect when disabled', () => {
-      const { result } = renderHook(() => useWebSocket('test-session-token', false));
+      renderHook(() => useWebSocket('test-token', false));
 
-      expect(result.current.isConnected).toBe(false);
+      expect(io).not.toHaveBeenCalled();
     });
 
     it('should not connect when no session token', () => {
-      const { result } = renderHook(() => useWebSocket(null, true));
+      renderHook(() => useWebSocket(null, true));
 
-      expect(result.current.isConnected).toBe(false);
+      expect(io).not.toHaveBeenCalled();
     });
 
     it('should connect with session token', async () => {
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
+      renderHook(() => useWebSocket('test-token', true));
 
-      await act(async () => {
-        vi.advanceTimersByTime(0); // Trigger connection
+      expect(io).toHaveBeenCalledWith({
+        path: '/api/v1/ws',
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 16000,
       });
-
-      expect(result.current.isConnected).toBe(true);
     });
 
-    it('should determine WebSocket URL from window.location', async () => {
-      const originalLocation = window.location;
-      delete window.location;
-      window.location = { protocol: 'http:', host: 'localhost:5173' };
+    it('should connect in demo mode without token', () => {
+      mockDemoModeURL(true);
 
-      renderHook(() => useWebSocket('test-session-token', true));
+      renderHook(() => useWebSocket(null, true));
 
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      expect(console.log).toHaveBeenCalledWith(
-        '[WebSocket] Connecting to',
-        'ws://localhost:5173/api/v1/ws',
-        '(session mode)'
-      );
-
-      window.location = originalLocation;
-    });
-
-    it('should use wss:// for https pages', async () => {
-      const originalLocation = window.location;
-      delete window.location;
-      window.location = { protocol: 'https:', host: 'example.com' };
-
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      expect(console.log).toHaveBeenCalledWith(
-        '[WebSocket] Connecting to',
-        'wss://example.com/api/v1/ws',
-        '(session mode)'
-      );
-
-      window.location = originalLocation;
+      expect(io).toHaveBeenCalled();
     });
   });
 
   describe('Authentication', () => {
-    it('should send session token on connect', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
+    it('should send session auth on connect', () => {
+      renderHook(() => useWebSocket('test-token', true));
 
-      renderHook(() => useWebSocket('test-session-token', true));
+      triggerSocketEvent('connect');
 
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
+      expect(mockSocket.emit).toHaveBeenCalledWith('auth', { sessionToken: 'test-token' });
+    });
 
-      expect(ws.sentMessages).toContainEqual({
-        type: 'auth',
-        sessionToken: 'test-session-token',
-      });
+    it('should send demo auth on connect in demo mode', () => {
+      mockDemoModeURL(true);
 
-      global.WebSocket = originalWebSocket;
+      renderHook(() => useWebSocket(null, true));
+
+      triggerSocketEvent('connect');
+
+      expect(mockSocket.emit).toHaveBeenCalledWith('auth', { demoMode: true });
+    });
+  });
+
+  describe('Connection state', () => {
+    it('should update isConnected on connect', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      expect(result.current.isConnected).toBe(false);
+
+      triggerSocketEvent('connect');
+
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    it('should update isConnected on disconnect', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      triggerSocketEvent('connect');
+      expect(result.current.isConnected).toBe(true);
+
+      triggerSocketEvent('disconnect');
+      expect(result.current.isConnected).toBe(false);
+    });
+
+    it('should set isReconnecting on connect_error after first connection', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      triggerSocketEvent('connect');
+      triggerSocketEvent('disconnect');
+      triggerSocketEvent('connect_error');
+
+      expect(result.current.isReconnecting).toBe(true);
     });
   });
 
   describe('Message handling', () => {
-    it('should handle initial_state message', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
+    it('should set dashboard on initial_state', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
+      const mockDashboard = { summary: { totalLights: 5 }, rooms: [] };
+      triggerSocketEvent('initial_state', mockDashboard);
 
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      const dashboardData = {
-        summary: { totalLights: 10 },
-        rooms: [],
-      };
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: dashboardData,
-        });
-      });
-
-      expect(result.current.dashboard).toEqual(dashboardData);
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.dashboard).toEqual(mockDashboard);
     });
 
-    it('should handle state_update message', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
+    it('should update summary on state_update', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
 
       // Set initial state
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: { totalLights: 10, lightsOn: 5 },
-            rooms: [{ id: 'room-1', lights: [{ id: 'light-1', on: false }] }],
-          },
-        });
+      const initialDashboard = { summary: { totalLights: 5 }, rooms: [] };
+      triggerSocketEvent('initial_state', initialDashboard);
+
+      // Update summary
+      triggerSocketEvent('state_update', {
+        changes: [{ type: 'summary', data: { totalLights: 10 } }],
       });
 
-      // Update light
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'light',
-              roomId: 'room-1',
-              data: { id: 'light-1', on: true },
-            },
-          ],
-        });
-      });
-
-      expect(result.current.dashboard.rooms[0].lights[0].on).toBe(true);
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.dashboard.summary.totalLights).toBe(10);
     });
 
-    it('should handle summary update', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
+    it('should update room on state_update', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      const initialDashboard = {
+        summary: {},
+        rooms: [{ id: 'room-1', name: 'Living Room', lights: [] }],
       };
+      triggerSocketEvent('initial_state', initialDashboard);
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: { summary: { totalLights: 10 }, rooms: [] },
-        });
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'summary',
-              data: { totalLights: 12, lightsOn: 6 },
-            },
-          ],
-        });
-      });
-
-      expect(result.current.dashboard.summary.totalLights).toBe(12);
-      expect(result.current.dashboard.summary.lightsOn).toBe(6);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should handle room update', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: {},
-            rooms: [{ id: 'room-1', name: 'Living Room' }],
-          },
-        });
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'room',
-              data: { id: 'room-1', name: 'Updated Room' },
-            },
-          ],
-        });
+      triggerSocketEvent('state_update', {
+        changes: [{ type: 'room', data: { id: 'room-1', name: 'Updated Room', lights: [] } }],
       });
 
       expect(result.current.dashboard.rooms[0].name).toBe('Updated Room');
-
-      global.WebSocket = originalWebSocket;
     });
 
-    it('should handle error message', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
+    it('should update light on state_update', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      const initialDashboard = {
+        summary: {},
+        rooms: [{ id: 'room-1', lights: [{ id: 'light-1', on: false }] }],
       };
+      triggerSocketEvent('initial_state', initialDashboard);
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
+      triggerSocketEvent('state_update', {
+        changes: [{ type: 'light', data: { id: 'light-1', on: true }, roomId: 'room-1' }],
       });
 
-      act(() => {
-        ws.simulateMessage({
-          type: 'error',
-          message: 'Test error',
-        });
-      });
-
-      expect(result.current.error).toBe('Test error');
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.dashboard.rooms[0].lights[0].on).toBe(true);
     });
 
-    it('should handle pong message', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
+    it('should update motion_zone on state_update', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      const initialDashboard = {
+        summary: {},
+        rooms: [],
+        motionZones: [{ id: 'zone-1', motion: false }],
       };
+      triggerSocketEvent('initial_state', initialDashboard);
 
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
+      triggerSocketEvent('state_update', {
+        changes: [{ type: 'motion_zone', data: { id: 'zone-1', motion: true } }],
       });
 
-      // Should not throw or cause issues
-      act(() => {
-        ws.simulateMessage({ type: 'pong' });
-      });
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.dashboard.motionZones[0].motion).toBe(true);
     });
 
-    it('should warn on unknown message type', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
+    it('should update zone on state_update', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
+
+      const initialDashboard = {
+        summary: {},
+        rooms: [],
+        zones: [{ id: 'zone-1', name: 'All Lights' }],
       };
+      triggerSocketEvent('initial_state', initialDashboard);
 
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
+      triggerSocketEvent('state_update', {
+        changes: [{ type: 'zone', data: { id: 'zone-1', name: 'Updated Zone' } }],
       });
 
-      act(() => {
-        ws.simulateMessage({ type: 'unknown_type' });
-      });
-
-      expect(console.warn).toHaveBeenCalledWith(
-        '[WebSocket] Unknown message type:',
-        'unknown_type'
-      );
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should handle malformed JSON gracefully', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        if (ws.onmessage) {
-          ws.onmessage({ data: 'invalid json{' });
-        }
-      });
-
-      expect(console.error).toHaveBeenCalledWith(
-        '[WebSocket] Failed to parse message:',
-        expect.any(Error)
-      );
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should handle motion zone update', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      // Set initial state with motion zones
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: {},
-            rooms: [],
-            motionZones: [{ id: 'zone-1', name: 'Hallway', motionDetected: false, enabled: true }],
-          },
-        });
-      });
-
-      expect(result.current.dashboard.motionZones).toHaveLength(1);
-      expect(result.current.dashboard.motionZones[0].motionDetected).toBe(false);
-
-      // Update motion zone
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'motion_zone',
-              data: { id: 'zone-1', name: 'Hallway', motionDetected: true, enabled: true },
-            },
-          ],
-        });
-      });
-
-      expect(result.current.dashboard.motionZones[0].motionDetected).toBe(true);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should handle multiple motion zone updates', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: {},
-            rooms: [],
-            motionZones: [
-              { id: 'zone-1', name: 'Hallway', motionDetected: false },
-              { id: 'zone-2', name: 'Kitchen', motionDetected: false },
-            ],
-          },
-        });
-      });
-
-      // Update both zones
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'motion_zone',
-              data: { id: 'zone-1', name: 'Hallway', motionDetected: true },
-            },
-            {
-              type: 'motion_zone',
-              data: { id: 'zone-2', name: 'Kitchen', motionDetected: true },
-            },
-          ],
-        });
-      });
-
-      expect(result.current.dashboard.motionZones[0].motionDetected).toBe(true);
-      expect(result.current.dashboard.motionZones[1].motionDetected).toBe(true);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    // Zone (light grouping) update tests
-    it('should handle zone update', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      // Set initial state with zones
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: {},
-            rooms: [],
-            zones: [
-              { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 0, totalLights: 3 } },
-            ],
-          },
-        });
-      });
-
-      expect(result.current.dashboard.zones).toHaveLength(1);
-      expect(result.current.dashboard.zones[0].stats.lightsOnCount).toBe(0);
-
-      // Update zone
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'zone',
-              data: { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 2, totalLights: 3 } },
-            },
-          ],
-        });
-      });
-
-      expect(result.current.dashboard.zones[0].stats.lightsOnCount).toBe(2);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should handle multiple zone updates', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: {},
-            rooms: [],
-            zones: [
-              { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 0 } },
-              { id: 'zone-2', name: 'Downstairs', stats: { lightsOnCount: 0 } },
-            ],
-          },
-        });
-      });
-
-      // Update both zones
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'zone',
-              data: { id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 3 } },
-            },
-            {
-              type: 'zone',
-              data: { id: 'zone-2', name: 'Downstairs', stats: { lightsOnCount: 5 } },
-            },
-          ],
-        });
-      });
-
-      expect(result.current.dashboard.zones[0].stats.lightsOnCount).toBe(3);
-      expect(result.current.dashboard.zones[1].stats.lightsOnCount).toBe(5);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should preserve zones when not included in update', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: {
-            summary: { lightsOn: 5 },
-            rooms: [],
-            zones: [{ id: 'zone-1', name: 'Upstairs', stats: { lightsOnCount: 2 } }],
-          },
-        });
-      });
-
-      // Update summary only
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [
-            {
-              type: 'summary',
-              data: { lightsOn: 7 },
-            },
-          ],
-        });
-      });
-
-      // Zones should be preserved
-      expect(result.current.dashboard.zones).toHaveLength(1);
-      expect(result.current.dashboard.zones[0].name).toBe('Upstairs');
-
-      global.WebSocket = originalWebSocket;
-    });
-  });
-
-  describe('Reconnection', () => {
-    it('should reconnect with exponential backoff', async () => {
-      let ws;
-      let connectionCount = 0;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-          connectionCount++;
-        }
-      };
-
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      expect(connectionCount).toBe(1);
-
-      // Simulate disconnect
-      act(() => {
-        ws.close();
-      });
-
-      // First reconnect: 1000ms
-      await act(async () => {
-        vi.advanceTimersByTime(1000);
-      });
-
-      expect(connectionCount).toBe(2);
-
-      // Disconnect again
-      act(() => {
-        ws.close();
-      });
-
-      // Second reconnect: 2000ms
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
-      });
-
-      expect(connectionCount).toBe(3);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should limit reconnection attempts', async () => {
-      // Note: Detailed reconnection testing is covered by integration tests
-      // This test just verifies the max attempts constant is reasonable
-      const maxReconnectAttempts = 5;
-      expect(maxReconnectAttempts).toBeGreaterThan(0);
-      expect(maxReconnectAttempts).toBeLessThanOrEqual(10);
-    });
-  });
-
-  describe('Heartbeat', () => {
-    it('should send ping every 30 seconds when connected', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      ws.sentMessages = []; // Clear auth message
-
-      // Advance 30 seconds
-      await act(async () => {
-        vi.advanceTimersByTime(30000);
-      });
-
-      expect(ws.sentMessages).toContainEqual({ type: 'ping' });
-
-      // Advance another 30 seconds
-      await act(async () => {
-        vi.advanceTimersByTime(30000);
-      });
-
-      expect(ws.sentMessages.filter((m) => m.type === 'ping').length).toBe(2);
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should not send ping when disconnected', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.close();
-      });
-
-      ws.sentMessages = [];
-
-      await act(async () => {
-        vi.advanceTimersByTime(30000);
-      });
-
-      expect(ws.sentMessages).not.toContainEqual({ type: 'ping' });
-
-      global.WebSocket = originalWebSocket;
-    });
-  });
-
-  describe('Cleanup', () => {
-    it('should close connection on unmount', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { unmount } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      const closeSpy = vi.spyOn(ws, 'close');
-
-      unmount();
-
-      expect(closeSpy).toHaveBeenCalled();
-
-      global.WebSocket = originalWebSocket;
-    });
-
-    it('should clear reconnect timeout on unmount', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
-
-      const { unmount } = renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.close();
-      });
-
-      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
-
-      unmount();
-
-      expect(clearTimeoutSpy).toHaveBeenCalled();
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.dashboard.zones[0].name).toBe('Updated Zone');
     });
   });
 
   describe('Error handling', () => {
-    it('should handle WebSocket errors', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
+    it('should set error on error event', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
+      triggerSocketEvent('error', { message: 'Connection failed' });
 
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
-
-      act(() => {
-        ws.simulateError({ type: 'error', message: 'Connection failed' });
-      });
-
-      expect(result.current.error).toBe('WebSocket connection error');
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.error).toBe('Connection failed');
     });
 
-    it('should not crash on changes when dashboard is null', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
+    it('should not crash on changes when dashboard is null', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
 
-      renderHook(() => useWebSocket('test-session-token', true));
-
-      await act(async () => {
-        vi.advanceTimersByTime(0);
+      // Don't set initial state, dashboard is null
+      triggerSocketEvent('state_update', {
+        changes: [{ type: 'summary', data: { totalLights: 5 } }],
       });
 
-      // Send update without initial state
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [{ type: 'summary', data: { totalLights: 10 } }],
-        });
-      });
-
-      // Should not crash
-
-      global.WebSocket = originalWebSocket;
+      expect(result.current.dashboard).toBe(null);
     });
 
-    it('should handle empty changes array', async () => {
-      let ws;
-      const originalWebSocket = global.WebSocket;
-      global.WebSocket = class extends MockWebSocket {
-        constructor(url) {
-          super(url);
-          ws = this;
-        }
-      };
+    it('should handle empty changes array', () => {
+      const { result } = renderHook(() => useWebSocket('test-token', true));
 
-      const { result } = renderHook(() => useWebSocket('test-session-token', true));
+      const initialDashboard = { summary: { totalLights: 5 }, rooms: [] };
+      triggerSocketEvent('initial_state', initialDashboard);
 
-      await act(async () => {
-        vi.advanceTimersByTime(0);
-      });
+      triggerSocketEvent('state_update', { changes: [] });
 
-      act(() => {
-        ws.simulateMessage({
-          type: 'initial_state',
-          data: { summary: {}, rooms: [] },
-        });
-      });
+      expect(result.current.dashboard.summary.totalLights).toBe(5);
+    });
+  });
 
-      const initialDashboard = result.current.dashboard;
+  describe('Cleanup', () => {
+    it('should disconnect on unmount', () => {
+      const { unmount } = renderHook(() => useWebSocket('test-token', true));
 
-      act(() => {
-        ws.simulateMessage({
-          type: 'state_update',
-          changes: [],
-        });
-      });
+      unmount();
 
-      expect(result.current.dashboard).toBe(initialDashboard); // No change
-
-      global.WebSocket = originalWebSocket;
+      expect(mockSocket.disconnect).toHaveBeenCalled();
     });
   });
 });

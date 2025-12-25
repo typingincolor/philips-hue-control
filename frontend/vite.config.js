@@ -21,10 +21,16 @@ export default defineConfig({
     port: config.development.frontendPort,
     // Proxy API requests to backend during development
     proxy: {
+      // Socket.IO needs its own proxy config
+      '/api/v1/ws': {
+        target: `http://localhost:${backendPort}`,
+        changeOrigin: true,
+        ws: true,
+      },
+      // Regular API requests
       '/api': {
         target: `http://localhost:${backendPort}`,
         changeOrigin: true,
-        ws: true, // Enable WebSocket proxying
       },
     },
   },

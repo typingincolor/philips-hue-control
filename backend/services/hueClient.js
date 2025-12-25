@@ -1,7 +1,7 @@
 import axios from 'axios';
-import https from 'https';
 import { CACHE_TTL_MS, REQUEST_TIMEOUT_MS } from '../constants/timings.js';
 import { createLogger } from '../utils/logger.js';
+import { hueHttpsAgent } from '../utils/httpsAgent.js';
 
 const logger = createLogger('HUE_CLIENT');
 
@@ -12,10 +12,7 @@ const logger = createLogger('HUE_CLIENT');
  */
 class HueClient {
   constructor() {
-    // Create HTTPS agent that accepts self-signed certificates
-    this.httpsAgent = new https.Agent({
-      rejectUnauthorized: false,
-    });
+    this.httpsAgent = hueHttpsAgent;
 
     // Cache for static resources
     this.cache = new Map();

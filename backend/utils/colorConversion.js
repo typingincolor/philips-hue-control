@@ -1,3 +1,5 @@
+import ColorConverter from 'cie-rgb-color-converter';
+
 const COLOR_CONFIG = {
   WARM_DIM: { r: 255, g: 200, b: 130 },
   DEFAULT_WHITE: { r: 255, g: 245, b: 235 },
@@ -6,68 +8,36 @@ const COLOR_CONFIG = {
     BRIGHT_START: 50,
   },
   SHADOW_THRESHOLD: 50,
-  XYZ_TO_RGB_MATRIX: {
-    r: [1.656492, -0.354851, -0.255038],
-    g: [-0.707196, 1.655397, 0.036152],
-    b: [0.051713, -0.121364, 1.01153],
-  },
 };
 
 /**
  * Convert Hue XY color coordinates (CIE 1931) to RGB
+ * Uses cie-rgb-color-converter package for accurate Hue color conversion
  * @param {number} x - X coordinate (0-1)
  * @param {number} y - Y coordinate (0-1)
  * @param {number} brightness - Brightness percentage (0-100)
  * @returns {Object} RGB object with r, g, b values (0-255)
  */
 export const xyToRgb = (x, y, brightness = 100) => {
-  // Convert xy to XYZ with brightness scaling
-  const z = 1.0 - x - y;
-  const brightnessScale = Math.pow(brightness / 100, 2.2); // Gamma curve
-  const Y = brightnessScale;
-  const X = (Y / y) * x;
-  const Z = (Y / y) * z;
-
-  // XYZ to RGB (using sRGB D65)
-  const matrix = COLOR_CONFIG.XYZ_TO_RGB_MATRIX;
-  let r = X * matrix.r[0] + Y * matrix.r[1] + Z * matrix.r[2];
-  let g = X * matrix.g[0] + Y * matrix.g[1] + Z * matrix.g[2];
-  let b = X * matrix.b[0] + Y * matrix.b[1] + Z * matrix.b[2];
-
-  // Apply gamma correction
-  const gammaCorrect = (val) => {
-    if (val <= 0.0031308) return 12.92 * val;
-    return 1.055 * Math.pow(val, 1.0 / 2.4) - 0.055;
+  // cie-rgb-color-converter expects brightness 0-254 (Hue native)
+  const bri = Math.round((brightness / 100) * 254);
+  const { r, g, b } = ColorConverter.xyBriToRgb(x, y, bri);
+  // Clamp values for edge cases (library doesn't handle extreme coordinates)
+  return {
+    r: Math.max(0, Math.min(255, r)),
+    g: Math.max(0, Math.min(255, g)),
+    b: Math.max(0, Math.min(255, b)),
   };
-
-  r = gammaCorrect(r);
-  g = gammaCorrect(g);
-  b = gammaCorrect(b);
-
-  // Normalize if any value is > 1
-  const max = Math.max(r, g, b);
-  if (max > 1) {
-    r /= max;
-    g /= max;
-    b /= max;
-  }
-
-  // Convert to 0-255 range
-  r = Math.max(0, Math.min(255, Math.round(r * 255)));
-  g = Math.max(0, Math.min(255, Math.round(g * 255)));
-  b = Math.max(0, Math.min(255, Math.round(b * 255)));
-
-  return { r, g, b };
 };
 
 /**
  * Convert color temperature (mirek) to RGB
+ * Uses Tanner Helland algorithm for Kelvin to RGB conversion
  * @param {number} mirek - Mired color temperature
  * @param {number} brightness - Brightness percentage (0-100)
  * @returns {Object} RGB object with r, g, b values (0-255)
  */
 export const mirekToRgb = (mirek, brightness = 100) => {
-  // Convert mirek to Kelvin (mirek = 1,000,000 / Kelvin)
   const kelvin = 1000000 / mirek;
   const temp = kelvin / 100;
 
@@ -133,8 +103,6 @@ export const getLightColor = (light) => {
 
   // If no color data available, use intelligent fallback
   if (!baseColor) {
-    // Assume neutral white as default - prevents green flash during API data load
-    // Most color-capable lights default to neutral/warm white
     const DEFAULT_WHITE = COLOR_CONFIG.DEFAULT_WHITE;
     const WARM_DIM_COLOR = COLOR_CONFIG.WARM_DIM;
     const DIM_START = COLOR_CONFIG.DIM_THRESHOLD.START;
@@ -172,7 +140,7 @@ export const getLightColor = (light) => {
     blendFactor = t * t * (3 - 2 * t); // Smoothstep curve
   }
 
-  // Blend colors (blending already accounts for perceived dimness)
+  // Blend colors
   const r = Math.round(WARM_DIM_COLOR.r * (1 - blendFactor) + baseColor.r * blendFactor);
   const g = Math.round(WARM_DIM_COLOR.g * (1 - blendFactor) + baseColor.g * blendFactor);
   const b = Math.round(WARM_DIM_COLOR.b * (1 - blendFactor) + baseColor.b * blendFactor);
@@ -193,10 +161,8 @@ export const getLightShadow = (light, lightColor) => {
   const SHADOW_THRESHOLD = COLOR_CONFIG.SHADOW_THRESHOLD;
 
   if (brightness < SHADOW_THRESHOLD) {
-    // Dim lights: neutral shadow only
     return '0 2px 6px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1)';
   } else {
-    // Bright lights: colored glow + depth shadow
     const glowIntensity = Math.round(
       ((brightness - SHADOW_THRESHOLD) / (100 - SHADOW_THRESHOLD)) * 40 + 20
     );
@@ -211,7 +177,6 @@ export const getLightShadow = (light, lightColor) => {
  * @returns {Object} Enriched light object with color, shadow, and colorSource properties
  */
 export const enrichLight = (light) => {
-  // Determine color source
   let colorSource = null;
   if (light.color?.xy) {
     colorSource = 'xy';
@@ -221,18 +186,13 @@ export const enrichLight = (light) => {
     colorSource = 'fallback';
   }
 
-  // Get pre-computed color
   const color = getLightColor(light);
-
-  // Get pre-computed shadow
   const shadow = getLightShadow(light, color);
 
-  // Calculate brightness with minimum of 5% when light is on
   const isOn = light.on?.on ?? false;
   const rawBrightness = light.dimming?.brightness ?? 0;
   const brightness = isOn ? Math.max(5, rawBrightness) : 0;
 
-  // Return enriched light with additional properties
   return {
     id: light.id,
     name: light.metadata?.name || 'Unknown',
@@ -241,7 +201,6 @@ export const enrichLight = (light) => {
     color,
     shadow,
     colorSource,
-    // Keep original data for advanced use cases
     _original: light,
   };
 };

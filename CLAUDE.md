@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Philips Hue Light Control** - React/Express monorepo for controlling Hue lights locally via the Hue Bridge API. Features true color display, responsive design (iPhone 14+, iPad, Raspberry Pi 7"), room/zone organization, scene management, MotionAware zones, and WebSocket real-time updates.
+**Philips Hue Light Control** - React/Express monorepo for controlling Hue lights locally via the Hue Bridge API. Features true color display, responsive design, room/zone organization, scene management, MotionAware zones, and Socket.IO real-time updates.
 
 **Architecture:** Backend handles all business logic, exposing a v1 REST API with WebSocket. Frontend is a thin presentation layer consuming pre-computed data.
 
@@ -10,10 +10,7 @@
 
 ```bash
 npm run dev              # Start both servers (frontend:5173, backend:3001)
-npm run dev:frontend     # Frontend only
-npm run dev:backend      # Backend only
-npm run test             # Unit tests (watch mode)
-npm run test:run         # Unit tests (CI)
+npm run test:all         # Run all unit tests (frontend + backend)
 npm run test:e2e         # E2E tests (auto-starts servers on ports 5174/3002)
 npm run deploy           # Build and start production
 ```
@@ -30,12 +27,9 @@ npm run deploy           # Build and start production
 
 ### Authentication
 
-Session-based authentication with two modes:
-
+Session-based with two modes:
 - **Session Token:** `Authorization: Bearer <token>` header
 - **Demo Mode:** `X-Demo-Mode: true` header (no bridge required)
-
-Backend proxies Hue Bridge requests (CORS + self-signed cert handling).
 
 ### Dual-Mode Serving
 
@@ -76,180 +70,54 @@ Backend-based demo allows testing without Hue Bridge:
 
 - URL param: `?demo=true`
 - Header: `X-Demo-Mode: true` (auto-added by frontend)
-- WebSocket auth: `{ type: 'auth', demoMode: true }`
+- Socket.IO auth: `{ demoMode: true }`
 
-**Key files:**
-
-- `backend/middleware/demoMode.js` - Detects header
-- `backend/services/mockData.js` - Demo data
-- `backend/services/mockHueClient.js` - Mock Hue client
+**Key files:** `backend/middleware/demoMode.js`, `backend/services/mockData.js`, `backend/services/mockHueClient.js`
 
 ## Backend Services
 
-| Service               | Purpose                     |
-| --------------------- | --------------------------- |
-| `hueClient.js`        | Real Hue Bridge client      |
-| `mockHueClient.js`    | Mock client for demo        |
+| Service | Purpose |
+|---------|---------|
+| `hueClient.js` | Real Hue Bridge client |
+| `mockHueClient.js` | Mock client for demo |
 | `hueClientFactory.js` | Returns real or mock client |
-| `dashboardService.js` | Dashboard data aggregation  |
-| `roomService.js`      | Room hierarchy building     |
-| `zoneService.js`      | Zone hierarchy building     |
-| `motionService.js`    | Motion zone handling        |
-| `statsService.js`     | Statistics calculation      |
-| `sessionManager.js`   | Session token management    |
-| `settingsService.js`  | Per-session settings        |
-| `weatherService.js`   | Weather API (Open-Meteo)    |
-| `websocketService.js` | Real-time updates           |
+| `dashboardService.js` | Dashboard data aggregation |
+| `roomService.js` / `zoneService.js` | Hierarchy building |
+| `motionService.js` | Motion zone handling |
+| `sessionManager.js` | Session token management |
+| `websocketService.js` | Socket.IO real-time updates |
 
-## Frontend Components
+## Frontend Structure
 
-### Main Flow
+**Main Flow:** App.jsx (auth) → LightControl/index.jsx → TopToolbar + BottomNav + MainPanel
 
-1. **App.jsx** - 3-step auth flow: Discovery → Authentication → LightControl
-2. **LightControl/index.jsx** - Main UI container
-3. **TopToolbar.jsx** - Header with motion dots, stats, weather, logout
-4. **BottomNav.jsx** - Room tabs (drag-scrollable)
-5. **MainPanel.jsx** - Content switcher (room/zones)
-6. **RoomContent.jsx** - Light tiles grid
-7. **LightTile.jsx** - Large light button with brightness fill
-8. **SceneDrawer.jsx** - Slide-out scene selector
-9. **ZonesView.jsx** - All zones list
+**Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences)
 
-### Data Flow
-
-- **localStorage:** Bridge IP, session token persistence
-- **useHueBridge:** Bridge connection state
-- **DemoModeContext:** Demo mode detection and API selection
-- **useWebSocket:** Real-time updates with reconnection
-- **hueApi:** API calls with session token or demo mode header
-
-### UI Text Constants
-
-All user-facing text centralized in `constants/uiText.js`. Tests use these constants to prevent brittleness.
-
-## CSS Architecture
-
-Single file: `frontend/src/App.css` (dark theme only)
-
-**Key variables:**
-
-- `--bg-primary: #1a1a1a`, `--bg-secondary: #2d2d2d`
-- `--accent-primary: #f59e0b` (amber)
-- `--text-primary: #ffffff`, `--text-secondary: #a0a0a0`
-
-**Layout:** Fixed top toolbar + bottom nav, main panel between them.
-
-**Responsive breakpoints:**
-
-- `max-width: 500px` - Phone (2×4 grid)
-- `min-width: 600px` - Tablet/Pi (4×2 grid)
-
-## Testing
-
-See `frontend/TESTING.md` for detailed testing documentation.
-
-### Test Suites
-
-- **Backend:** 497 tests (services, middleware, utils)
-- **Frontend:** 242 tests (hooks, components, integration)
-- **E2E:** 158 tests (Playwright, demo mode)
-
-### Running Tests
-
-```bash
-npm run test              # Watch mode
-npm run test:run          # CI mode
-npm run test:coverage     # Coverage report
-npm run test:mutation     # Mutation testing (~1 min)
-npm run test:e2e          # E2E tests (Playwright)
-```
-
-### E2E Test Ports
-
-E2E tests run on isolated ports to avoid dev server conflicts:
-
-- Frontend: 5174 (not 5173)
-- Backend: 3002 (not 3001)
-
-Playwright auto-starts and stops both servers.
+**UI Text:** All user-facing text in `constants/uiText.js` - tests use these constants.
 
 ## API Endpoints
 
-### Auth
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/v1/auth/connect` | Connect to bridge |
+| GET | `/api/v1/dashboard` | Full dashboard data |
+| PUT | `/api/v1/lights/:id` | Update light state |
+| PUT | `/api/v1/rooms/:id/lights` | Update all room lights |
+| PUT | `/api/v1/zones/:id/lights` | Update all zone lights |
+| POST | `/api/v1/scenes/:id/activate` | Activate scene |
+| GET/PUT | `/api/v1/settings` | User settings |
+| GET | `/api/v1/weather` | Weather data |
 
-- `POST /api/v1/auth/connect` - Connect to bridge
+**WebSocket:** Connect to `/api/v1/ws`, auth with `{ sessionToken }` or `{ demoMode: true }`
 
-### Dashboard
+## Testing
 
-- `GET /api/v1/dashboard` - Full dashboard data
+See `frontend/TESTING.md` for detailed documentation.
 
-### Lights
-
-- `PUT /api/v1/lights/:id` - Update light state
-
-### Rooms
-
-- `PUT /api/v1/rooms/:id/lights` - Update all room lights
-
-### Zones
-
-- `PUT /api/v1/zones/:id/lights` - Update all zone lights
-
-### Scenes
-
-- `POST /api/v1/scenes/:id/activate` - Activate scene
-
-### Settings
-
-- `GET /api/v1/settings` - Get settings
-- `PUT /api/v1/settings` - Update settings
-- `PUT /api/v1/settings/location` - Update location
-- `DELETE /api/v1/settings/location` - Clear location
-
-### Weather
-
-- `GET /api/v1/weather` - Get weather for stored location
-
-### WebSocket
-
-- Connect: `/api/v1/ws`
-- Auth: `{ type: 'auth', sessionToken, demoMode? }`
-- Events: `initial_state`, `light_update`, `motion_update`
-
-## Performance
-
-- **Backend caching:** 5-minute TTL for static resources
-- **WebSocket polling:** 15-second interval for dynamic data
-- **Optimistic updates:** Immediate UI response
-- **Brightness minimum:** 5% when on (prevents 0% artifacts)
-- **WebSocket reconnection:** Exponential backoff (1s→16s, 5 attempts)
-
-## File Structure
-
-```
-/
-├── config.json                    # Centralized config
-├── CLAUDE.md                      # This file
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx               # Main app + auth flow
-│   │   ├── App.css               # All styles
-│   │   ├── components/           # React components
-│   │   ├── hooks/                # Custom hooks
-│   │   ├── services/             # API services
-│   │   ├── utils/                # Pure functions
-│   │   └── constants/            # Config values
-│   ├── e2e/                      # Playwright tests
-│   ├── TESTING.md                # Test documentation
-│   ├── playwright.config.ts      # E2E config
-│   └── vite.config.js            # Vite config
-└── backend/
-    ├── server.js                 # Express server
-    ├── middleware/               # Auth, demo mode
-    ├── services/                 # Business logic
-    ├── routes/v1/                # API routes
-    ├── utils/                    # Utilities
-    └── constants/                # Config values
+```bash
+npm run test:all         # All unit tests (687 tests)
+npm run test:e2e         # E2E tests (158 tests)
+npm run test:mutation:all # Mutation testing
 ```
 
 ## Common Tasks
@@ -257,7 +125,7 @@ Playwright auto-starts and stops both servers.
 ### Adding a New API Endpoint
 
 1. Add route in `backend/routes/v1/`
-2. Add to route aggregator `backend/routes/v1/index.js`
+2. Add to `backend/routes/v1/index.js`
 3. Add frontend method in `frontend/src/services/hueApi.js`
 
 ### Adding a New Component
@@ -266,15 +134,13 @@ Playwright auto-starts and stops both servers.
 2. Add UI text to `frontend/src/constants/uiText.js`
 3. Add tests in same directory
 
-### Debugging
+## Performance Notes
 
-```bash
-curl http://localhost:3001/api/health  # Check backend
-```
+- **Backend caching:** 5-minute TTL for static resources
+- **Socket.IO polling:** 15-second interval for dynamic data
+- **Brightness minimum:** 5% when on (prevents 0% artifacts)
 
-Backend logs all proxied requests. Check port 5173 for Vite dev server.
-
-## Network
+## Network Requirements
 
 - **Development:** Frontend localhost:5173, Backend 0.0.0.0:3001
 - **Production:** Single server 0.0.0.0:3001

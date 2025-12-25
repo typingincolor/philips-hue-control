@@ -1,6 +1,5 @@
 import express from 'express';
 import axios from 'axios';
-import https from 'https';
 import sessionManager from '../../services/sessionManager.js';
 import { getHueClient } from '../../services/hueClientFactory.js';
 import { requireSession } from '../../middleware/auth.js';
@@ -8,14 +7,12 @@ import { MissingCredentialsError, BridgeConnectionError } from '../../utils/erro
 import { createLogger } from '../../utils/logger.js';
 import { REQUEST_TIMEOUT_MS } from '../../constants/timings.js';
 import { DEMO_BRIDGE_IP } from '../../services/mockData.js';
+import { hueHttpsAgent } from '../../utils/httpsAgent.js';
 
 const logger = createLogger('AUTH');
 const router = express.Router();
 
-// HTTPS agent for self-signed certificates
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
+const httpsAgent = hueHttpsAgent;
 
 /**
  * POST /api/v1/auth/pair
