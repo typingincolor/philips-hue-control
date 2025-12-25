@@ -113,13 +113,13 @@ TopToolbar.propTypes = {
   weather: PropTypes.shape({
     current: PropTypes.shape({
       temperature: PropTypes.number,
-      weatherCode: PropTypes.number,
+      condition: PropTypes.string,
       windSpeed: PropTypes.number,
     }),
     forecast: PropTypes.arrayOf(
       PropTypes.shape({
         date: PropTypes.string,
-        weatherCode: PropTypes.number,
+        condition: PropTypes.string,
         high: PropTypes.number,
         low: PropTypes.number,
       })

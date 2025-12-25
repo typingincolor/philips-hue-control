@@ -257,7 +257,7 @@ const initialMotionZones = [
 const weatherData = {
   current: {
     temperature: 18,
-    weatherCode: 2, // Partly cloudy
+    condition: 'Partly cloudy',
     windSpeed: 12,
     time: new Date().toISOString(),
   },
@@ -336,11 +336,11 @@ export const getMockWeather = () => {
   return {
     current: { ...weatherData.current, time: new Date().toISOString() },
     forecast: [
-      { date: forecastDates[0], weatherCode: 2, high: 20, low: 14 },
-      { date: forecastDates[1], weatherCode: 3, high: 18, low: 12 },
-      { date: forecastDates[2], weatherCode: 61, high: 15, low: 10 },
-      { date: forecastDates[3], weatherCode: 1, high: 19, low: 13 },
-      { date: forecastDates[4], weatherCode: 0, high: 22, low: 15 },
+      { date: forecastDates[0], condition: 'Partly cloudy', high: 20, low: 14 },
+      { date: forecastDates[1], condition: 'Overcast', high: 18, low: 12 },
+      { date: forecastDates[2], condition: 'Slight rain', high: 15, low: 10 },
+      { date: forecastDates[3], condition: 'Mainly clear', high: 19, low: 13 },
+      { date: forecastDates[4], condition: 'Clear sky', high: 22, low: 15 },
     ],
   };
 };

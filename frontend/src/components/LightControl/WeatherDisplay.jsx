@@ -46,12 +46,12 @@ export const WeatherDisplay = ({ weather, location, isLoading, error, units, onC
 
   // Weather data available
   if (weather?.current) {
-    const { temperature, weatherCode } = weather.current;
+    const { temperature, condition } = weather.current;
 
     return (
       <button className="weather-display" onClick={onClick}>
         <span data-testid="weather-icon">
-          <WeatherIcon code={weatherCode} size={16} />
+          <WeatherIcon condition={condition} size={16} />
         </span>
         <span className="weather-display__temp">{temperature}°</span>
         <span className="weather-display__location">{location.name}</span>

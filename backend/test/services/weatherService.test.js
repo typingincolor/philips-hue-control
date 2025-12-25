@@ -41,8 +41,9 @@ describe('WeatherService', () => {
       const result = await WeatherService.getWeather(location, 'celsius', true);
 
       expect(result.current).toHaveProperty('temperature');
-      expect(result.current).toHaveProperty('weatherCode');
+      expect(result.current).toHaveProperty('condition');
       expect(result.current).toHaveProperty('windSpeed');
+      expect(typeof result.current.condition).toBe('string');
       expect(Array.isArray(result.forecast)).toBe(true);
       expect(result.forecast.length).toBeGreaterThan(0);
     });

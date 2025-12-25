@@ -246,62 +246,59 @@ export const Thermometer = (props) => <LucideThermometer {...defaultProps} {...p
 export const MapPin = (props) => <LucideMapPin {...defaultProps} {...props} />;
 export const Settings = (props) => <LucideSettings {...defaultProps} {...props} />;
 
-// Weather code to icon mapping
-// See: https://open-meteo.com/en/docs#weathervariables
-const weatherIconMap = {
-  // Clear sky
-  0: LucideSun,
-  // Mainly clear, partly cloudy
-  1: LucideCloudSun,
-  2: LucideCloudSun,
+// Weather condition to icon mapping
+// Maps condition strings from the backend to icons
+const weatherConditionIconMap = {
+  // Clear
+  'Clear sky': LucideSun,
+  'Mainly clear': LucideCloudSun,
+  'Partly cloudy': LucideCloudSun,
   // Overcast
-  3: LucideCloud,
+  Overcast: LucideCloud,
   // Fog
-  45: LucideCloudFog,
-  48: LucideCloudFog,
+  Fog: LucideCloudFog,
+  'Depositing rime fog': LucideCloudFog,
   // Drizzle
-  51: LucideCloudDrizzle,
-  53: LucideCloudDrizzle,
-  55: LucideCloudDrizzle,
-  56: LucideCloudDrizzle,
-  57: LucideCloudDrizzle,
+  'Light drizzle': LucideCloudDrizzle,
+  'Moderate drizzle': LucideCloudDrizzle,
+  'Dense drizzle': LucideCloudDrizzle,
+  'Light freezing drizzle': LucideCloudDrizzle,
+  'Dense freezing drizzle': LucideCloudDrizzle,
   // Rain
-  61: LucideCloudRain,
-  63: LucideCloudRain,
-  65: LucideCloudRain,
-  66: LucideCloudRain,
-  67: LucideCloudRain,
+  'Slight rain': LucideCloudRain,
+  'Moderate rain': LucideCloudRain,
+  'Heavy rain': LucideCloudRain,
+  'Light freezing rain': LucideCloudRain,
+  'Heavy freezing rain': LucideCloudRain,
+  'Slight rain showers': LucideCloudRain,
+  'Moderate rain showers': LucideCloudRain,
+  'Violent rain showers': LucideCloudRain,
   // Snow
-  71: LucideCloudSnow,
-  73: LucideCloudSnow,
-  75: LucideCloudSnow,
-  77: LucideCloudSnow,
-  // Rain showers
-  80: LucideCloudRain,
-  81: LucideCloudRain,
-  82: LucideCloudRain,
-  // Snow showers
-  85: LucideCloudSnow,
-  86: LucideCloudSnow,
+  'Slight snow': LucideCloudSnow,
+  'Moderate snow': LucideCloudSnow,
+  'Heavy snow': LucideCloudSnow,
+  'Snow grains': LucideCloudSnow,
+  'Slight snow showers': LucideCloudSnow,
+  'Heavy snow showers': LucideCloudSnow,
   // Thunderstorm
-  95: LucideCloudLightning,
-  96: LucideCloudLightning,
-  99: LucideCloudLightning,
+  Thunderstorm: LucideCloudLightning,
+  'Thunderstorm with slight hail': LucideCloudLightning,
+  'Thunderstorm with heavy hail': LucideCloudLightning,
 };
 
 /**
- * Get the weather icon component for a weather code
- * @param {number} weatherCode - Open-Meteo weather code
+ * Get the weather icon component for a condition string
+ * @param {string} condition - Weather condition description
  * @returns {React.Component} Icon component
  */
-export const getWeatherIcon = (weatherCode) => {
-  return weatherIconMap[weatherCode] || LucideSun;
+export const getWeatherIcon = (condition) => {
+  return weatherConditionIconMap[condition] || LucideSun;
 };
 
 /**
- * Weather icon component that auto-selects icon based on weather code
+ * Weather icon component that auto-selects icon based on condition
  */
-export const WeatherIcon = ({ code, ...props }) => {
-  const IconComponent = getWeatherIcon(code);
+export const WeatherIcon = ({ condition, ...props }) => {
+  const IconComponent = getWeatherIcon(condition);
   return <IconComponent {...defaultProps} {...props} />;
 };

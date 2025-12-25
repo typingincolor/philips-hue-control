@@ -14,13 +14,13 @@ describe('useWeather', () => {
   const mockWeatherResponse = {
     current: {
       temperature: 22,
-      weatherCode: 1,
+      condition: 'Mainly clear',
       windSpeed: 15,
       time: '2024-01-01T12:00:00Z',
     },
     forecast: [
-      { date: '2024-01-01', weatherCode: 1, high: 24, low: 18 },
-      { date: '2024-01-02', weatherCode: 2, high: 22, low: 16 },
+      { date: '2024-01-01', condition: 'Mainly clear', high: 24, low: 18 },
+      { date: '2024-01-02', condition: 'Partly cloudy', high: 22, low: 16 },
     ],
   };
 

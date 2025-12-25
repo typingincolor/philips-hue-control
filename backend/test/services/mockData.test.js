@@ -233,7 +233,7 @@ describe('mockData', () => {
 
       expect(result).toHaveProperty('current');
       expect(result.current).toHaveProperty('temperature');
-      expect(result.current).toHaveProperty('weatherCode');
+      expect(result.current).toHaveProperty('condition');
       expect(result.current).toHaveProperty('windSpeed');
     });
 
@@ -246,7 +246,7 @@ describe('mockData', () => {
 
       const day = result.forecast[0];
       expect(day).toHaveProperty('date');
-      expect(day).toHaveProperty('weatherCode');
+      expect(day).toHaveProperty('condition');
       expect(day).toHaveProperty('high');
       expect(day).toHaveProperty('low');
     });

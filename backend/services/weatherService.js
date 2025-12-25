@@ -12,6 +12,49 @@ const logger = createLogger('WEATHER');
 const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Weather code to description mapping
+ * Based on WMO Weather interpretation codes (WW) used by Open-Meteo
+ * This mapping is internal to the backend - frontend receives only descriptions
+ */
+const WEATHER_DESCRIPTIONS = {
+  0: 'Clear sky',
+  1: 'Mainly clear',
+  2: 'Partly cloudy',
+  3: 'Overcast',
+  45: 'Fog',
+  48: 'Depositing rime fog',
+  51: 'Light drizzle',
+  53: 'Moderate drizzle',
+  55: 'Dense drizzle',
+  56: 'Light freezing drizzle',
+  57: 'Dense freezing drizzle',
+  61: 'Slight rain',
+  63: 'Moderate rain',
+  65: 'Heavy rain',
+  66: 'Light freezing rain',
+  67: 'Heavy freezing rain',
+  71: 'Slight snow',
+  73: 'Moderate snow',
+  75: 'Heavy snow',
+  77: 'Snow grains',
+  80: 'Slight rain showers',
+  81: 'Moderate rain showers',
+  82: 'Violent rain showers',
+  85: 'Slight snow showers',
+  86: 'Heavy snow showers',
+  95: 'Thunderstorm',
+  96: 'Thunderstorm with slight hail',
+  99: 'Thunderstorm with heavy hail',
+};
+
+/**
+ * Get weather description from code
+ * @param {number} code - Weather code
+ * @returns {string} Human-readable description
+ */
+const getWeatherDescription = (code) => WEATHER_DESCRIPTIONS[code] || 'Unknown';
+
 // In-memory cache: cacheKey -> { data, expiresAt }
 const weatherCache = new Map();
 
@@ -94,23 +137,29 @@ class WeatherService {
 
   /**
    * Transform Open-Meteo API response to our format
+   * Converts internal weather codes to human-readable descriptions
    * @private
    */
   _transformResponse(apiData) {
     const { current, daily } = apiData;
 
     // Build forecast from daily data
-    const forecast = (daily.time || []).map((date, index) => ({
-      date,
-      weatherCode: daily.weather_code[index],
-      high: Math.round(daily.temperature_2m_max[index]),
-      low: Math.round(daily.temperature_2m_min[index]),
-    }));
+    const forecast = (daily.time || []).map((date, index) => {
+      const code = daily.weather_code[index];
+      return {
+        date,
+        condition: getWeatherDescription(code),
+        high: Math.round(daily.temperature_2m_max[index]),
+        low: Math.round(daily.temperature_2m_min[index]),
+      };
+    });
+
+    const currentCode = current.weather_code;
 
     return {
       current: {
         temperature: Math.round(current.temperature_2m),
-        weatherCode: current.weather_code,
+        condition: getWeatherDescription(currentCode),
         windSpeed: Math.round(current.wind_speed_10m),
         time: current.time,
       },

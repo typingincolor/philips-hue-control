@@ -7,7 +7,7 @@ describe('WeatherDisplay', () => {
   const mockWeather = {
     current: {
       temperature: 22,
-      weatherCode: 1,
+      condition: 'Mainly clear',
       windSpeed: 15,
     },
   };
@@ -66,7 +66,7 @@ describe('WeatherDisplay', () => {
       const fahrenheitWeather = {
         current: {
           temperature: 72,
-          weatherCode: 0,
+          condition: 'Clear sky',
           windSpeed: 10,
         },
       };

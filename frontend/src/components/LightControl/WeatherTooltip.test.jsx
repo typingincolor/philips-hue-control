@@ -7,15 +7,15 @@ describe('WeatherTooltip', () => {
   const mockWeather = {
     current: {
       temperature: 22,
-      weatherCode: 1,
+      condition: 'Mainly clear',
       windSpeed: 15,
     },
     forecast: [
-      { date: '2024-01-01', weatherCode: 0, high: 24, low: 18 },
-      { date: '2024-01-02', weatherCode: 2, high: 22, low: 16 },
-      { date: '2024-01-03', weatherCode: 61, high: 18, low: 12 },
-      { date: '2024-01-04', weatherCode: 3, high: 20, low: 14 },
-      { date: '2024-01-05', weatherCode: 1, high: 23, low: 17 },
+      { date: '2024-01-01', condition: 'Clear sky', high: 24, low: 18 },
+      { date: '2024-01-02', condition: 'Partly cloudy', high: 22, low: 16 },
+      { date: '2024-01-03', condition: 'Slight rain', high: 18, low: 12 },
+      { date: '2024-01-04', condition: 'Overcast', high: 20, low: 14 },
+      { date: '2024-01-05', condition: 'Mainly clear', high: 23, low: 17 },
     ],
   };
 

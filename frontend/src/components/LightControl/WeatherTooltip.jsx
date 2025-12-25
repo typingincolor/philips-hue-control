@@ -1,6 +1,5 @@
 import { WeatherIcon, Wind } from './Icons';
 import { UI_TEXT } from '../../constants/uiText';
-import { getWeatherDescription } from '../../utils/weatherUtils';
 
 /**
  * Format date to day abbreviation
@@ -29,12 +28,10 @@ export const WeatherTooltip = ({ weather, location, units }) => {
       <div className="weather-tooltip__header">
         <div className="weather-tooltip__location">{location.name}</div>
         <div className="weather-tooltip__current">
-          <WeatherIcon code={current.weatherCode} size={32} />
+          <WeatherIcon condition={current.condition} size={32} />
           <div className="weather-tooltip__temp-main">{current.temperature}°</div>
         </div>
-        <div className="weather-tooltip__description">
-          {getWeatherDescription(current.weatherCode)}
-        </div>
+        <div className="weather-tooltip__description">{current.condition}</div>
         <div className="weather-tooltip__wind">
           <Wind size={14} />
           <span>
@@ -47,14 +44,14 @@ export const WeatherTooltip = ({ weather, location, units }) => {
       <div className="weather-tooltip__forecast">
         <div className="weather-tooltip__forecast-title">{UI_TEXT.WEATHER_FORECAST}</div>
         <div className="weather-tooltip__forecast-list">
-          {forecast?.map((day, index) => (
+          {forecast?.map((day) => (
             <div
               key={day.date}
               className="weather-tooltip__forecast-day"
               data-testid="forecast-day"
             >
               <span className="weather-tooltip__day-name">{formatDay(day.date)}</span>
-              <WeatherIcon code={day.weatherCode} size={16} />
+              <WeatherIcon condition={day.condition} size={16} />
               <span className="weather-tooltip__day-high">{day.high}°</span>
               <span className="weather-tooltip__day-low">{day.low}°</span>
             </div>
