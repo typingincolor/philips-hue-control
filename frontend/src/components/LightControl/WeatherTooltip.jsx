@@ -1,6 +1,6 @@
 import { WeatherIcon, Wind } from './Icons';
 import { UI_TEXT } from '../../constants/uiText';
-import { getWeatherDescription } from '../../constants/weather';
+import { getWeatherDescription } from '../../utils/weatherUtils';
 
 /**
  * Format date to day abbreviation

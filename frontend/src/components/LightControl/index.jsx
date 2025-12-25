@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useDemoMode } from '../../context/DemoModeContext';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -27,17 +27,39 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     error: wsError,
   } = useWebSocket(sessionToken, null, !isDemoMode);
 
-  // Weather hooks
-  const { settings, updateSettings } = useSettings();
-  const { location, isDetecting, error: locationError, detectLocation } = useLocation();
+  // Settings from backend (includes location and units)
+  const { settings, updateSettings } = useSettings(sessionToken);
+
+  // Callback for when location is updated
+  const handleLocationUpdate = useCallback(
+    (newLocation) => {
+      // Update local settings state with new location
+      updateSettings({ location: newLocation });
+    },
+    [updateSettings]
+  );
+
+  // Location detection hook
+  const { isDetecting, error: locationError, detectLocation } = useLocation(
+    sessionToken,
+    settings.location,
+    handleLocationUpdate
+  );
+
+  // Weather from backend (uses session's location and units)
   const {
     weather,
     isLoading: weatherLoading,
     error: weatherError,
-  } = useWeather({
-    location,
-    units: settings.units,
-  });
+    refetch: refetchWeather,
+  } = useWeather(sessionToken);
+
+  // Refetch weather when settings change (location or units updated)
+  useEffect(() => {
+    if (settings.location) {
+      refetchWeather();
+    }
+  }, [settings.location, settings.units, refetchWeather]);
 
   // Local dashboard state (for demo mode or manual updates)
   const [localDashboard, setLocalDashboard] = useState(null);
@@ -349,7 +371,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
         weather={weather}
         weatherLoading={weatherLoading}
         weatherError={weatherError}
-        location={location}
+        location={settings.location}
         units={settings.units}
         onOpenSettings={() => setSettingsOpen(true)}
       />
@@ -387,7 +409,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       <SettingsDrawer
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        location={location}
+        location={settings.location}
         settings={settings}
         onUpdateSettings={updateSettings}
         onDetectLocation={detectLocation}

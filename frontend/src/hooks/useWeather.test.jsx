@@ -1,17 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useWeather } from './useWeather';
-import { weatherApi } from '../services/weatherApi';
+import { hueApi } from '../services/hueApi';
 
-// Mock weather API
-vi.mock('../services/weatherApi', () => ({
-  weatherApi: {
-    getWeatherData: vi.fn(),
+// Mock hueApi
+vi.mock('../services/hueApi', () => ({
+  hueApi: {
+    getWeather: vi.fn(),
   },
 }));
 
 describe('useWeather', () => {
-  const mockLocation = { lat: 51.5074, lon: -0.1278, name: 'London' };
   const mockWeatherResponse = {
     current: {
       temperature: 22,
@@ -30,55 +29,44 @@ describe('useWeather', () => {
   });
 
   describe('initialization', () => {
-    it('should return null weather when no location provided', () => {
-      const { result } = renderHook(() => useWeather({ location: null, units: 'celsius' }));
+    it('should return null weather when no sessionToken provided', () => {
+      const { result } = renderHook(() => useWeather(null));
 
       expect(result.current.weather).toBeNull();
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
     });
 
-    it('should start loading when location is provided', () => {
-      weatherApi.getWeatherData.mockReturnValue(new Promise(() => {})); // Never resolves
+    it('should start loading when sessionToken is provided', async () => {
+      hueApi.getWeather.mockReturnValue(new Promise(() => {})); // Never resolves
 
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
+      const { result } = renderHook(() => useWeather('test-token'));
 
-      expect(result.current.isLoading).toBe(true);
+      // Wait for useEffect to run
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(true);
+      });
     });
   });
 
   describe('fetching weather', () => {
-    it('should fetch weather data when location is provided', async () => {
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+    it('should fetch weather data when sessionToken is provided', async () => {
+      hueApi.getWeather.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
+      const { result } = renderHook(() => useWeather('test-token'));
 
       await waitFor(() => {
         expect(result.current.weather).toEqual(mockWeatherResponse);
       });
 
-      expect(weatherApi.getWeatherData).toHaveBeenCalledWith(51.5074, -0.1278, 'celsius');
+      expect(hueApi.getWeather).toHaveBeenCalledWith('test-token');
       expect(result.current.isLoading).toBe(false);
     });
 
-    it('should pass units to API call', async () => {
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
-
-      const { result } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'fahrenheit' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.weather).not.toBeNull();
-      });
-
-      expect(weatherApi.getWeatherData).toHaveBeenCalledWith(51.5074, -0.1278, 'fahrenheit');
-    });
-
     it('should set error on API failure', async () => {
-      weatherApi.getWeatherData.mockRejectedValue(new Error('Network error'));
+      hueApi.getWeather.mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
+      const { result } = renderHook(() => useWeather('test-token'));
 
       await waitFor(() => {
         expect(result.current.error).toBe('Failed to fetch weather data');
@@ -86,64 +74,74 @@ describe('useWeather', () => {
 
       expect(result.current.isLoading).toBe(false);
     });
+
+    it('should not set error when no location is set (404)', async () => {
+      hueApi.getWeather.mockRejectedValue(new Error('404: No location set'));
+
+      const { result } = renderHook(() => useWeather('test-token'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.weather).toBeNull();
+      expect(result.current.error).toBeNull();
+    });
   });
 
   describe('refetch', () => {
     it('should provide refetch function', async () => {
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+      hueApi.getWeather.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
+      const { result } = renderHook(() => useWeather('test-token'));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
       });
 
-      expect(weatherApi.getWeatherData).toHaveBeenCalledTimes(1);
+      expect(hueApi.getWeather).toHaveBeenCalledTimes(1);
 
       await act(async () => {
         await result.current.refetch();
       });
 
-      expect(weatherApi.getWeatherData).toHaveBeenCalledTimes(2);
+      expect(hueApi.getWeather).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('location changes', () => {
-    it('should refetch when location changes', async () => {
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+  describe('sessionToken changes', () => {
+    it('should refetch when sessionToken changes', async () => {
+      hueApi.getWeather.mockResolvedValue(mockWeatherResponse);
 
-      const { result, rerender } = renderHook(
-        ({ location }) => useWeather({ location, units: 'celsius' }),
-        { initialProps: { location: mockLocation } }
-      );
+      const { result, rerender } = renderHook(({ token }) => useWeather(token), {
+        initialProps: { token: 'token-1' },
+      });
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
       });
 
-      expect(weatherApi.getWeatherData).toHaveBeenCalledTimes(1);
+      expect(hueApi.getWeather).toHaveBeenCalledWith('token-1');
 
-      const newLocation = { lat: 40.7128, lon: -74.006, name: 'New York' };
-      rerender({ location: newLocation });
+      rerender({ token: 'token-2' });
 
       await waitFor(() => {
-        expect(weatherApi.getWeatherData).toHaveBeenCalledWith(40.7128, -74.006, 'celsius');
+        expect(hueApi.getWeather).toHaveBeenCalledWith('token-2');
       });
     });
 
-    it('should clear weather when location becomes null', async () => {
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+    it('should clear weather when sessionToken becomes null', async () => {
+      hueApi.getWeather.mockResolvedValue(mockWeatherResponse);
 
-      const { result, rerender } = renderHook(
-        ({ location }) => useWeather({ location, units: 'celsius' }),
-        { initialProps: { location: mockLocation } }
-      );
+      const { result, rerender } = renderHook(({ token }) => useWeather(token), {
+        initialProps: { token: 'test-token' },
+      });
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
       });
 
-      rerender({ location: null });
+      rerender({ token: null });
 
       await waitFor(() => {
         expect(result.current.weather).toBeNull();
@@ -151,35 +149,12 @@ describe('useWeather', () => {
     });
   });
 
-  describe('units changes', () => {
-    it('should refetch when units change', async () => {
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
-
-      const { result, rerender } = renderHook(
-        ({ units }) => useWeather({ location: mockLocation, units }),
-        { initialProps: { units: 'celsius' } }
-      );
-
-      await waitFor(() => {
-        expect(result.current.weather).not.toBeNull();
-      });
-
-      expect(weatherApi.getWeatherData).toHaveBeenCalledWith(51.5074, -0.1278, 'celsius');
-
-      rerender({ units: 'fahrenheit' });
-
-      await waitFor(() => {
-        expect(weatherApi.getWeatherData).toHaveBeenCalledWith(51.5074, -0.1278, 'fahrenheit');
-      });
-    });
-  });
-
   describe('polling', () => {
     it('should set up polling interval', async () => {
       const setIntervalSpy = vi.spyOn(global, 'setInterval');
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+      hueApi.getWeather.mockResolvedValue(mockWeatherResponse);
 
-      const { result } = renderHook(() => useWeather({ location: mockLocation, units: 'celsius' }));
+      const { result } = renderHook(() => useWeather('test-token'));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();
@@ -192,11 +167,9 @@ describe('useWeather', () => {
 
     it('should clear polling interval on unmount', async () => {
       const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
-      weatherApi.getWeatherData.mockResolvedValue(mockWeatherResponse);
+      hueApi.getWeather.mockResolvedValue(mockWeatherResponse);
 
-      const { result, unmount } = renderHook(() =>
-        useWeather({ location: mockLocation, units: 'celsius' })
-      );
+      const { result, unmount } = renderHook(() => useWeather('test-token'));
 
       await waitFor(() => {
         expect(result.current.weather).not.toBeNull();

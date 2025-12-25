@@ -1,64 +1,80 @@
-import { useState, useCallback } from 'react';
-import { STORAGE_KEYS } from '../constants/storage';
+import { useState, useCallback, useEffect } from 'react';
+import { hueApi } from '../services/hueApi';
 
 /**
- * Default settings
+ * Default settings (used while loading or on error)
  */
 const DEFAULT_SETTINGS = {
   units: 'celsius',
-  weatherEnabled: true,
+  location: null,
 };
 
 /**
- * Load settings from localStorage
- * @returns {object} Settings object
+ * Hook for managing settings via backend API
+ * Settings are stored per-session on the backend
+ * @param {string} sessionToken - Session token for API authentication
+ * @returns {object} { settings, isLoading, error, updateSettings }
  */
-const loadSettings = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.WEATHER_SETTINGS);
-    if (!stored) {
-      return DEFAULT_SETTINGS;
+export const useSettings = (sessionToken) => {
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch settings on mount
+  useEffect(() => {
+    if (!sessionToken) {
+      setIsLoading(false);
+      return;
     }
 
-    const parsed = JSON.parse(stored);
-    // Merge with defaults to handle partial data
-    return { ...DEFAULT_SETTINGS, ...parsed };
-  } catch {
-    // Handle corrupted data
-    return DEFAULT_SETTINGS;
-  }
-};
+    const fetchSettings = async () => {
+      try {
+        setIsLoading(true);
+        const data = await hueApi.getSettings(sessionToken);
+        setSettings({
+          units: data.units || 'celsius',
+          location: data.location || null,
+        });
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        // Keep default settings on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-/**
- * Hook for managing weather settings with localStorage persistence
- * @returns {object} { settings, updateSettings, resetSettings }
- */
-export const useSettings = () => {
-  const [settings, setSettings] = useState(() => loadSettings());
+    fetchSettings();
+  }, [sessionToken]);
 
   /**
    * Update settings (partial update supported)
    * @param {object} newSettings - Settings to merge
    */
-  const updateSettings = useCallback((newSettings) => {
-    setSettings((prev) => {
-      const updated = { ...prev, ...newSettings };
-      localStorage.setItem(STORAGE_KEYS.WEATHER_SETTINGS, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  const updateSettings = useCallback(
+    async (newSettings) => {
+      if (!sessionToken) return;
 
-  /**
-   * Reset settings to defaults
-   */
-  const resetSettings = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEYS.WEATHER_SETTINGS);
-    setSettings(DEFAULT_SETTINGS);
-  }, []);
+      // Optimistic update
+      const previousSettings = settings;
+      const updated = { ...settings, ...newSettings };
+      setSettings(updated);
+
+      try {
+        await hueApi.updateSettings(sessionToken, updated);
+      } catch (err) {
+        // Rollback on error
+        setSettings(previousSettings);
+        setError(err.message);
+      }
+    },
+    [sessionToken, settings]
+  );
 
   return {
     settings,
+    isLoading,
+    error,
     updateSettings,
-    resetSettings,
   };
 };

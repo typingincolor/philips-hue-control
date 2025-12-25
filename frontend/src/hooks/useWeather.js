@@ -1,23 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { weatherApi } from '../services/weatherApi';
-import { WEATHER_CONFIG } from '../constants/weather';
+import { hueApi } from '../services/hueApi';
 
 /**
- * Hook for fetching and managing weather data
- * Always uses weatherApi (Open-Meteo) - no mock data in frontend
- * @param {object} options - Hook options
- * @param {object|null} options.location - Location object with lat, lon, name
- * @param {string} options.units - Temperature units ('celsius' or 'fahrenheit')
+ * Weather polling interval (15 minutes)
+ */
+const WEATHER_POLLING_INTERVAL = 15 * 60 * 1000;
+
+/**
+ * Hook for fetching weather data from backend
+ * Backend uses session's stored location and units
+ * @param {string} sessionToken - Session token for API authentication
  * @returns {object} { weather, isLoading, error, refetch }
  */
-export const useWeather = ({ location, units }) => {
+export const useWeather = (sessionToken) => {
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const intervalRef = useRef(null);
 
   const fetchWeather = useCallback(async () => {
-    if (!location) {
+    if (!sessionToken) {
       setWeather(null);
       return;
     }
@@ -26,18 +28,24 @@ export const useWeather = ({ location, units }) => {
     setError(null);
 
     try {
-      const data = await weatherApi.getWeatherData(location.lat, location.lon, units);
+      const data = await hueApi.getWeather(sessionToken);
       setWeather(data);
-    } catch {
-      setError('Failed to fetch weather data');
+    } catch (err) {
+      // 404 means no location set - not an error, just no weather
+      if (err.message?.includes('404') || err.message?.includes('No location')) {
+        setWeather(null);
+        setError(null);
+      } else {
+        setError('Failed to fetch weather data');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [location?.lat, location?.lon, units]);
+  }, [sessionToken]);
 
-  // Fetch on mount and when dependencies change
+  // Fetch on mount and when sessionToken changes
   useEffect(() => {
-    if (!location) {
+    if (!sessionToken) {
       setWeather(null);
       setError(null);
       return;
@@ -48,7 +56,7 @@ export const useWeather = ({ location, units }) => {
     // Set up polling interval
     intervalRef.current = setInterval(() => {
       fetchWeather();
-    }, WEATHER_CONFIG.POLLING_INTERVAL);
+    }, WEATHER_POLLING_INTERVAL);
 
     // Cleanup on unmount or dependency change
     return () => {
@@ -57,7 +65,7 @@ export const useWeather = ({ location, units }) => {
         intervalRef.current = null;
       }
     };
-  }, [fetchWeather, location]);
+  }, [fetchWeather, sessionToken]);
 
   return {
     weather,

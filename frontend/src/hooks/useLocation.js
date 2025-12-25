@@ -1,30 +1,39 @@
-import { useState, useCallback, useEffect } from 'react';
-import { STORAGE_KEYS } from '../constants/storage';
-import { weatherApi } from '../services/weatherApi';
-import { useDemoMode } from '../context/DemoModeContext';
+import { useState, useCallback } from 'react';
+import { hueApi } from '../services/hueApi';
 
 /**
- * Default demo location (London) for demo mode
+ * Reverse geocode coordinates to get city name
+ * Uses Nominatim (OpenStreetMap) API
+ * @param {number} latitude
+ * @param {number} longitude
+ * @returns {Promise<string>} City/town name
  */
-const DEMO_LOCATION = {
-  lat: 51.5074,
-  lon: -0.1278,
-  name: 'London',
-};
+const reverseGeocode = async (latitude, longitude) => {
+  const GEOCODING_API_URL = 'https://nominatim.openstreetmap.org/reverse';
+  const params = new URLSearchParams({
+    lat: latitude.toString(),
+    lon: longitude.toString(),
+    format: 'json',
+  });
 
-/**
- * Load location from localStorage
- * @returns {object|null} Location object or null
- */
-const loadLocation = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.WEATHER_LOCATION);
-    if (!stored) {
-      return null;
+    const response = await fetch(`${GEOCODING_API_URL}?${params}`, {
+      headers: {
+        'User-Agent': 'HueControl/1.0',
+      },
+    });
+
+    if (!response.ok) {
+      return 'Unknown';
     }
-    return JSON.parse(stored);
+
+    const data = await response.json();
+    const address = data.address || {};
+
+    // Try city, then town, then village
+    return address.city || address.town || address.village || 'Unknown';
   } catch {
-    return null;
+    return 'Unknown';
   }
 };
 
@@ -47,30 +56,16 @@ const getGeolocationErrorMessage = (code) => {
 };
 
 /**
- * Hook for managing user location with geolocation detection and localStorage persistence
- * In demo mode, uses default London location as fallback
- * @returns {object} { location, isDetecting, error, detectLocation, setManualLocation, clearLocation }
+ * Hook for managing user location with geolocation detection
+ * Location is stored on the backend via settings API
+ * @param {string} sessionToken - Session token for API authentication
+ * @param {object|null} currentLocation - Current location from settings
+ * @param {function} onLocationUpdate - Callback when location changes (to update settings)
+ * @returns {object} { isDetecting, error, detectLocation, clearLocation }
  */
-export const useLocation = () => {
-  const { isDemoMode } = useDemoMode();
-
-  const [location, setLocation] = useState(() => {
-    const stored = loadLocation();
-    // In demo mode, use DEMO_LOCATION as fallback if nothing stored
-    if (!stored && isDemoMode) {
-      return DEMO_LOCATION;
-    }
-    return stored;
-  });
+export const useLocation = (sessionToken, currentLocation, onLocationUpdate) => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState(null);
-
-  // Update location if demo mode changes and no location set
-  useEffect(() => {
-    if (isDemoMode && !location) {
-      setLocation(DEMO_LOCATION);
-    }
-  }, [isDemoMode, location]);
 
   /**
    * Detect location using browser geolocation API
@@ -79,6 +74,11 @@ export const useLocation = () => {
   const detectLocation = useCallback(async () => {
     if (!navigator.geolocation) {
       setError('Geolocation not supported');
+      return;
+    }
+
+    if (!sessionToken) {
+      setError('Not authenticated');
       return;
     }
 
@@ -97,7 +97,7 @@ export const useLocation = () => {
       const { latitude, longitude } = position.coords;
 
       // Get city name via reverse geocoding
-      const name = await weatherApi.reverseGeocode(latitude, longitude);
+      const name = await reverseGeocode(latitude, longitude);
 
       const newLocation = {
         lat: latitude,
@@ -105,43 +105,49 @@ export const useLocation = () => {
         name,
       };
 
-      localStorage.setItem(STORAGE_KEYS.WEATHER_LOCATION, JSON.stringify(newLocation));
-      setLocation(newLocation);
+      // Save to backend
+      await hueApi.updateLocation(sessionToken, newLocation);
+
+      // Notify parent to update settings
+      if (onLocationUpdate) {
+        onLocationUpdate(newLocation);
+      }
     } catch (err) {
-      setError(getGeolocationErrorMessage(err.code));
-      setLocation(null);
+      if (err.code) {
+        // Geolocation error
+        setError(getGeolocationErrorMessage(err.code));
+      } else {
+        // API error
+        setError(err.message || 'Failed to save location');
+      }
     } finally {
       setIsDetecting(false);
     }
-  }, []);
-
-  /**
-   * Set location manually
-   * @param {number} lat - Latitude
-   * @param {number} lon - Longitude
-   * @param {string} name - Location name
-   */
-  const setManualLocation = useCallback((lat, lon, name) => {
-    const newLocation = { lat, lon, name };
-    localStorage.setItem(STORAGE_KEYS.WEATHER_LOCATION, JSON.stringify(newLocation));
-    setLocation(newLocation);
-    setError(null);
-  }, []);
+  }, [sessionToken, onLocationUpdate]);
 
   /**
    * Clear stored location
    */
-  const clearLocation = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEYS.WEATHER_LOCATION);
-    setLocation(null);
-  }, []);
+  const clearLocation = useCallback(async () => {
+    if (!sessionToken) return;
+
+    try {
+      await hueApi.clearLocation(sessionToken);
+
+      // Notify parent to update settings
+      if (onLocationUpdate) {
+        onLocationUpdate(null);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to clear location');
+    }
+  }, [sessionToken, onLocationUpdate]);
 
   return {
-    location,
+    location: currentLocation,
     isDetecting,
     error,
     detectLocation,
-    setManualLocation,
     clearLocation,
   };
 };

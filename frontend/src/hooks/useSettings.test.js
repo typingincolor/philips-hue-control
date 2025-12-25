@@ -1,178 +1,187 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useSettings } from './useSettings';
-import { STORAGE_KEYS } from '../constants/storage';
+import { hueApi } from '../services/hueApi';
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store = {};
-  return {
-    getItem: (key) => store[key] || null,
-    setItem: (key, value) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(global, 'localStorage', {
-  value: localStorageMock,
-});
+// Mock hueApi
+vi.mock('../services/hueApi', () => ({
+  hueApi: {
+    getSettings: vi.fn(),
+    updateSettings: vi.fn(),
+  },
+}));
 
 describe('useSettings', () => {
+  const mockSettings = {
+    units: 'celsius',
+    location: { lat: 51.5074, lon: -0.1278, name: 'London' },
+  };
+
   beforeEach(() => {
-    localStorage.clear();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    localStorage.clear();
-  });
-
   describe('initialization', () => {
-    it('should return default settings when no localStorage data', () => {
-      const { result } = renderHook(() => useSettings());
+    it('should return default settings when no sessionToken', () => {
+      const { result } = renderHook(() => useSettings(null));
 
       expect(result.current.settings).toEqual({
         units: 'celsius',
-        weatherEnabled: true,
+        location: null,
+      });
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    it('should fetch settings when sessionToken is provided', async () => {
+      hueApi.getSettings.mockResolvedValue(mockSettings);
+
+      const { result } = renderHook(() => useSettings('test-token'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(hueApi.getSettings).toHaveBeenCalledWith('test-token');
+      expect(result.current.settings).toEqual(mockSettings);
+    });
+
+    it('should set isLoading while fetching', async () => {
+      hueApi.getSettings.mockReturnValue(new Promise(() => {})); // Never resolves
+
+      const { result } = renderHook(() => useSettings('test-token'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(true);
       });
     });
 
-    it('should load settings from localStorage on mount', () => {
-      localStorage.setItem(
-        STORAGE_KEYS.WEATHER_SETTINGS,
-        JSON.stringify({ units: 'fahrenheit', weatherEnabled: false })
-      );
+    it('should handle API error gracefully', async () => {
+      hueApi.getSettings.mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(() => useSettings());
+      const { result } = renderHook(() => useSettings('test-token'));
 
-      expect(result.current.settings.units).toBe('fahrenheit');
-      expect(result.current.settings.weatherEnabled).toBe(false);
-    });
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
-    it('should handle corrupted localStorage data', () => {
-      localStorage.setItem(STORAGE_KEYS.WEATHER_SETTINGS, 'not-valid-json');
-
-      const { result } = renderHook(() => useSettings());
-
-      // Should fall back to defaults
+      expect(result.current.error).toBe('Network error');
+      // Should keep default settings on error
       expect(result.current.settings).toEqual({
         units: 'celsius',
-        weatherEnabled: true,
+        location: null,
       });
     });
 
-    it('should merge partial localStorage data with defaults', () => {
-      localStorage.setItem(STORAGE_KEYS.WEATHER_SETTINGS, JSON.stringify({ units: 'fahrenheit' }));
+    it('should handle missing fields in API response', async () => {
+      hueApi.getSettings.mockResolvedValue({});
 
-      const { result } = renderHook(() => useSettings());
+      const { result } = renderHook(() => useSettings('test-token'));
 
-      expect(result.current.settings.units).toBe('fahrenheit');
-      expect(result.current.settings.weatherEnabled).toBe(true); // Default
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.settings).toEqual({
+        units: 'celsius',
+        location: null,
+      });
     });
   });
 
   describe('updateSettings', () => {
-    it('should update settings in state', () => {
-      const { result } = renderHook(() => useSettings());
+    it('should optimistically update settings', async () => {
+      hueApi.getSettings.mockResolvedValue(mockSettings);
+      hueApi.updateSettings.mockResolvedValue({});
 
-      act(() => {
-        result.current.updateSettings({ units: 'fahrenheit' });
+      const { result } = renderHook(() => useSettings('test-token'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.updateSettings({ units: 'fahrenheit' });
       });
 
       expect(result.current.settings.units).toBe('fahrenheit');
+      expect(hueApi.updateSettings).toHaveBeenCalledWith('test-token', {
+        ...mockSettings,
+        units: 'fahrenheit',
+      });
     });
 
-    it('should persist settings to localStorage', () => {
-      const { result } = renderHook(() => useSettings());
+    it('should rollback on API error', async () => {
+      hueApi.getSettings.mockResolvedValue(mockSettings);
+      hueApi.updateSettings.mockRejectedValue(new Error('Update failed'));
 
-      act(() => {
-        result.current.updateSettings({ units: 'fahrenheit' });
+      const { result } = renderHook(() => useSettings('test-token'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
       });
 
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.WEATHER_SETTINGS));
-      expect(stored.units).toBe('fahrenheit');
-    });
-
-    it('should merge partial updates with existing settings', () => {
-      const { result } = renderHook(() => useSettings());
-
-      act(() => {
-        result.current.updateSettings({ weatherEnabled: false });
+      await act(async () => {
+        await result.current.updateSettings({ units: 'fahrenheit' });
       });
 
-      expect(result.current.settings.units).toBe('celsius'); // Unchanged
-      expect(result.current.settings.weatherEnabled).toBe(false); // Updated
+      // Should rollback to original settings
+      expect(result.current.settings.units).toBe('celsius');
+      expect(result.current.error).toBe('Update failed');
     });
 
-    it('should update multiple settings at once', () => {
-      const { result } = renderHook(() => useSettings());
+    it('should not call API when no sessionToken', async () => {
+      const { result } = renderHook(() => useSettings(null));
 
-      act(() => {
-        result.current.updateSettings({
-          units: 'fahrenheit',
-          weatherEnabled: false,
-        });
+      await act(async () => {
+        await result.current.updateSettings({ units: 'fahrenheit' });
+      });
+
+      expect(hueApi.updateSettings).not.toHaveBeenCalled();
+    });
+
+    it('should merge partial updates with existing settings', async () => {
+      hueApi.getSettings.mockResolvedValue(mockSettings);
+      hueApi.updateSettings.mockResolvedValue({});
+
+      const { result } = renderHook(() => useSettings('test-token'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.updateSettings({ units: 'fahrenheit' });
+      });
+
+      // Location should be preserved
+      expect(result.current.settings.location).toEqual(mockSettings.location);
+      expect(result.current.settings.units).toBe('fahrenheit');
+    });
+  });
+
+  describe('sessionToken changes', () => {
+    it('should refetch when sessionToken changes', async () => {
+      hueApi.getSettings.mockResolvedValue(mockSettings);
+
+      const { result, rerender } = renderHook(({ token }) => useSettings(token), {
+        initialProps: { token: 'token-1' },
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(hueApi.getSettings).toHaveBeenCalledWith('token-1');
+
+      hueApi.getSettings.mockResolvedValue({ units: 'fahrenheit', location: null });
+
+      rerender({ token: 'token-2' });
+
+      await waitFor(() => {
+        expect(hueApi.getSettings).toHaveBeenCalledWith('token-2');
       });
 
       expect(result.current.settings.units).toBe('fahrenheit');
-      expect(result.current.settings.weatherEnabled).toBe(false);
-    });
-  });
-
-  describe('resetSettings', () => {
-    it('should reset to default settings', () => {
-      const { result } = renderHook(() => useSettings());
-
-      act(() => {
-        result.current.updateSettings({ units: 'fahrenheit', weatherEnabled: false });
-      });
-
-      act(() => {
-        result.current.resetSettings();
-      });
-
-      expect(result.current.settings).toEqual({
-        units: 'celsius',
-        weatherEnabled: true,
-      });
-    });
-
-    it('should clear settings from localStorage', () => {
-      const { result } = renderHook(() => useSettings());
-
-      act(() => {
-        result.current.updateSettings({ units: 'fahrenheit' });
-      });
-
-      act(() => {
-        result.current.resetSettings();
-      });
-
-      const stored = localStorage.getItem(STORAGE_KEYS.WEATHER_SETTINGS);
-      expect(stored).toBeNull();
-    });
-  });
-
-  describe('persistence across remounts', () => {
-    it('should preserve settings after remount', () => {
-      const { result, unmount } = renderHook(() => useSettings());
-
-      act(() => {
-        result.current.updateSettings({ units: 'fahrenheit' });
-      });
-
-      unmount();
-
-      const { result: newResult } = renderHook(() => useSettings());
-
-      expect(newResult.current.settings.units).toBe('fahrenheit');
     });
   });
 });
