@@ -69,4 +69,23 @@ export const UI_TEXT = {
   // Common
   ERROR_OCCURRED: 'An error occurred',
   RETRY: 'Retry',
+
+  // Weather
+  WEATHER_LOADING: 'Loading...',
+  WEATHER_ERROR: 'Weather unavailable',
+  WEATHER_FEELS_LIKE: 'Feels like',
+  WEATHER_HUMIDITY: 'Humidity',
+  WEATHER_WIND: 'Wind',
+  WEATHER_FORECAST: '5-Day Forecast',
+
+  // Settings
+  SETTINGS_TITLE: 'Settings',
+  SETTINGS_LOCATION: 'Location',
+  SETTINGS_LOCATION_PLACEHOLDER: 'City name',
+  SETTINGS_UNITS: 'Temperature Units',
+  SETTINGS_CELSIUS: 'Celsius',
+  SETTINGS_FAHRENHEIT: 'Fahrenheit',
+  SETTINGS_DETECT_LOCATION: 'Detect Location',
+  SETTINGS_DETECTING: 'Detecting...',
+  SETTINGS_WEATHER_ENABLED: 'Show Weather',
 };
