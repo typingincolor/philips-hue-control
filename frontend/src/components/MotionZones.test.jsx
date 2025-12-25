@@ -2,22 +2,28 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MotionZones } from './MotionZones';
 
-// Mock the hooks
-vi.mock('../hooks/useHueApi', () => ({
-  useHueApi: vi.fn(),
+// Mock the context
+const mockGetMotionZones = vi.fn();
+let mockDemoModeValue = {
+  isDemoMode: false,
+  api: {
+    getMotionZones: mockGetMotionZones,
+  },
+};
+
+vi.mock('../context/DemoModeContext', () => ({
+  useDemoMode: () => mockDemoModeValue,
 }));
 
-import { useHueApi } from '../hooks/useHueApi';
-
 describe('MotionZones', () => {
-  const mockGetMotionZones = vi.fn();
-  const mockApi = {
-    getMotionZones: mockGetMotionZones,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    useHueApi.mockReturnValue(mockApi);
+    mockDemoModeValue = {
+      isDemoMode: false,
+      api: {
+        getMotionZones: mockGetMotionZones,
+      },
+    };
   });
 
   afterEach(() => {

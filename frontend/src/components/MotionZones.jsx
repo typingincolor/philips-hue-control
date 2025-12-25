@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { MotionZoneShape } from '../propTypes/shapes';
-import { useHueApi } from '../hooks/useHueApi';
+import { useDemoMode } from '../context/DemoModeContext';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MotionZones');
 
 export const MotionZones = ({ sessionToken, motionZones }) => {
-  const api = useHueApi();
+  const { api } = useDemoMode();
 
   const [fetchedZones, setFetchedZones] = useState([]);
   const [activeAlerts, setActiveAlerts] = useState([]);
