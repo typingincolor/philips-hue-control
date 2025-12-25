@@ -2768,11 +2768,11 @@ body.dark-theme {
   animation: fadeIn 0.2s ease;
 }
 
-/* Settings drawer panel */
+/* Settings drawer panel (slides from left) */
 .settings-drawer {
   position: fixed;
   top: 0;
-  right: 0;
+  left: 0;
   bottom: 0;
   width: 280px;
   max-width: 85vw;
@@ -2780,8 +2780,17 @@ body.dark-theme {
   z-index: 201;
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
-  animation: slideIn 0.25s ease;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+  animation: slideInLeft 0.25s ease;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Settings drawer header */

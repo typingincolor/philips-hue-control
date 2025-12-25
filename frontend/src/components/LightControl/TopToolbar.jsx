@@ -38,6 +38,12 @@ export const TopToolbar = ({
   return (
     <div className="top-toolbar">
       <div className="toolbar-left">
+        <button className="toolbar-settings" onClick={onOpenSettings} aria-label="Settings">
+          <Settings size={18} />
+        </button>
+
+        <div className="toolbar-divider" />
+
         <div className="toolbar-stat">
           <LightbulbOn size={16} className="toolbar-stat-icon" />
           <span className="toolbar-stat-value">{lightsOn}</span>
@@ -89,9 +95,6 @@ export const TopToolbar = ({
           <span className={`toolbar-status-dot ${connectionStatus.className}`} />
           <span>{connectionStatus.text}</span>
         </div>
-        <button className="toolbar-settings" onClick={onOpenSettings} aria-label="Settings">
-          <Settings size={18} />
-        </button>
         <button className="toolbar-logout" onClick={onLogout}>
           <Logout size={16} />
         </button>
