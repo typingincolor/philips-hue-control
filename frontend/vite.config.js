@@ -11,6 +11,9 @@ const __dirname = path.dirname(__filename);
 const configPath = path.resolve(__dirname, '../config.json');
 const config = JSON.parse(readFileSync(configPath, 'utf-8'));
 
+// Allow override via environment variable for e2e tests (uses different port)
+const backendPort = process.env.VITE_BACKEND_PORT || config.development.backendPort;
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -19,7 +22,7 @@ export default defineConfig({
     // Proxy API requests to backend during development
     proxy: {
       '/api': {
-        target: `http://localhost:${config.development.backendPort}`,
+        target: `http://localhost:${backendPort}`,
         changeOrigin: true,
         ws: true, // Enable WebSocket proxying
       },
