@@ -39,8 +39,16 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 import App from './App';
+import { DemoModeProvider } from './context/DemoModeContext';
 import { UI_TEXT } from './constants/uiText';
 import { ERROR_MESSAGES } from './constants/messages';
+
+// Wrap App with DemoModeProvider for tests
+const WrappedApp = () => (
+  <DemoModeProvider>
+    <App />
+  </DemoModeProvider>
+);
 
 // Mock WebSocket since MSW doesn't support WebSocket yet
 class MockWebSocket {
@@ -328,7 +336,7 @@ describe('Integration Tests', () => {
     it('completes discovery → pairing → session → dashboard', async () => {
       const user = userEvent.setup();
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Step 1: Should show discovery screen
       expect(screen.getByText(UI_TEXT.APP_TITLE)).toBeInTheDocument();
@@ -387,7 +395,7 @@ describe('Integration Tests', () => {
         })
       );
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Navigate to authentication
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
@@ -410,7 +418,7 @@ describe('Integration Tests', () => {
     it('persists session to localStorage', async () => {
       const user = userEvent.setup();
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Complete authentication
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
@@ -437,7 +445,7 @@ describe('Integration Tests', () => {
       localStorage.setItem('hue_username', mockUsername);
       localStorage.setItem('hue_session_expires_at', expiresAt.toString());
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Should skip straight to dashboard
       await waitFor(
@@ -459,7 +467,7 @@ describe('Integration Tests', () => {
       localStorage.setItem('hue_username', mockUsername);
       localStorage.setItem('hue_session_expires_at', expiresAt.toString());
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Should automatically create new session using saved username
       await waitFor(
@@ -481,7 +489,7 @@ describe('Integration Tests', () => {
     it('connects and receives initial dashboard state', async () => {
       const user = userEvent.setup();
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Complete authentication
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
@@ -506,7 +514,7 @@ describe('Integration Tests', () => {
     it('does not show error flash during initial connection', async () => {
       const user = userEvent.setup();
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Complete authentication
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
@@ -542,7 +550,7 @@ describe('Integration Tests', () => {
       localStorage.setItem('hue_username', mockUsername);
       localStorage.setItem('hue_session_expires_at', expiresAt.toString());
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Wait for dashboard to appear
       await waitFor(() => {
@@ -593,7 +601,7 @@ describe('Integration Tests', () => {
         })
       );
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Should detect invalid session and auto-recover
       await waitFor(
@@ -617,7 +625,7 @@ describe('Integration Tests', () => {
         })
       );
 
-      render(<App />);
+      render(<WrappedApp />);
 
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
 
@@ -643,7 +651,7 @@ describe('Integration Tests', () => {
         })
       );
 
-      render(<App />);
+      render(<WrappedApp />);
 
       // Complete authentication
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
