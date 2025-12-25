@@ -12,12 +12,8 @@ import { test, expect } from '@playwright/test';
  * - Scene drawer slides in from right
  */
 
-// Clean up localStorage after each test to prevent interference with dev server
-test.afterEach(async ({ page }) => {
-  await page.evaluate(() => {
-    localStorage.removeItem('hue_session_token');
-  });
-});
+// Note: These tests use ?demo=true which bypasses auth entirely
+// No localStorage cleanup needed as demo mode doesn't modify auth state
 
 // Viewport definitions
 const VIEWPORTS = {

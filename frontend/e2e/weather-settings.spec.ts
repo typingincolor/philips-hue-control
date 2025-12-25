@@ -18,14 +18,16 @@ const VIEWPORTS = {
   raspberryPi: { width: 800, height: 480, name: 'Raspberry Pi 7"' },
 };
 
-// Clean up localStorage after each test to prevent interference with dev server
-test.afterEach(async ({ page }) => {
+// Clear test-related localStorage before each test to ensure isolation
+// This runs BEFORE the test, so dev server state is restored after tests complete
+test.beforeEach(async ({ page }) => {
+  await page.goto('about:blank');
   await page.evaluate(() => {
-    // Only clear weather-related keys, preserve auth keys
+    // Clear weather/settings keys that tests will modify
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (key.includes('weather') || key.includes('settings'))) {
+      if (key && (key.includes('weather') || key.includes('hue_weather'))) {
         keysToRemove.push(key);
       }
     }
