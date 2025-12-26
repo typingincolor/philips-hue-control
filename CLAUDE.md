@@ -110,12 +110,23 @@ Backend-based demo allows testing without Hue Bridge:
 
 **WebSocket:** Connect to `/api/v1/ws`, auth with `{ sessionToken }` or `{ demoMode: true }`
 
+## Rate Limiting
+
+API endpoints are rate limited per IP address. Demo mode bypasses limits.
+
+| Endpoint | Limit |
+|----------|-------|
+| `/api/v1/*` | 100 requests/minute |
+| `/api/discovery` | 10 requests/minute |
+
+Headers returned: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After` (when limited)
+
 ## Testing
 
 See `frontend/TESTING.md` for detailed documentation.
 
 ```bash
-npm run test:all         # All unit tests (687 tests)
+npm run test:all         # All unit tests (708 tests)
 npm run test:e2e         # E2E tests (158 tests)
 npm run test:mutation:all # Mutation testing
 ```

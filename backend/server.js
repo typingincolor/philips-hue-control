@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import v1Routes from './routes/v1/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { detectDemoMode } from './middleware/demoMode.js';
+import { rateLimit, discoveryRateLimit } from './middleware/rateLimit.js';
 import { openApiSpec } from './openapi.js';
 import websocketService from './services/websocketService.js';
 import { createLogger } from './utils/logger.js';
@@ -47,11 +48,14 @@ app.use(
 // Demo mode detection (before v1 routes)
 app.use('/api/v1', detectDemoMode);
 
+// Rate limiting for API routes (after demo mode, so demo bypasses limits)
+app.use('/api/v1', rateLimit);
+
 // Mount v1 API routes
 app.use('/api/v1', v1Routes);
 
-// Discovery endpoint (no bridge IP needed)
-app.get('/api/discovery', async (req, res) => {
+// Discovery endpoint (no bridge IP needed, stricter rate limit)
+app.get('/api/discovery', discoveryRateLimit, async (req, res) => {
   try {
     logger.info('Discovery request');
     const response = await axios.get(config.hue.discoveryEndpoint);

@@ -42,7 +42,8 @@ A modern React web application for controlling Philips Hue lights locally using 
 - **Multi-Machine Support**: Access from any device on your network
 - **Centralized Configuration**: All settings managed through config.json
 - **Modern API v2**: Uses the latest Philips Hue API for future-proof functionality
-- **Comprehensive Testing**: 739 tests (242 frontend + 497 backend) with integration test suite
+- **Comprehensive Testing**: 708 unit tests (226 frontend + 482 backend) with E2E test suite
+- **Rate Limiting**: API protection with per-IP rate limits (100 req/min for API, 10 req/min for discovery)
 
 ## Prerequisites
 
@@ -411,11 +412,11 @@ Runs mutation testing with Stryker (validates test quality)
 
 ## Testing
 
-The project includes comprehensive testing infrastructure with **739 tests total** (242 frontend + 497 backend) and mutation testing to ensure code quality.
+The project includes comprehensive testing infrastructure with **708 unit tests** (226 frontend + 482 backend) and mutation testing to ensure code quality.
 
 ### Test Coverage
 
-**Frontend Tests (242 tests):**
+**Frontend Tests (226 tests):**
 
 - **Unit tests**: Utilities, hooks, and components
 - **Integration tests**: 10 end-to-end flow tests with MSW
@@ -423,7 +424,7 @@ The project includes comprehensive testing infrastructure with **739 tests total
 - **Testing Library** - React component testing with user-centric approach
 - **MSW** - Network-level API mocking for integration tests
 
-**Backend Tests (497 tests):**
+**Backend Tests (482 tests):**
 
 - **Service layer tests**: Color conversion, room hierarchy, motion sensors, statistics, WebSocket service
 - **Route tests**: API endpoint validation
