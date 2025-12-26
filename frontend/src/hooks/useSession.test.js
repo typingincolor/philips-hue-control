@@ -38,9 +38,16 @@ describe('useSession', () => {
     vi.useFakeTimers();
     localStorage.clear();
     vi.clearAllMocks();
+    // Set up default mock for refreshSession to avoid errors when auto-refresh triggers
+    hueApi.refreshSession.mockResolvedValue({
+      sessionToken: 'refreshed-token',
+      expiresIn: 86400,
+    });
   });
 
   afterEach(() => {
+    // Clear all pending timers to prevent state updates after unmount
+    vi.clearAllTimers();
     vi.useRealTimers();
     localStorage.clear();
   });
@@ -191,8 +198,11 @@ describe('useSession', () => {
       expect(result.current.isValid).toBe(true);
     });
 
-    it('should return false when session expires', () => {
-      const { result } = renderHook(() => useSession());
+    it('should return false when session expires', async () => {
+      // Prevent auto-refresh from replacing the session
+      hueApi.refreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
+
+      const { result, rerender } = renderHook(() => useSession());
 
       act(() => {
         result.current.createSession('test-token', '192.168.1.100', 1); // 1 second
@@ -200,10 +210,13 @@ describe('useSession', () => {
 
       expect(result.current.isValid).toBe(true);
 
-      // Fast-forward past expiration
-      act(() => {
+      // Fast-forward past expiration and wait for async operations (auto-refresh)
+      await act(async () => {
         vi.advanceTimersByTime(2000);
       });
+
+      // Re-render to recalculate isValid (computed on render, not a getter)
+      rerender();
 
       expect(result.current.isValid).toBe(false);
     });
@@ -228,8 +241,11 @@ describe('useSession', () => {
       expect(remaining).toBeLessThanOrEqual(3600);
     });
 
-    it('should decrease over time', () => {
-      const { result } = renderHook(() => useSession());
+    it('should decrease over time', async () => {
+      // Prevent auto-refresh from replacing the session
+      hueApi.refreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
+
+      const { result, rerender } = renderHook(() => useSession());
 
       act(() => {
         result.current.createSession('test-token', '192.168.1.100', 100);
@@ -237,24 +253,35 @@ describe('useSession', () => {
 
       const initialRemaining = result.current.timeRemaining;
 
-      act(() => {
+      // Advance time and wait for async operations (auto-refresh)
+      await act(async () => {
         vi.advanceTimersByTime(10000); // 10 seconds
       });
+
+      // Re-render to recalculate timeRemaining (computed on render, not a getter)
+      rerender();
 
       const laterRemaining = result.current.timeRemaining;
       expect(laterRemaining).toBeLessThan(initialRemaining);
     });
 
-    it('should not return negative values', () => {
-      const { result } = renderHook(() => useSession());
+    it('should not return negative values', async () => {
+      // Prevent auto-refresh from replacing the session
+      hueApi.refreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
+
+      const { result, rerender } = renderHook(() => useSession());
 
       act(() => {
         result.current.createSession('test-token', '192.168.1.100', 1);
       });
 
-      act(() => {
+      // Advance time past expiration and wait for async operations (auto-refresh)
+      await act(async () => {
         vi.advanceTimersByTime(5000); // 5 seconds (past expiration)
       });
+
+      // Re-render to recalculate timeRemaining (computed on render, not a getter)
+      rerender();
 
       expect(result.current.timeRemaining).toBe(0);
     });

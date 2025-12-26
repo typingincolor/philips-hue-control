@@ -49,39 +49,20 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (242 tests)
+### Unit Test Results (226 frontend + 470 backend = 696 tests)
 
-#### Utilities
+#### Frontend (226 tests)
 
-- **validation.js**: 8 tests - IP address validation
+- **Hooks**: useSession (23), useSettings (10), useWeather (10), useWebSocket (19), useLocation (16)
+- **Services**: hueApi (24)
+- **Components**: App (4), MotionZones (9), DashboardSummary (5), SceneSelector (8), SettingsDrawer (16), WeatherDisplay (11), WeatherTooltip (11), LightControl/index (25), index.zones (9)
+- **Context**: DemoModeContext (8)
+- **Utils**: validation (8)
+- **Integration**: integration.test.jsx (10)
 
-#### Hooks
+#### Backend (470 tests)
 
-- **useSession.js**: 23 tests - Session management
-- **useSettings.js**: 10 tests - Settings API
-- **useWeather.js**: 10 tests - Weather API
-- **useWebSocket.js**: 28 tests - WebSocket connection
-
-#### Services
-
-- **hueApi.js**: 22 tests - API client methods
-
-#### Components
-
-- **App.jsx**: 4 tests - App component
-- **MotionZones.jsx**: 9 tests - Motion zone alerts
-- **DashboardSummary.jsx**: 5 tests - Statistics rendering
-- **SceneSelector.jsx**: 8 tests - Scene icon buttons
-- **SettingsDrawer.jsx**: 16 tests - Settings drawer
-- **WeatherDisplay.jsx**: 11 tests - Weather display
-- **LightControl/index.jsx**: 18 tests - Main control component
-- **index.zones.test.jsx**: 9 tests - Zone integration tests
-
-#### Integration
-
-- **integration.test.jsx**: 10 tests - Full app flow tests
-
-**Note:** Business logic tests (colorConversion, roomUtils, motionSensors) are in the backend test suite (497 tests).
+Business logic tests including colorConversion (49), roomService, zoneService, sessionManager (43), websocketService (26), and more.
 
 ## Mutation Testing Results
 
@@ -148,7 +129,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 242 tests run in <5 seconds
+   - 696 tests run in <5 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 

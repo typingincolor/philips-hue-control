@@ -98,7 +98,8 @@ class WebSocketService {
 
     // Send initial state
     try {
-      const dashboard = this.stateCache.get(bridgeIp) || (await dashboardService.getDashboard(bridgeIp, username));
+      const dashboard =
+        this.stateCache.get(bridgeIp) || (await dashboardService.getDashboard(bridgeIp, username));
       socket.emit('initial_state', dashboard);
     } catch (error) {
       logger.error('Failed to send initial state', { error: error.message });

@@ -50,7 +50,7 @@ const createMockSocket = () => ({
   on: vi.fn((event, handler) => {
     mockSocketHandlers[event] = handler;
   }),
-  emit: vi.fn((event, data) => {
+  emit: vi.fn((event, _data) => {
     if (event === 'auth') {
       // Simulate successful auth - send initial_state after auth
       setTimeout(() => {
@@ -486,14 +486,14 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
-      // Wait for dashboard to appear
+      // Wait for dashboard to appear AND RoomContent to render (includes drawer trigger)
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
+        expect(document.querySelector('.scene-drawer-trigger')).toBeTruthy();
       });
 
       // Open the scene drawer
       const drawerTrigger = document.querySelector('.scene-drawer-trigger');
-      expect(drawerTrigger).toBeTruthy();
       await user.click(drawerTrigger);
 
       // Wait for drawer to appear and find scene items

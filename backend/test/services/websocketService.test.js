@@ -147,19 +147,23 @@ describe('WebSocketService', () => {
     it('should detect light changes within rooms', () => {
       const previous = {
         summary: {},
-        rooms: [{
-          id: 'room-1',
-          name: 'Living Room',
-          lights: [{ id: 'light-1', on: { on: false } }],
-        }],
+        rooms: [
+          {
+            id: 'room-1',
+            name: 'Living Room',
+            lights: [{ id: 'light-1', on: { on: false } }],
+          },
+        ],
       };
       const current = {
         summary: {},
-        rooms: [{
-          id: 'room-1',
-          name: 'Living Room',
-          lights: [{ id: 'light-1', on: { on: true } }],
-        }],
+        rooms: [
+          {
+            id: 'room-1',
+            name: 'Living Room',
+            lights: [{ id: 'light-1', on: { on: true } }],
+          },
+        ],
       };
 
       const changes = websocketService.detectChanges(previous, current);

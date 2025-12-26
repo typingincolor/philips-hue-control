@@ -50,7 +50,9 @@ api.interceptors.response.use(
 
     // Network error detection
     if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-      return Promise.reject(new Error('Could not connect to proxy server. Make sure it is running.'));
+      return Promise.reject(
+        new Error('Could not connect to proxy server. Make sure it is running.')
+      );
     }
 
     // Log unexpected errors (not 401/404)
@@ -155,7 +157,8 @@ export const hueApi = {
     api.post(`/v1/scenes/${sceneId}/activate`, null, authHeader(token)).then((r) => r.data),
 
   // Session management
-  refreshSession: (token) => api.post('/v1/auth/refresh', null, authHeader(token)).then((r) => r.data),
+  refreshSession: (token) =>
+    api.post('/v1/auth/refresh', null, authHeader(token)).then((r) => r.data),
 
   revokeSession: (token) => api.delete('/v1/auth/session', authHeader(token)).then((r) => r.data),
 
@@ -168,7 +171,8 @@ export const hueApi = {
   updateLocation: (token, location) =>
     api.put('/v1/settings/location', location, authHeader(token)).then((r) => r.data),
 
-  clearLocation: (token) => api.delete('/v1/settings/location', authHeader(token)).then((r) => r.data),
+  clearLocation: (token) =>
+    api.delete('/v1/settings/location', authHeader(token)).then((r) => r.data),
 
   // Weather
   getWeather: (token) => api.get('/v1/weather', authHeader(token)).then((r) => r.data),

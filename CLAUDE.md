@@ -28,6 +28,7 @@ npm run deploy           # Build and start production
 ### Authentication
 
 Session-based with two modes:
+
 - **Session Token:** `Authorization: Bearer <token>` header
 - **Demo Mode:** `X-Demo-Mode: true` header (no bridge required)
 
@@ -76,16 +77,16 @@ Backend-based demo allows testing without Hue Bridge:
 
 ## Backend Services
 
-| Service | Purpose |
-|---------|---------|
-| `hueClient.js` | Real Hue Bridge client |
-| `mockHueClient.js` | Mock client for demo |
-| `hueClientFactory.js` | Returns real or mock client |
-| `dashboardService.js` | Dashboard data aggregation |
-| `roomService.js` / `zoneService.js` | Hierarchy building |
-| `motionService.js` | Motion zone handling |
-| `sessionManager.js` | Session token management |
-| `websocketService.js` | Socket.IO real-time updates |
+| Service                             | Purpose                     |
+| ----------------------------------- | --------------------------- |
+| `hueClient.js`                      | Real Hue Bridge client      |
+| `mockHueClient.js`                  | Mock client for demo        |
+| `hueClientFactory.js`               | Returns real or mock client |
+| `dashboardService.js`               | Dashboard data aggregation  |
+| `roomService.js` / `zoneService.js` | Hierarchy building          |
+| `motionService.js`                  | Motion zone handling        |
+| `sessionManager.js`                 | Session token management    |
+| `websocketService.js`               | Socket.IO real-time updates |
 
 ## Frontend Structure
 
@@ -97,27 +98,29 @@ Backend-based demo allows testing without Hue Bridge:
 
 ## API Endpoints
 
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| POST | `/api/v1/auth/connect` | Connect to bridge |
-| GET | `/api/v1/dashboard` | Full dashboard data |
-| PUT | `/api/v1/lights/:id` | Update light state |
-| PUT | `/api/v1/rooms/:id/lights` | Update all room lights |
-| PUT | `/api/v1/zones/:id/lights` | Update all zone lights |
-| POST | `/api/v1/scenes/:id/activate` | Activate scene |
-| GET/PUT | `/api/v1/settings` | User settings |
-| GET | `/api/v1/weather` | Weather data |
+| Method  | Endpoint                      | Purpose                |
+| ------- | ----------------------------- | ---------------------- |
+| POST    | `/api/v1/auth/connect`        | Connect to bridge      |
+| GET     | `/api/v1/dashboard`           | Full dashboard data    |
+| PUT     | `/api/v1/lights/:id`          | Update light state     |
+| PUT     | `/api/v1/rooms/:id/lights`    | Update all room lights |
+| PUT     | `/api/v1/zones/:id/lights`    | Update all zone lights |
+| POST    | `/api/v1/scenes/:id/activate` | Activate scene         |
+| GET/PUT | `/api/v1/settings`            | User settings          |
+| GET     | `/api/v1/weather`             | Weather data           |
 
 **WebSocket:** Connect to `/api/v1/ws`, auth with `{ sessionToken }` or `{ demoMode: true }`
+
+**API Docs:** `http://localhost:3001/api/v1/docs/` (Swagger UI, requires trailing slash)
 
 ## Rate Limiting
 
 API endpoints are rate limited per IP address. Demo mode bypasses limits.
 
-| Endpoint | Limit |
-|----------|-------|
-| `/api/v1/*` | 100 requests/minute |
-| `/api/discovery` | 10 requests/minute |
+| Endpoint         | Limit               |
+| ---------------- | ------------------- |
+| `/api/v1/*`      | 100 requests/minute |
+| `/api/discovery` | 10 requests/minute  |
 
 Headers returned: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After` (when limited)
 
@@ -126,7 +129,7 @@ Headers returned: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Res
 See `frontend/TESTING.md` for detailed documentation.
 
 ```bash
-npm run test:all         # All unit tests (708 tests)
+npm run test:all         # All unit tests (696 tests)
 npm run test:e2e         # E2E tests (158 tests)
 npm run test:mutation:all # Mutation testing
 ```
