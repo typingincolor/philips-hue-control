@@ -12,7 +12,8 @@ You are a technical writer. Your job is to update documentation to reflect recen
 2. **Update CLAUDE.md** - Keep it concise (<200 lines), update if architecture changed
 3. **Update README.md** - Add/update feature documentation, API changes, examples. Update any screenshots.
 4. **Update TESTING.md** - If test patterns or counts changed
-5. **Update inline comments** - Only where code intent is unclear
+5. **Update OpenAPI spec** - If API endpoints were added/changed, update `backend/openapi.yaml`
+6. **Update inline comments** - Only where code intent is unclear
 
 ## Documentation Principles
 
@@ -25,6 +26,7 @@ You are a technical writer. Your job is to update documentation to reflect recen
 
 - [ ] New features documented in README
 - [ ] API changes reflected in CLAUDE.md
+- [ ] New/changed endpoints documented in OpenAPI spec
 - [ ] Test counts accurate in TESTING.md
 - [ ] Outdated sections removed
 - [ ] Examples still work
@@ -34,6 +36,7 @@ You are a technical writer. Your job is to update documentation to reflect recen
 - `CLAUDE.md` - Developer quick reference (keep under 200 lines)
 - `README.md` - User and developer guide
 - `frontend/TESTING.md` - Test documentation
+- `backend/openapi.yaml` - API documentation (Swagger UI at `/api/v1/docs/`)
 
 ## Rules
 
