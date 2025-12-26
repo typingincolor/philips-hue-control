@@ -4,6 +4,7 @@ import axios from 'axios';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { load } from 'js-yaml';
 import swaggerUi from 'swagger-ui-express';
 import v1Routes from './routes/v1/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -19,8 +20,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load configuration
-const configPath = path.resolve(__dirname, '../config.json');
-const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+const configPath = path.resolve(__dirname, '../config.yaml');
+const config = load(readFileSync(configPath, 'utf-8'));
 
 const app = express();
 const PORT = process.env.PORT || config.server.port;

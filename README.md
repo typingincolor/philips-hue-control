@@ -40,7 +40,7 @@ A modern React web application for controlling Philips Hue lights locally using 
 
 - **CORS Solution**: Backend handles CORS and self-signed HTTPS certificates
 - **Multi-Machine Support**: Access from any device on your network
-- **Centralized Configuration**: All settings managed through config.json
+- **Centralized Configuration**: All settings managed through config.yaml
 - **Modern API v2**: Uses the latest Philips Hue API for future-proof functionality
 - **Comprehensive Testing**: 696 unit tests (226 frontend + 470 backend) with E2E test suite
 - **Rate Limiting**: API protection with per-IP rate limits (100 req/min for API, 10 req/min for discovery)
@@ -151,11 +151,11 @@ The app is organized as a monorepo with separate frontend and backend workspaces
 
 ```
 philips-hue-connector/
-├── config.json                 # Centralized configuration
+├── config.yaml                 # Centralized configuration
 ├── package.json                # Root workspace manager
 ├── frontend/                   # React frontend workspace
 │   ├── package.json
-│   ├── vite.config.js         # Vite config (reads config.json)
+│   ├── vite.config.js         # Vite config (reads config.yaml)
 │   ├── vitest.config.js       # Test configuration
 │   ├── stryker.conf.json      # Mutation testing config
 │   ├── TESTING.md             # Testing documentation
@@ -250,23 +250,20 @@ philips-hue-connector/
 
 ### Configuration File
 
-All hostnames, IPs, and ports are centralized in `config.json`:
+All hostnames, IPs, and ports are centralized in `config.yaml`:
 
-```json
-{
-  "server": {
-    "port": 3001,
-    "host": "0.0.0.0",
-    "corsEnabled": true
-  },
-  "hue": {
-    "discoveryEndpoint": "https://discovery.meethue.com/"
-  },
-  "development": {
-    "frontendPort": 5173,
-    "backendPort": 3001
-  }
-}
+```yaml
+server:
+  port: 3001
+  host: '0.0.0.0'
+  corsEnabled: true
+
+hue:
+  discoveryEndpoint: 'https://discovery.meethue.com/'
+
+development:
+  frontendPort: 5173
+  backendPort: 3001
 ```
 
 **Benefits:**
@@ -826,14 +823,14 @@ When demo mode is enabled:
 
 ### Configuration
 
-Edit `config.json` to customize:
+Edit `config.yaml` to customize:
 
 - Server port (default: 3001)
 - Server host (default: 0.0.0.0 for all interfaces)
 - Development ports
 - Hue discovery endpoint
 
-Environment variables override config.json:
+Environment variables override config.yaml:
 
 ```bash
 PORT=8080 npm run start
@@ -904,120 +901,31 @@ PORT=8080 npm run start
 - The app communicates only with your local bridge and backend
 - The backend accepts self-signed certificates (required for Hue Bridge)
 - No data is sent to external servers except Hue discovery (discovery.meethue.com)
-- CORS is open by default (configure in config.json if needed)
+- CORS is open by default (configure in config.yaml if needed)
 - WebSocket connections are authenticated with session tokens
 
 ## Version History
 
 ### v1.0.0 (Current)
 
-- **Session-only authentication** - Simplified to Bearer tokens only (removed header/query auth)
-- **DemoModeContext** - Demo mode uses React Context directly instead of hook wrapper
-- **Backend demo mode** - Demo mode moved from frontend to backend for multi-client support
-- **Demo via header** - Use `X-Demo-Mode: true` header or `?demo=true` URL parameter
-- **MockHueClient** - Full mock implementation of HueClient with state persistence
-- **Settings API** - `/api/v1/settings` endpoints for location and unit preferences
-- **Weather API** - `/api/v1/weather` endpoint (uses Open-Meteo, mock for demo)
-- **WebSocket demo auth** - Authenticate with `{ type: 'auth', demoMode: true }`
-- **API cleanup** - Removed legacy authentication, backward compatibility code, and unused parameters
-- **OpenAPI v2.0.0** - Updated API documentation reflecting session-only auth
-- **Multi-client support** - Second client connects instantly using server-stored credentials
-- **Performance optimizations** - Backend caching for static resources (5-minute TTL), 15-second WebSocket polling
-- **Optimistic updates** - UI responds immediately to user actions without waiting for polling
-- **Test suite** - 739 tests total (242 frontend + 497 backend)
+Major release with simplified architecture and comprehensive test coverage.
 
-### v0.8.1
+**Key Features:**
+- Backend-heavy architecture with v1 REST API
+- Session-based authentication with Bearer tokens
+- WebSocket real-time updates (15-second polling)
+- Demo mode via `?demo=true` or `X-Demo-Mode: true` header
+- Multi-client support with server-stored credentials
+- Hue API v2 with zones, scenes, and MotionAware support
+- True color display with brightness-aware rendering
+- Settings and weather APIs
+- Rate limiting (100 req/min API, 10 req/min discovery)
+- OpenAPI documentation at `/api/v1/docs/`
 
-- **OpenAPI documentation** - Added Zone and MotionZone schemas to API specification
-- **Demo mode improvements** - Added zones to mock data, descriptive light names
-- **UI polish** - Fixed zone card alignment, light labels wrap to multiple lines
-
-### v0.8.0
-
-- **Compact motion zones** - Redesigned as always-visible inline bar with pill-shaped badges
-- **Motion detection indicators** - Green dot (no motion) and red dot (motion detected)
-- **WebSocket motion updates** - Real-time push notifications for motion zone changes
-
-### v0.7.0 (Zone Support)
-
-- **Hue Zones** - Full support for Hue zones (light groups spanning multiple rooms)
-- **ZoneCard component** - Compact bar layout with scene selector and on/off toggle
-- **Zone API endpoints** - PUT /zones/{id}/lights for zone-level control
-- **Zone scenes** - Scene activation for zone-specific scenes
-- **Collapsible zones section** - 3-column grid with expand/collapse toggle
-- **Backend zone support** - Zone data included in dashboard response with pre-computed stats
-
-### v0.6.0 (Architecture Overhaul)
-
-- **Backend-heavy architecture** - Migrated business logic from frontend to backend (~1,300 lines)
-- **v1 REST API** - Simplified API with pre-computed data (dashboard, motion zones, light control)
-- **WebSocket support** - Real-time bidirectional updates replace 30-second polling
-- **Session-based authentication** - Token-based sessions with auto-refresh and expiration handling
-- **Performance improvements** - API calls reduced by 67-83% (4-6 calls → 1-2 calls)
-- **Backend services** - Color conversion, room hierarchy, statistics, motion parsing moved to backend
-- **Integration tests** - Added 11 end-to-end tests with MSW for network-level mocking
-- **UI_TEXT constants** - Centralized all user-facing text for consistency and maintainability
-- **Test migration** - Backend tests added (99 tests), frontend tests updated (91 tests)
-- **Documentation updates** - Updated README and CLAUDE.md to reflect new architecture
-
-### v0.5.0
-
-- **Comprehensive testing infrastructure** - Added 127 unit tests with 73.25% mutation score
-- **Code refactoring for testability** - Extracted utilities, hooks, and components into modular, testable units
-- **Mutation testing** - Stryker Mutator integration validates test effectiveness
-- **PropTypes validation** - Runtime type checking for all React components
-- **Test organization** - Utilities (75 tests), hooks (23 tests), components (29 tests)
-- **Documentation** - Added TESTING.md with comprehensive testing guide
-- **Test scripts** - Interactive watch mode, UI explorer, coverage reports, mutation testing
-- **Code quality improvements** - Reduced code duplication, centralized constants, improved maintainability
-
-### v0.4.2
-
-- **Brightness-aware warm dim blending** - Smooth gradual transition from warm candlelight color (15%) to actual color (50%) using smoothstep curve
-- **Smart shadow system** - Colored glow only appears on bright lights (≥50% brightness), neutral gray shadows for dim lights
-- **Race condition fixes** - Intelligent fallback system prevents green flashing during scene transitions when color data is loading
-- **Brightness badge redesign** - Compact badge design replaces progress bar, with always-visible placeholder ("—") for consistent layout alignment
-- **Demo mode enhancements** - Added boundary test lights at 5% and 15% brightness for comprehensive testing of warm dim transitions
-
-### v0.4.1
-
-- **Dim light color adjustment** - Lights below 30% brightness display as pale yellow/beige for better visual representation
-- Improves realism for very dim lights which appear similar regardless of color capability
-
-### v0.4.0
-
-- **True color display** - light buttons show actual RGB colors and white temperatures
-- **Information density improvements** - dashboard summary, room status badges, brightness indicators
-- **Modern visual design** - Tailwind-inspired color palette, layered shadows, improved typography
-- **Responsive optimization** - iPhone 14+ and iPad support with optimized spacing and button sizing
-- **Layout improvements** - CSS Grid with uniform card sizing, max 4 rooms per row, 5 lights per row
-- **Color conversion** - xy color space (CIE 1931) and color temperature (mirek) to RGB
-- **Universal hover effects** - brightness filter works with any color
-- **Text overflow protection** - ellipsis handling for long room, light, and scene names
-
-### v0.3.0
-
-- **Migrated to Hue API v2** (CLIP API)
-- **Motion zone detection** with MotionAware support
-- **Component refactoring** - renamed ConnectionTest to LightControl
-- **Removed adapter layer** - direct v2 data structures
-- **Improved room hierarchy** - device-based organization
-- **Real-time updates** - 30-second auto-refresh for all features
-
-### v0.2.0
-
-- **Separated frontend and backend** into monorepo structure
-- **Added config.json** for centralized configuration
-- **Multi-machine support** - access from any device on network
-- **Single deployment** - backend serves both API and frontend
-- **Express 5 compatibility** - fixed wildcard route pattern
-
-### v0.1.0
-
-- Initial release with full light control features
-- Responsive card-based UI
-- Bridge discovery and authentication
-- Room organization and scene management
+**Test Coverage:**
+- 697 unit tests (226 frontend + 471 backend)
+- 158 E2E tests with Playwright
+- Mutation testing with Stryker
 
 ## Contributing
 

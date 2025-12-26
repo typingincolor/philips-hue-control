@@ -21,7 +21,7 @@ npm run deploy           # Build and start production
 
 ### Monorepo Structure
 
-- **Root:** Workspace manager, `config.json` (ports, settings)
+- **Root:** Workspace manager, `config.yaml` (ports, settings)
 - **Frontend:** React 18 + Vite 6 (`frontend/`)
 - **Backend:** Express 5 (`backend/`)
 
@@ -129,7 +129,7 @@ Headers returned: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Res
 See `frontend/TESTING.md` for detailed documentation.
 
 ```bash
-npm run test:all         # All unit tests (696 tests)
+npm run test:all         # All unit tests (697 tests)
 npm run test:e2e         # E2E tests (158 tests)
 npm run test:mutation:all # Mutation testing
 ```

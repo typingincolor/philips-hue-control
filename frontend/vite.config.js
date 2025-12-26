@@ -3,13 +3,14 @@ import react from '@vitejs/plugin-react';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { load } from 'js-yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Read configuration from root config.json
-const configPath = path.resolve(__dirname, '../config.json');
-const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+// Read configuration from root config.yaml
+const configPath = path.resolve(__dirname, '../config.yaml');
+const config = load(readFileSync(configPath, 'utf-8'));
 
 // Allow override via environment variable for e2e tests (uses different port)
 const backendPort = process.env.VITE_BACKEND_PORT || config.development.backendPort;

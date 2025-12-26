@@ -49,7 +49,7 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (226 frontend + 470 backend = 696 tests)
+### Unit Test Results (226 frontend + 471 backend = 697 tests)
 
 #### Frontend (226 tests)
 
@@ -129,7 +129,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 696 tests run in <5 seconds
+   - 697 tests run in <5 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 
