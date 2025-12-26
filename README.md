@@ -904,28 +904,11 @@ PORT=8080 npm run start
 - CORS is open by default (configure in config.yaml if needed)
 - WebSocket connections are authenticated with session tokens
 
-## Version History
+## Build Info
 
-### v1.0.0 (Current)
+Build numbers are derived from git commit count: `git rev-list --count HEAD`
 
-Major release with simplified architecture and comprehensive test coverage.
-
-**Key Features:**
-- Backend-heavy architecture with v1 REST API
-- Session-based authentication with Bearer tokens
-- WebSocket real-time updates (15-second polling)
-- Demo mode via `?demo=true` or `X-Demo-Mode: true` header
-- Multi-client support with server-stored credentials
-- Hue API v2 with zones, scenes, and MotionAware support
-- True color display with brightness-aware rendering
-- Settings and weather APIs
-- Rate limiting (100 req/min API, 10 req/min discovery)
-- OpenAPI documentation at `/api/v1/docs/`
-
-**Test Coverage:**
-- 697 unit tests (226 frontend + 471 backend)
-- 158 E2E tests with Playwright
-- Mutation testing with Stryker
+Current build: **158** (commit `945e536`)
 
 ## Contributing
 
