@@ -18,6 +18,8 @@ const testSettingsPath = '/tmp/test-settings.json';
 describe('SettingsService', () => {
   beforeEach(() => {
     SettingsService.clearAll();
+    // Redirect all file writes to test file to avoid polluting real settings
+    SettingsService.settingsFilePath = testSettingsPath;
     // Clean up test file
     try {
       fs.unlinkSync(testSettingsPath);

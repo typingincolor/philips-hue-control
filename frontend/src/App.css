@@ -3016,6 +3016,81 @@ body.dark-theme {
   color: var(--text-muted);
 }
 
+/* Hive Settings Styles */
+.settings-hive-connected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-hive-status {
+  color: var(--success-color, #22c55e);
+  font-weight: 500;
+}
+
+.settings-hive-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-hive-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.settings-hive-input::placeholder {
+  color: var(--text-muted);
+}
+
+.settings-hive-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.settings-hive-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-hive-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-hive-btn:hover:not(:disabled) {
+  background: var(--border-color);
+  border-color: var(--accent-primary);
+}
+
+.settings-hive-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Responsive adjustments */
 @media (max-width: 500px) {
   .weather-display__location {
@@ -3204,5 +3279,212 @@ body.dark-theme {
     width: 40px;
     height: 40px;
     font-size: 1.25rem;
+  }
+}
+
+/* ==============================================
+   HIVE VIEW STYLES
+   ============================================== */
+
+.hive-view {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px var(--min-edge-spacing);
+  box-sizing: border-box;
+  width: 100%;
+  height: fit-content;
+}
+
+.hive-loading,
+.hive-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.hive-loading .spinner {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.hive-error-message {
+  color: var(--error-color, #ef4444);
+}
+
+.hive-retry-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.hive-retry-btn:hover {
+  background: var(--border-color);
+}
+
+/* Thermostat Display */
+.hive-thermostat {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.hive-temp-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.hive-temp-value {
+  font-size: 4rem;
+  font-weight: 300;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.hive-mode-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.hive-status-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.hive-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.hive-status-indicator svg {
+  opacity: 0.5;
+}
+
+.hive-status-indicator.active {
+  color: var(--accent-primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.hive-status-indicator.active svg {
+  opacity: 1;
+  color: #f97316;
+}
+
+/* Schedules */
+.hive-schedules {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.hive-schedules-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+}
+
+.hive-schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hive-schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.hive-schedule-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.hive-schedule-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.hive-schedule-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.hive-schedule-time {
+  font-size: 0.9rem;
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
+.hive-schedule-days {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Responsive adjustments for Hive */
+@media (max-width: 500px) {
+  .hive-view {
+    padding: 12px var(--min-edge-spacing);
+  }
+
+  .hive-thermostat {
+    padding: 16px;
+  }
+
+  .hive-temp-value {
+    font-size: 3rem;
+  }
+
+  .hive-status-indicators {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hive-status-indicator {
+    justify-content: center;
   }
 }

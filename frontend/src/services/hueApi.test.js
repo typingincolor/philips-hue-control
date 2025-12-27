@@ -412,15 +412,21 @@ describe('hueApi', () => {
 
   describe('Hive API', () => {
     describe('connectHive', () => {
-      it('should send POST request with credentials', async () => {
+      it('should send POST request with credentials and Authorization header', async () => {
         axios.post.mockResolvedValue({ data: { success: true } });
 
-        const result = await hueApi.connectHive('test@hive.com', 'password123');
+        const result = await hueApi.connectHive('test-token', 'test@hive.com', 'password123');
 
-        expect(axios.post).toHaveBeenCalledWith('/v1/hive/connect', {
-          username: 'test@hive.com',
-          password: 'password123',
-        });
+        expect(axios.post).toHaveBeenCalledWith(
+          '/v1/hive/connect',
+          {
+            username: 'test@hive.com',
+            password: 'password123',
+          },
+          {
+            headers: { Authorization: 'Bearer test-token' },
+          }
+        );
         expect(result.success).toBe(true);
       });
 
@@ -429,7 +435,7 @@ describe('hueApi', () => {
           data: { success: false, error: 'Invalid credentials' },
         });
 
-        const result = await hueApi.connectHive('bad@email.com', 'wrong');
+        const result = await hueApi.connectHive('test-token', 'bad@email.com', 'wrong');
 
         expect(result.success).toBe(false);
         expect(result.error).toBe('Invalid credentials');
@@ -437,18 +443,20 @@ describe('hueApi', () => {
     });
 
     describe('disconnectHive', () => {
-      it('should send POST request to disconnect', async () => {
+      it('should send POST request to disconnect with Authorization header', async () => {
         axios.post.mockResolvedValue({ data: { success: true } });
 
-        const result = await hueApi.disconnectHive();
+        const result = await hueApi.disconnectHive('test-token');
 
-        expect(axios.post).toHaveBeenCalledWith('/v1/hive/disconnect');
+        expect(axios.post).toHaveBeenCalledWith('/v1/hive/disconnect', null, {
+          headers: { Authorization: 'Bearer test-token' },
+        });
         expect(result.success).toBe(true);
       });
     });
 
     describe('getHiveStatus', () => {
-      it('should fetch thermostat and hot water status', async () => {
+      it('should fetch thermostat and hot water status with Authorization header', async () => {
         const mockStatus = {
           heating: {
             currentTemperature: 19.5,
@@ -463,56 +471,62 @@ describe('hueApi', () => {
         };
         axios.get.mockResolvedValue({ data: mockStatus });
 
-        const result = await hueApi.getHiveStatus();
+        const result = await hueApi.getHiveStatus('test-token');
 
-        expect(axios.get).toHaveBeenCalledWith('/v1/hive/status');
+        expect(axios.get).toHaveBeenCalledWith('/v1/hive/status', {
+          headers: { Authorization: 'Bearer test-token' },
+        });
         expect(result).toEqual(mockStatus);
       });
 
       it('should throw error if not connected', async () => {
         axios.get.mockRejectedValue({ response: { status: 401 } });
 
-        await expect(hueApi.getHiveStatus()).rejects.toThrow();
+        await expect(hueApi.getHiveStatus('test-token')).rejects.toThrow();
       });
     });
 
     describe('getHiveSchedules', () => {
-      it('should fetch list of schedules', async () => {
+      it('should fetch list of schedules with Authorization header', async () => {
         const mockSchedules = [
           { id: '1', name: 'Morning', type: 'heating', time: '06:00' },
           { id: '2', name: 'Evening', type: 'heating', time: '17:00' },
         ];
         axios.get.mockResolvedValue({ data: mockSchedules });
 
-        const result = await hueApi.getHiveSchedules();
+        const result = await hueApi.getHiveSchedules('test-token');
 
-        expect(axios.get).toHaveBeenCalledWith('/v1/hive/schedules');
+        expect(axios.get).toHaveBeenCalledWith('/v1/hive/schedules', {
+          headers: { Authorization: 'Bearer test-token' },
+        });
         expect(result).toEqual(mockSchedules);
       });
 
       it('should return empty array when no schedules', async () => {
         axios.get.mockResolvedValue({ data: [] });
 
-        const result = await hueApi.getHiveSchedules();
+        const result = await hueApi.getHiveSchedules('test-token');
 
         expect(result).toEqual([]);
       });
     });
 
     describe('getHiveConnectionStatus', () => {
-      it('should fetch connection status', async () => {
+      it('should fetch connection status with Authorization header', async () => {
         axios.get.mockResolvedValue({ data: { connected: true } });
 
-        const result = await hueApi.getHiveConnectionStatus();
+        const result = await hueApi.getHiveConnectionStatus('test-token');
 
-        expect(axios.get).toHaveBeenCalledWith('/v1/hive/connection');
+        expect(axios.get).toHaveBeenCalledWith('/v1/hive/connection', {
+          headers: { Authorization: 'Bearer test-token' },
+        });
         expect(result.connected).toBe(true);
       });
 
       it('should return connected: false when not connected', async () => {
         axios.get.mockResolvedValue({ data: { connected: false } });
 
-        const result = await hueApi.getHiveConnectionStatus();
+        const result = await hueApi.getHiveConnectionStatus('test-token');
 
         expect(result.connected).toBe(false);
       });

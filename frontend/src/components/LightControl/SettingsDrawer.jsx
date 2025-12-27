@@ -124,11 +124,12 @@ export const SettingsDrawer = ({
             ) : (
               <div className="settings-hive-login">
                 <input
-                  type="email"
+                  type="text"
                   className="settings-hive-input"
                   placeholder={UI_TEXT.HIVE_USERNAME_PLACEHOLDER}
                   value={hiveUsername}
                   onChange={(e) => setHiveUsername(e.target.value)}
+                  autoComplete="email"
                   disabled={hiveConnecting}
                 />
                 <input

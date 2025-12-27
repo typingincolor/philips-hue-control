@@ -9,10 +9,11 @@ import {
 
 /**
  * Hook for managing Hive heating system integration
+ * @param {string} sessionToken - Session token for API authentication
  * @param {boolean} demoMode - Whether in demo mode (uses mock data)
  * @returns {object} Hive state and control functions
  */
-export const useHive = (demoMode = false) => {
+export const useHive = (sessionToken, demoMode = false) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +26,10 @@ export const useHive = (demoMode = false) => {
     setError(null);
 
     try {
-      const [statusData, schedulesData] = await Promise.all([getHiveStatus(), getHiveSchedules()]);
+      const [statusData, schedulesData] = await Promise.all([
+        getHiveStatus(sessionToken),
+        getHiveSchedules(sessionToken),
+      ]);
       setStatus(statusData);
       setSchedules(schedulesData);
     } catch (err) {
@@ -33,7 +37,7 @@ export const useHive = (demoMode = false) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [sessionToken]);
 
   const connect = useCallback(
     async (username, password) => {
@@ -41,7 +45,7 @@ export const useHive = (demoMode = false) => {
       setError(null);
 
       try {
-        const result = await connectHive(username, password);
+        const result = await connectHive(sessionToken, username, password);
 
         if (!result.success) {
           setError(result.error || 'Failed to connect to Hive');
@@ -56,12 +60,12 @@ export const useHive = (demoMode = false) => {
         setIsConnecting(false);
       }
     },
-    [fetchData]
+    [sessionToken, fetchData]
   );
 
   const disconnect = useCallback(async () => {
     try {
-      await disconnectHive();
+      await disconnectHive(sessionToken);
     } catch {
       // Ignore disconnect errors
     }
@@ -69,7 +73,7 @@ export const useHive = (demoMode = false) => {
     setStatus(null);
     setSchedules([]);
     setError(null);
-  }, []);
+  }, [sessionToken]);
 
   const refresh = useCallback(async () => {
     if (!isConnected && !demoMode) {
@@ -80,18 +84,18 @@ export const useHive = (demoMode = false) => {
     setError(null);
 
     try {
-      const statusData = await getHiveStatus();
+      const statusData = await getHiveStatus(sessionToken);
       setStatus(statusData);
     } catch (err) {
       setError(err.message || 'Failed to refresh Hive data');
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, demoMode]);
+  }, [sessionToken, isConnected, demoMode]);
 
   const checkConnection = useCallback(async () => {
     try {
-      const connectionStatus = await getHiveConnectionStatus();
+      const connectionStatus = await getHiveConnectionStatus(sessionToken);
       setIsConnected(connectionStatus.connected);
 
       if (connectionStatus.connected) {
@@ -100,7 +104,7 @@ export const useHive = (demoMode = false) => {
     } catch {
       setIsConnected(false);
     }
-  }, [fetchData]);
+  }, [sessionToken, fetchData]);
 
   return {
     isConnected,

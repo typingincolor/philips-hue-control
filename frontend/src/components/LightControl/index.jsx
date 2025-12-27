@@ -68,7 +68,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     connect: hiveConnect,
     disconnect: hiveDisconnect,
     refresh: hiveRefresh,
-  } = useHive(isDemoMode);
+  } = useHive(sessionToken, isDemoMode);
 
   // Refetch weather when settings change (location or units updated)
   useEffect(() => {
