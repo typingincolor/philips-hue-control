@@ -380,7 +380,6 @@ describe('HiveService', () => {
     });
 
     it('should check real connection status when not in demo mode', () => {
-      hiveCredentialsManager.hasCredentials.mockReturnValue(true);
       hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
 
       const status = HiveService.getConnectionStatus(false);
@@ -388,8 +387,8 @@ describe('HiveService', () => {
       expect(status.connected).toBe(true);
     });
 
-    it('should return connected: false when no real credentials', () => {
-      hiveCredentialsManager.hasCredentials.mockReturnValue(false);
+    it('should return connected: false when no session token', () => {
+      hiveCredentialsManager.getSessionToken.mockReturnValue(null);
 
       const status = HiveService.getConnectionStatus(false);
 

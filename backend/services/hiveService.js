@@ -19,13 +19,11 @@ class HiveService {
   }
 
   /**
-   * Check if connected to Hive (has valid credentials and session)
+   * Check if connected to Hive (has valid session token)
    * @returns {boolean}
    */
   isConnected() {
-    return (
-      hiveCredentialsManager.hasCredentials() && hiveCredentialsManager.getSessionToken() !== null
-    );
+    return hiveCredentialsManager.getSessionToken() !== null;
   }
 
   /**

@@ -46,6 +46,15 @@ describe('HiveCredentialsManager', () => {
 
     // Override credentials file path for testing
     hiveCredentialsManager.credentialsFilePath = testCredentialsPath;
+
+    // Clear any credentials loaded from the default path during import
+    hiveCredentialsManager.username = null;
+    hiveCredentialsManager.password = null;
+    hiveCredentialsManager.sessionToken = null;
+    hiveCredentialsManager.sessionExpiresAt = null;
+    hiveCredentialsManager.deviceKey = null;
+    hiveCredentialsManager.deviceGroupKey = null;
+    hiveCredentialsManager.devicePassword = null;
   });
 
   afterEach(() => {
