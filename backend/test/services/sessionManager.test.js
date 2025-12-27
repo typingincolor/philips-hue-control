@@ -27,13 +27,24 @@ describe('SessionManager', () => {
     // Stop automatic cleanup to prevent test interference
     sessionManager.stopCleanup();
 
-    // Clear any existing sessions
+    // Clear any existing sessions and credentials loaded from production file
     sessionManager.sessions.clear();
+    sessionManager.bridgeCredentials.clear();
+
+    // Use test path to avoid touching production credentials
+    sessionManager.credentialsFilePath = '/tmp/test-session-credentials.json';
   });
 
   afterEach(() => {
     sessionManager.stopCleanup();
     vi.restoreAllMocks();
+
+    // Clean up test credentials file
+    try {
+      fs.unlinkSync('/tmp/test-session-credentials.json');
+    } catch {
+      // File doesn't exist, that's fine
+    }
   });
 
   describe('createSession', () => {
@@ -611,9 +622,15 @@ describe('SessionManager', () => {
     });
 
     describe('constructor with persistence', () => {
-      it('should have default credentials file path', () => {
-        expect(sessionManager.credentialsFilePath).toBeDefined();
-        expect(sessionManager.credentialsFilePath).toContain('bridge-credentials.json');
+      it('should have default credentials file path', async () => {
+        // Import fresh to check default path before test override
+        vi.resetModules();
+        const freshModule = await import('../../services/sessionManager.js');
+        const freshManager = freshModule.default;
+        freshManager.stopCleanup();
+
+        expect(freshManager.credentialsFilePath).toBeDefined();
+        expect(freshManager.credentialsFilePath).toContain('bridge-credentials.json');
       });
     });
   });
