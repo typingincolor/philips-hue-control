@@ -4,7 +4,12 @@
  * and device registration for skipping future 2FA
  */
 
-import { CognitoUserPool, CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
+import {
+  CognitoUserPool,
+  CognitoUser,
+  AuthenticationDetails,
+  CognitoRefreshToken,
+} from 'amazon-cognito-identity-js';
 import hiveCredentialsManager, { HIVE_DEMO_CREDENTIALS } from './hiveCredentialsManager.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -265,24 +270,47 @@ class HiveAuthService {
   /**
    * Refresh access token using refresh token
    * @param {string} refreshToken - Cognito refresh token
-   * @param {string} deviceKey - Optional device key for device auth
-   * @returns {Promise<{accessToken?: string, idToken?: string, error?: string}>}
+   * @param {string} username - Username for the session (optional, uses 'user' if not provided)
+   * @returns {Promise<{accessToken?: string, idToken?: string, refreshToken?: string, error?: string}>}
    */
-  async refreshTokens(refreshToken, deviceKey = null) {
+  async refreshTokens(refreshToken, username = 'user') {
     try {
       // Validate refresh token
       if (!refreshToken || refreshToken === 'expired-refresh-token') {
         return { error: 'Refresh token expired or invalid' };
       }
 
-      logger.debug('Refreshing tokens', { hasDeviceKey: !!deviceKey });
+      logger.info('Refreshing Cognito tokens');
 
-      const tokens = {
-        accessToken: `access-refreshed-${Date.now()}`,
-        idToken: `id-refreshed-${Date.now()}`,
-      };
+      // Create a CognitoUser for the refresh operation
+      const cognitoUser = new CognitoUser({
+        Username: username,
+        Pool: this._getUserPool(),
+      });
 
-      return tokens;
+      // Create refresh token object
+      const cognitoRefreshToken = new CognitoRefreshToken({
+        RefreshToken: refreshToken,
+      });
+
+      // Wrap callback-based API in a Promise
+      return new Promise((resolve) => {
+        cognitoUser.refreshSession(cognitoRefreshToken, (err, session) => {
+          if (err) {
+            logger.error('Token refresh failed', { error: err.message });
+            resolve({ error: err.message || 'Failed to refresh tokens' });
+            return;
+          }
+
+          const tokens = extractTokensFromSession(session);
+          logger.info('Tokens refreshed successfully');
+
+          // Store the new tokens
+          this.storeTokens(tokens);
+
+          resolve(tokens);
+        });
+      });
     } catch (error) {
       logger.error('Token refresh error', { error: error.message });
       return { error: 'Failed to refresh tokens' };
@@ -302,8 +330,8 @@ class HiveAuthService {
     const expiresIn = tokens.expiresIn || 3600;
     const expiresAt = Date.now() + expiresIn * 1000;
 
-    hiveCredentialsManager.setSessionToken(tokens.idToken, expiresAt);
-    logger.debug('Stored authentication tokens');
+    hiveCredentialsManager.setSessionToken(tokens.idToken, expiresAt, tokens.refreshToken);
+    logger.debug('Stored authentication tokens', { hasRefreshToken: !!tokens.refreshToken });
   }
 
   /**

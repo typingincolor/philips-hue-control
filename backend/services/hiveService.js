@@ -17,6 +17,7 @@ const HIVE_API_URL = 'https://beekeeper-uk.hivehome.com/1.0';
 class HiveService {
   constructor() {
     this._demoConnected = false;
+    this._refreshing = null; // Prevent concurrent refresh attempts
   }
 
   /**
@@ -25,6 +26,52 @@ class HiveService {
    */
   isConnected() {
     return hiveCredentialsManager.getSessionToken() !== null;
+  }
+
+  /**
+   * Try to refresh the session token if expired but we have a refresh token
+   * @returns {Promise<boolean>} - True if session is valid (or was refreshed), false otherwise
+   */
+  async ensureValidSession() {
+    // Already have a valid token
+    if (hiveCredentialsManager.getSessionToken()) {
+      return true;
+    }
+
+    // Check if we have a refresh token to try
+    const refreshToken = hiveCredentialsManager.getRefreshToken();
+    if (!refreshToken) {
+      logger.debug('No refresh token available for session refresh');
+      return false;
+    }
+
+    // Prevent concurrent refresh attempts
+    if (this._refreshing) {
+      logger.debug('Refresh already in progress, waiting...');
+      return this._refreshing;
+    }
+
+    logger.info('Session expired, attempting token refresh');
+
+    // Start refresh and store promise to prevent concurrent attempts
+    this._refreshing = (async () => {
+      try {
+        const result = await hiveAuthService.refreshTokens(refreshToken);
+        if (result.error) {
+          logger.warn('Token refresh failed', { error: result.error });
+          return false;
+        }
+        logger.info('Session refreshed successfully');
+        return true;
+      } catch (error) {
+        logger.error('Token refresh error', { error: error.message });
+        return false;
+      } finally {
+        this._refreshing = null;
+      }
+    })();
+
+    return this._refreshing;
   }
 
   /**
@@ -168,6 +215,9 @@ class HiveService {
       return getMockHiveStatus();
     }
 
+    // Try to refresh session if expired
+    await this.ensureValidSession();
+
     if (!this.isConnected()) {
       throw new Error('Not connected to Hive');
     }
@@ -207,6 +257,9 @@ class HiveService {
       logger.debug('Demo mode: returning mock Hive schedules');
       return getMockHiveSchedules();
     }
+
+    // Try to refresh session if expired
+    await this.ensureValidSession();
 
     if (!this.isConnected()) {
       throw new Error('Not connected to Hive');

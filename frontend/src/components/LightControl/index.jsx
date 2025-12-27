@@ -71,6 +71,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     connect: hiveConnect,
     disconnect: hiveDisconnect,
     refresh: hiveRefresh,
+    checkConnection: hiveCheckConnection,
     submit2faCode: hiveSubmit2fa,
     cancel2fa: hiveCancel2fa,
     clearError: hiveClearError,
@@ -381,6 +382,14 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       fetchAutomations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only fetch when navigating to automations
+  }, [selectedId]);
+
+  // Check Hive connection when navigating to hive tab
+  useEffect(() => {
+    if (selectedId === 'hive' && !hiveConnected && !hiveConnecting && !hiveRequires2fa) {
+      hiveCheckConnection();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only check when navigating to hive
   }, [selectedId]);
 
   const handleTriggerAutomation = async (automationId) => {

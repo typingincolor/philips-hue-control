@@ -14,6 +14,7 @@ vi.unmock('../../services/hiveAuthService.js');
 const mockAuthenticateUser = vi.fn();
 const mockSendMFACode = vi.fn();
 const mockGetSession = vi.fn();
+const mockRefreshSession = vi.fn();
 
 // Use function keyword for constructor mocks (required by vitest)
 vi.mock('amazon-cognito-identity-js', () => ({
@@ -25,9 +26,13 @@ vi.mock('amazon-cognito-identity-js', () => ({
       authenticateUser: mockAuthenticateUser,
       sendMFACode: mockSendMFACode,
       getSession: mockGetSession,
+      refreshSession: mockRefreshSession,
     };
   }),
   AuthenticationDetails: vi.fn().mockImplementation(function (data) {
+    return data;
+  }),
+  CognitoRefreshToken: vi.fn().mockImplementation(function (data) {
     return data;
   }),
 }));
@@ -48,6 +53,7 @@ vi.mock('../../services/hiveCredentialsManager.js', () => ({
     hasCredentials: vi.fn(() => false),
     getCredentials: vi.fn(() => null),
     getSessionToken: vi.fn(() => null),
+    getRefreshToken: vi.fn(() => null),
     setSessionToken: vi.fn(),
     clearSessionToken: vi.fn(),
     getDeviceCredentials: vi.fn(() => null),
@@ -256,6 +262,18 @@ describe('HiveAuthService', () => {
   });
 
   describe('refreshTokens', () => {
+    beforeEach(() => {
+      // Configure mock to call callback with success
+      mockRefreshSession.mockImplementation((refreshToken, callback) => {
+        const mockSession = {
+          getAccessToken: () => ({ getJwtToken: () => 'new-access-token' }),
+          getRefreshToken: () => ({ getToken: () => 'new-refresh-token' }),
+          getIdToken: () => ({ getJwtToken: () => 'new-id-token' }),
+        };
+        callback(null, mockSession);
+      });
+    });
+
     it('should refresh access token using refresh token', async () => {
       const mockRefreshToken = 'valid-refresh-token';
 
@@ -265,11 +283,10 @@ describe('HiveAuthService', () => {
       expect(result).toHaveProperty('idToken');
     });
 
-    it('should include device key when refreshing with device auth', async () => {
+    it('should work with username parameter', async () => {
       const mockRefreshToken = 'valid-refresh-token';
-      const mockDeviceKey = 'device-key-123';
 
-      const result = await HiveAuthService.refreshTokens(mockRefreshToken, mockDeviceKey);
+      const result = await HiveAuthService.refreshTokens(mockRefreshToken, 'user@example.com');
 
       expect(result).toHaveProperty('accessToken');
     });
@@ -281,6 +298,17 @@ describe('HiveAuthService', () => {
 
       expect(result).toHaveProperty('error');
       expect(result.error).toMatch(/expired|invalid/i);
+    });
+
+    it('should handle Cognito refresh errors', async () => {
+      mockRefreshSession.mockImplementation((refreshToken, callback) => {
+        callback(new Error('Token expired'), null);
+      });
+
+      const result = await HiveAuthService.refreshTokens('some-token');
+
+      expect(result).toHaveProperty('error');
+      expect(result.error).toContain('expired');
     });
   });
 
@@ -323,7 +351,7 @@ describe('HiveAuthService', () => {
   });
 
   describe('storeTokens', () => {
-    it('should store access token and expiry', async () => {
+    it('should store id token, expiry, and refresh token', async () => {
       const tokens = {
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
@@ -333,7 +361,22 @@ describe('HiveAuthService', () => {
 
       await HiveAuthService.storeTokens(tokens);
 
-      expect(hiveCredentialsManager.setSessionToken).toHaveBeenCalled();
+      expect(hiveCredentialsManager.setSessionToken).toHaveBeenCalledWith(
+        'id-token',
+        expect.any(Number),
+        'refresh-token'
+      );
+    });
+
+    it('should not store if no idToken present', async () => {
+      const tokens = {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      };
+
+      await HiveAuthService.storeTokens(tokens);
+
+      expect(hiveCredentialsManager.setSessionToken).not.toHaveBeenCalled();
     });
   });
 

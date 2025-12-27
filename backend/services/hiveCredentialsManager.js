@@ -31,6 +31,7 @@ class HiveCredentialsManager {
     // Session token cache (Hive API session)
     this.sessionToken = null;
     this.sessionExpiresAt = null;
+    this.refreshToken = null;
 
     // Device credentials for skipping 2FA
     this.deviceKey = null;
@@ -120,10 +121,14 @@ class HiveCredentialsManager {
    * Set cached Hive API session token
    * @param {string} token - Hive session token
    * @param {number} expiresAt - Expiry timestamp in milliseconds
+   * @param {string} [refreshToken] - Optional refresh token for extending session
    */
-  setSessionToken(token, expiresAt) {
+  setSessionToken(token, expiresAt, refreshToken = null) {
     this.sessionToken = token;
     this.sessionExpiresAt = expiresAt;
+    if (refreshToken) {
+      this.refreshToken = refreshToken;
+    }
 
     // Persist session token to file
     this._saveCredentials();
@@ -154,11 +159,20 @@ class HiveCredentialsManager {
   }
 
   /**
+   * Get refresh token for extending session
+   * @returns {string|null} Refresh token or null if not set
+   */
+  getRefreshToken() {
+    return this.refreshToken;
+  }
+
+  /**
    * Clear cached session token
    */
   clearSessionToken() {
     this.sessionToken = null;
     this.sessionExpiresAt = null;
+    this.refreshToken = null;
     this._saveCredentials();
     logger.debug('Cleared Hive session token');
   }
@@ -242,6 +256,11 @@ class HiveCredentialsManager {
         data.sessionExpiresAt = this.sessionExpiresAt;
       }
 
+      // Add refresh token if present (persists even after session expires)
+      if (this.refreshToken) {
+        data.refreshToken = this.refreshToken;
+      }
+
       // Add device credentials if present
       if (this.deviceKey && this.deviceGroupKey && this.devicePassword) {
         data.deviceKey = this.deviceKey;
@@ -298,6 +317,11 @@ class HiveCredentialsManager {
           this.sessionToken = data.sessionToken;
           this.sessionExpiresAt = data.sessionExpiresAt;
         }
+      }
+
+      // Load refresh token (persists even if session expired - used to get new tokens)
+      if (data.refreshToken) {
+        this.refreshToken = data.refreshToken;
       }
 
       // Load device credentials if present

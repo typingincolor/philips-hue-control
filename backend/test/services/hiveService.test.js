@@ -16,6 +16,7 @@ vi.mock('../../services/hiveCredentialsManager.js', () => ({
     hasCredentials: vi.fn(() => false),
     getCredentials: vi.fn(() => null),
     getSessionToken: vi.fn(() => null),
+    getRefreshToken: vi.fn(() => null),
     setSessionToken: vi.fn(),
     clearSessionToken: vi.fn(),
     getDeviceCredentials: vi.fn(() => null),
