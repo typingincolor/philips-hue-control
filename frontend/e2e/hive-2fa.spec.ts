@@ -7,17 +7,61 @@ import { test, expect, Page } from '@playwright/test';
  * These tests use demo mode which simulates the 2FA flow.
  */
 
+// Helper to reset Hive demo state via API (reliable way to ensure disconnected)
+async function resetHiveDemoState(page: Page) {
+  await page.request.post('/api/v1/hive/reset-demo', {
+    headers: { 'X-Demo-Mode': 'true' },
+  });
+}
+
+// Helper to ensure Hive is disconnected (uses API reset + fresh navigation to sync frontend)
+async function ensureHiveDisconnected(page: Page) {
+  await resetHiveDemoState(page);
+  // Navigate fresh to ensure frontend syncs with backend state
+  await page.goto('/?demo=true');
+  await page.waitForSelector('.main-panel');
+}
+
 // Helper to navigate to Hive tab
 async function navigateToHive(page: Page) {
   await page.click('.nav-tab:has-text("Hive")');
   await page.waitForSelector('.hive-view');
 }
 
+// Helper to navigate to Hive and ensure login form is shown (with retry for race conditions)
+async function navigateToHiveLogin(page: Page) {
+  // Reset and navigate
+  await ensureHiveDisconnected(page);
+  await navigateToHive(page);
+
+  // Check if login form is visible, retry reset if thermostat appeared instead
+  const loginForm = page.locator('.hive-login-form');
+  const thermostat = page.locator('.hive-thermostat');
+
+  // Wait for either to appear
+  await Promise.race([
+    loginForm.waitFor({ state: 'visible', timeout: 3000 }),
+    thermostat.waitFor({ state: 'visible', timeout: 3000 }),
+  ]);
+
+  // If thermostat appeared, another test connected - reset and retry once
+  if (await thermostat.isVisible()) {
+    await ensureHiveDisconnected(page);
+    await navigateToHive(page);
+  }
+
+  await page.waitForSelector('.hive-login-form', { timeout: 5000 });
+}
+
+// Run Hive 2FA tests serially to avoid demo mode state conflicts
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Hive 2FA Authentication', () => {
   test.describe('Login Form Display', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
+      await ensureHiveDisconnected(page);
     });
 
     test('should always show Hive tab in navigation', async ({ page }) => {
@@ -54,7 +98,7 @@ test.describe('Hive 2FA Authentication', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
     });
 
     test('should show error for invalid credentials', async ({ page }) => {
@@ -92,7 +136,7 @@ test.describe('Hive 2FA Authentication', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
     });
 
     test('should show connecting state when submitting credentials', async ({ page }) => {
@@ -162,7 +206,7 @@ test.describe('Hive 2FA Authentication', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       // Trigger 2FA flow (all demo logins require 2FA)
       await page.fill('input[placeholder*="Email" i]', 'demo@hive.com');
@@ -240,7 +284,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should display login form on compact screen', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       await expect(page.locator('.hive-login-form')).toBeVisible();
     });
@@ -248,7 +292,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should fit login form within viewport', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       const form = page.locator('.hive-login-form');
       const box = await form.boundingBox();
@@ -260,7 +304,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should have tappable buttons (44px min)', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       const connectBtn = page.locator('button:has-text("Connect")');
       const box = await connectBtn.boundingBox();
@@ -276,7 +320,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should display login form on mobile', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       await expect(page.locator('.hive-login-form')).toBeVisible();
     });
@@ -284,7 +328,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should have full-width inputs on mobile', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       const input = page.locator('input[placeholder*="Email" i]');
       const box = await input.boundingBox();
@@ -302,7 +346,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should display login form on tablet', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       await expect(page.locator('.hive-login-form')).toBeVisible();
     });
@@ -310,7 +354,7 @@ test.describe('Hive 2FA Authentication', () => {
     test('should center login form on tablet', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
 
       const form = page.locator('.hive-login-form');
       const box = await form.boundingBox();
@@ -325,7 +369,7 @@ test.describe('Hive 2FA Authentication', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
-      await navigateToHive(page);
+      await navigateToHiveLogin(page);
     });
 
     test('should have accessible email input', async ({ page }) => {

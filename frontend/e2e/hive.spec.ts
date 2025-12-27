@@ -6,55 +6,66 @@ import { test, expect, Page } from '@playwright/test';
  * Tests for UK Hive heating system integration with demo mode support.
  */
 
+// Helper to reset Hive demo state via API (reliable way to ensure disconnected)
+async function resetHiveDemoState(page: Page) {
+  await page.request.post('/api/v1/hive/reset-demo', {
+    headers: { 'X-Demo-Mode': 'true' },
+  });
+}
+
 // Helper to close settings drawer
 async function closeSettingsDrawer(page: Page) {
-  // Use Escape key which works reliably
   await page.keyboard.press('Escape');
   await page.waitForSelector('.settings-drawer', { state: 'hidden', timeout: 5000 });
 }
 
-// Helper to ensure Hive is disconnected
+// Helper to ensure Hive is disconnected (uses API reset + fresh navigation to sync frontend)
 async function ensureHiveDisconnected(page: Page) {
-  await page.click('[aria-label="settings"]');
-  await page.waitForSelector('.settings-drawer');
-
-  // Check if already connected (Disconnect button visible)
-  const disconnectButton = page.locator('button:has-text("Disconnect")');
-  if (await disconnectButton.isVisible({ timeout: 500 }).catch(() => false)) {
-    await disconnectButton.click();
-    // Wait for link to Hive tab to appear (disconnected state)
-    await page.waitForSelector('.settings-hive-link', { timeout: 5000 });
-  }
-
-  // Close settings drawer
-  await closeSettingsDrawer(page);
+  await resetHiveDemoState(page);
+  // Navigate fresh to ensure frontend syncs with backend state
+  await page.goto('/?demo=true');
+  await page.waitForSelector('.main-panel');
 }
 
 // Helper to connect to Hive in demo mode (now through HiveView with 2FA)
 async function connectToHive(page: Page) {
-  // Navigate to Hive tab first
+  // First ensure Hive is disconnected to avoid race conditions with hiveCheckConnection
+  await ensureHiveDisconnected(page);
+
+  // Navigate to Hive tab
   await page.click('.nav-tab:has-text("Hive")');
   await page.waitForSelector('.hive-view');
 
-  // Check if already connected (thermostat display visible)
+  // Wait for either login form or thermostat to be visible
+  const loginForm = page.locator('.hive-login-form');
   const thermostat = page.locator('.hive-thermostat');
-  if (await thermostat.isVisible({ timeout: 500 }).catch(() => false)) {
-    return; // Already connected
+
+  await Promise.race([
+    loginForm.waitFor({ state: 'visible', timeout: 5000 }),
+    thermostat.waitFor({ state: 'visible', timeout: 5000 }),
+  ]);
+
+  // If already connected (thermostat visible), we're done
+  if (await thermostat.isVisible()) {
+    return;
   }
 
-  // Fill in credentials in HiveView login form
-  await page.fill('input[placeholder*="Email" i]', 'demo@hive.com');
-  await page.fill('input[type="password"]', 'demo');
+  // Additional wait for React re-render to complete
+  await page.waitForTimeout(100);
+
+  // Use locator-based fill which handles re-renders better
+  await page.locator('input[placeholder*="Email" i]').fill('demo@hive.com');
+  await page.locator('input[type="password"]').fill('demo');
 
   // Click Connect button
-  await page.click('button:has-text("Connect")');
+  await page.locator('button:has-text("Connect")').click();
 
   // Wait for 2FA form (all demo logins require 2FA like real Hive)
   await page.waitForSelector('.hive-2fa-form', { timeout: 5000 });
 
   // Enter 2FA code and verify
-  await page.fill('input[placeholder*="code" i]', '123456');
-  await page.click('button:has-text("Verify")');
+  await page.locator('input[placeholder*="code" i]').fill('123456');
+  await page.locator('button:has-text("Verify")').click();
 
   // Wait for connection to complete (thermostat appears)
   await page.waitForSelector('.hive-thermostat', { timeout: 5000 });
@@ -65,6 +76,11 @@ async function navigateToHive(page: Page) {
   await page.click('.nav-tab:has-text("Hive")');
   await page.waitForSelector('.hive-view');
 }
+
+// Run Hive tests serially to avoid demo mode state conflicts
+// Also use a project-level serial mode to prevent parallel execution with hive-2fa.spec.ts
+test.describe.configure({ mode: 'serial' });
+test.use({ storageState: undefined }); // Ensure fresh state per test
 
 test.describe('Hive Integration - Phase 1: Status Display', () => {
   test.describe('Settings - Hive Section', () => {

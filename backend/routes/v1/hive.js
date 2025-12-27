@@ -106,6 +106,24 @@ router.post('/disconnect', requireSession, async (req, res, next) => {
 });
 
 /**
+ * POST /api/v1/hive/reset-demo
+ * Reset Hive demo state (for E2E testing only)
+ * Only works in demo mode
+ *
+ * Auth: Session token required, demo mode required
+ */
+router.post('/reset-demo', requireSession, (req, res) => {
+  const demoMode = req.demoMode || false;
+
+  if (!demoMode) {
+    return res.status(403).json({ error: 'Only available in demo mode' });
+  }
+
+  hiveService.resetDemo();
+  res.json({ success: true });
+});
+
+/**
  * GET /api/v1/hive/connection
  * Get Hive connection status
  *

@@ -28,8 +28,8 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
 
-  /* Opt out of parallel tests on CI */
-  workers: process.env.CI ? 1 : undefined,
+  /* Single worker to prevent race conditions with shared backend state (e.g., Hive demo mode) */
+  workers: 1,
 
   /* Reporter to use */
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
@@ -48,8 +48,16 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // Hive tests share backend state (singleton) and must run with single worker
+    {
+      name: 'hive-tests',
+      testMatch: /hive.*\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // All other tests can run in parallel
     {
       name: 'chromium',
+      testIgnore: /hive.*\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
     /* Uncomment to test on more browsers

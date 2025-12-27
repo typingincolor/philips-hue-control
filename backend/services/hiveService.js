@@ -204,6 +204,15 @@ class HiveService {
   }
 
   /**
+   * Reset demo mode state (for E2E testing)
+   * Clears the demo connection state without affecting real credentials
+   */
+  resetDemo() {
+    this._demoConnected = false;
+    logger.debug('Reset Hive demo state');
+  }
+
+  /**
    * Get current thermostat and hot water status
    * @param {boolean} demoMode - Whether in demo mode
    * @returns {Promise<{heating: object, hotWater: object}>}
@@ -225,12 +234,15 @@ class HiveService {
     try {
       const token = hiveCredentialsManager.getSessionToken();
       // Beekeeper API uses lowercase 'authorization' header without Bearer prefix
-      const response = await fetch(`${HIVE_API_URL}/nodes/all?products=true&devices=true&actions=true`, {
-        headers: {
-          'Content-Type': 'application/json',
-          authorization: token,
-        },
-      });
+      const response = await fetch(
+        `${HIVE_API_URL}/nodes/all?products=true&devices=true&actions=true`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -268,12 +280,15 @@ class HiveService {
     try {
       const token = hiveCredentialsManager.getSessionToken();
       // Beekeeper API uses lowercase 'authorization' header without Bearer prefix
-      const response = await fetch(`${HIVE_API_URL}/nodes/all?products=true&devices=true&actions=true`, {
-        headers: {
-          'Content-Type': 'application/json',
-          authorization: token,
-        },
-      });
+      const response = await fetch(
+        `${HIVE_API_URL}/nodes/all?products=true&devices=true&actions=true`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -304,6 +319,7 @@ class HiveService {
 
     // Find hot water
     const hotWater = products.find((p) => p.type === 'hotwater') || {};
+    const hotWaterProps = hotWater.props || {};
     const hotWaterState = hotWater.state || {};
 
     logger.debug('Transformed Hive status', {
@@ -316,11 +332,11 @@ class HiveService {
       heating: {
         currentTemperature: heatingProps.temperature || 0,
         targetTemperature: heatingState.target || 0,
-        isHeating: heatingState.status === 'ON',
+        isHeating: heatingProps.working === true,
         mode: heatingState.mode || 'off',
       },
       hotWater: {
-        isOn: hotWaterState.status === 'ON',
+        isOn: hotWaterProps.working === true,
         mode: hotWaterState.mode || 'off',
       },
     };

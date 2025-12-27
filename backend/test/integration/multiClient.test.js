@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import fs from 'fs';
 
 // Mock logger to suppress output
 vi.mock('../../utils/logger.js', () => ({
@@ -18,6 +19,8 @@ vi.mock('../../services/hueClient.js', () => ({
     getDevices: vi.fn(() => Promise.resolve({ data: [] })),
   },
 }));
+
+const TEST_CREDENTIALS_PATH = '/tmp/test-multi-client-credentials.json';
 
 describe('Multi-Client Integration', () => {
   let sessionManager;
@@ -43,11 +46,21 @@ describe('Multi-Client Integration', () => {
     // Clear any existing data
     sessionManager.sessions.clear();
     sessionManager.bridgeCredentials.clear();
+
+    // CRITICAL: Use test path to avoid touching production credentials
+    sessionManager.credentialsFilePath = TEST_CREDENTIALS_PATH;
   });
 
   afterEach(() => {
     sessionManager.stopCleanup();
     vi.restoreAllMocks();
+
+    // Clean up test credentials file
+    try {
+      fs.unlinkSync(TEST_CREDENTIALS_PATH);
+    } catch {
+      // File doesn't exist, that's fine
+    }
   });
 
   describe('Client 1 pairs, Client 2 connects without pairing', () => {

@@ -354,6 +354,153 @@ describe('HiveService', () => {
     });
   });
 
+  describe('_transformStatus', () => {
+    it('should use props.working for heating status, not state.status', async () => {
+      // Set up connected state
+      hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
+
+      // Mock API response with props.working = true (heating is on)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            products: [
+              {
+                type: 'heating',
+                state: { mode: 'SCHEDULE', target: 20 },
+                props: { temperature: 18.5, working: true },
+              },
+              {
+                type: 'hotwater',
+                state: { mode: 'SCHEDULE', status: 'OFF' },
+                props: { working: false },
+              },
+            ],
+          }),
+      });
+
+      const result = await HiveService.getStatus(false);
+
+      // isHeating should be true because props.working is true
+      expect(result.heating.isHeating).toBe(true);
+      expect(result.heating.currentTemperature).toBe(18.5);
+      expect(result.heating.targetTemperature).toBe(20);
+    });
+
+    it('should show heating as off when props.working is false', async () => {
+      hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            products: [
+              {
+                type: 'heating',
+                state: { mode: 'SCHEDULE', target: 20 },
+                props: { temperature: 21.5, working: false },
+              },
+              {
+                type: 'hotwater',
+                state: { mode: 'OFF' },
+                props: { working: false },
+              },
+            ],
+          }),
+      });
+
+      const result = await HiveService.getStatus(false);
+
+      // isHeating should be false because props.working is false
+      expect(result.heating.isHeating).toBe(false);
+    });
+
+    it('should use props.working for hot water status', async () => {
+      hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            products: [
+              {
+                type: 'heating',
+                state: { mode: 'SCHEDULE', target: 20 },
+                props: { temperature: 20, working: false },
+              },
+              {
+                type: 'hotwater',
+                state: { mode: 'BOOST', status: 'ON' },
+                props: { working: true },
+              },
+            ],
+          }),
+      });
+
+      const result = await HiveService.getStatus(false);
+
+      // isOn should be true because props.working is true
+      expect(result.hotWater.isOn).toBe(true);
+      expect(result.hotWater.mode).toBe('BOOST');
+    });
+
+    it('should show hot water as off when props.working is false', async () => {
+      hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            products: [
+              {
+                type: 'heating',
+                state: { mode: 'SCHEDULE', target: 20 },
+                props: { temperature: 20, working: false },
+              },
+              {
+                type: 'hotwater',
+                state: { mode: 'SCHEDULE', status: 'OFF' },
+                props: { working: false },
+              },
+            ],
+          }),
+      });
+
+      const result = await HiveService.getStatus(false);
+
+      expect(result.hotWater.isOn).toBe(false);
+    });
+
+    it('should handle missing props.working gracefully (default to false)', async () => {
+      hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            products: [
+              {
+                type: 'heating',
+                state: { mode: 'SCHEDULE', target: 20 },
+                props: { temperature: 20 }, // No working field
+              },
+              {
+                type: 'hotwater',
+                state: { mode: 'SCHEDULE' },
+                props: {}, // No working field
+              },
+            ],
+          }),
+      });
+
+      const result = await HiveService.getStatus(false);
+
+      // Should default to false when props.working is undefined
+      expect(result.heating.isHeating).toBe(false);
+      expect(result.hotWater.isOn).toBe(false);
+    });
+  });
+
   describe('getConnectionStatus', () => {
     it('should return connected: false when not connected in demo mode', () => {
       const status = HiveService.getConnectionStatus(true);

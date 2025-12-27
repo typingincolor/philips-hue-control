@@ -358,7 +358,8 @@ describe('MotionService', () => {
 
       hueClient.getResource
         .mockResolvedValueOnce(behaviorsData)
-        .mockResolvedValueOnce(motionAreasData);
+        .mockResolvedValueOnce(motionAreasData)
+        .mockResolvedValueOnce({ data: [] }); // motion_area_configuration (empty)
 
       const result = await motionService.getMotionZones(bridgeIp, username);
 
@@ -374,7 +375,10 @@ describe('MotionService', () => {
     });
 
     it('should return empty zones when no motion behaviors exist', async () => {
-      hueClient.getResource.mockResolvedValueOnce({ data: [] }).mockResolvedValueOnce({ data: [] });
+      hueClient.getResource
+        .mockResolvedValueOnce({ data: [] })
+        .mockResolvedValueOnce({ data: [] })
+        .mockResolvedValueOnce({ data: [] }); // motion_area_configuration (empty)
 
       const result = await motionService.getMotionZones(bridgeIp, username);
 
@@ -397,6 +401,219 @@ describe('MotionService', () => {
       await expect(motionService.getMotionZones(bridgeIp, username)).rejects.toThrow(
         'Failed to get motion zones: Motion fetch failed'
       );
+    });
+  });
+
+  describe('Motion area configuration support', () => {
+    const bridgeIp = '192.168.1.100';
+    const username = 'test-user';
+
+    it('should include motion zones from motion_area_configuration without MotionAware behavior', async () => {
+      // Behavior instances - only Kitchen has MotionAware
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-kitchen',
+            metadata: { name: 'Kitchen' },
+            enabled: true,
+            configuration: {
+              motion: {
+                motion_service: { rtype: 'convenience_area_motion', rid: 'motion-kitchen' },
+              },
+            },
+          },
+        ],
+      };
+
+      // Convenience area motion - both Kitchen and Living Room have sensors
+      const motionAreasData = {
+        data: [
+          { id: 'motion-kitchen', enabled: true, motion: { motion: false, motion_valid: true } },
+          { id: 'motion-living-room', enabled: true, motion: { motion: true, motion_valid: true } },
+        ],
+      };
+
+      // Motion area configuration - includes Living Room (no MotionAware behavior)
+      const motionAreaConfigData = {
+        data: [
+          {
+            id: 'config-living-room',
+            name: 'Living Room',
+            enabled: true,
+            motion_area: { rid: 'motion-living-room', rtype: 'convenience_area_motion' },
+          },
+        ],
+      };
+
+      hueClient.getResource
+        .mockResolvedValueOnce(behaviorsData) // behavior_instance
+        .mockResolvedValueOnce(motionAreasData) // convenience_area_motion
+        .mockResolvedValueOnce(motionAreaConfigData); // motion_area_configuration
+
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      // Should include both Kitchen (from behavior) and Living Room (from config)
+      expect(result.zones).toHaveLength(2);
+
+      const kitchenZone = result.zones.find((z) => z.name === 'Kitchen');
+      const livingRoomZone = result.zones.find((z) => z.name === 'Living Room');
+
+      expect(kitchenZone).toBeDefined();
+      expect(livingRoomZone).toBeDefined();
+      expect(livingRoomZone.motionDetected).toBe(true);
+    });
+
+    it('should not duplicate zones that have both behavior and area config', async () => {
+      // Kitchen has both MotionAware behavior AND motion_area_configuration
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-kitchen',
+            metadata: { name: 'Kitchen MotionAware' },
+            enabled: true,
+            configuration: {
+              motion: {
+                motion_service: { rtype: 'convenience_area_motion', rid: 'motion-kitchen' },
+              },
+            },
+          },
+        ],
+      };
+
+      const motionAreasData = {
+        data: [
+          { id: 'motion-kitchen', enabled: true, motion: { motion: false, motion_valid: true } },
+        ],
+      };
+
+      const motionAreaConfigData = {
+        data: [
+          {
+            id: 'config-kitchen',
+            name: 'Kitchen',
+            enabled: true,
+            motion_area: { rid: 'motion-kitchen', rtype: 'convenience_area_motion' },
+          },
+        ],
+      };
+
+      hueClient.getResource
+        .mockResolvedValueOnce(behaviorsData)
+        .mockResolvedValueOnce(motionAreasData)
+        .mockResolvedValueOnce(motionAreaConfigData);
+
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      // Should only have one zone (behavior name takes priority)
+      expect(result.zones).toHaveLength(1);
+      expect(result.zones[0].name).toBe('Kitchen MotionAware');
+    });
+
+    it('should prefer behavior name over area config name when both exist', async () => {
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-1',
+            metadata: { name: 'Kitchen Automation' },
+            enabled: true,
+            configuration: {
+              motion: {
+                motion_service: { rtype: 'convenience_area_motion', rid: 'motion-1' },
+              },
+            },
+          },
+        ],
+      };
+
+      const motionAreasData = {
+        data: [{ id: 'motion-1', enabled: true, motion: { motion: false, motion_valid: true } }],
+      };
+
+      const motionAreaConfigData = {
+        data: [
+          {
+            id: 'config-1',
+            name: 'Kitchen Area',
+            enabled: true,
+            motion_area: { rid: 'motion-1', rtype: 'convenience_area_motion' },
+          },
+        ],
+      };
+
+      hueClient.getResource
+        .mockResolvedValueOnce(behaviorsData)
+        .mockResolvedValueOnce(motionAreasData)
+        .mockResolvedValueOnce(motionAreaConfigData);
+
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      // Should use behavior name, not area config name
+      expect(result.zones).toHaveLength(1);
+      expect(result.zones[0].name).toBe('Kitchen Automation');
+    });
+
+    it('should handle empty motion_area_configuration gracefully', async () => {
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-1',
+            metadata: { name: 'Kitchen' },
+            enabled: true,
+            configuration: {
+              motion: {
+                motion_service: { rtype: 'convenience_area_motion', rid: 'motion-1' },
+              },
+            },
+          },
+        ],
+      };
+
+      const motionAreasData = {
+        data: [{ id: 'motion-1', enabled: true, motion: { motion: false, motion_valid: true } }],
+      };
+
+      hueClient.getResource
+        .mockResolvedValueOnce(behaviorsData)
+        .mockResolvedValueOnce(motionAreasData)
+        .mockResolvedValueOnce({ data: [] }); // Empty motion_area_configuration
+
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      // Should still return the MotionAware zone
+      expect(result.zones).toHaveLength(1);
+      expect(result.zones[0].name).toBe('Kitchen');
+    });
+
+    it('should handle motion_area_configuration fetch failure gracefully', async () => {
+      const behaviorsData = {
+        data: [
+          {
+            id: 'behavior-1',
+            metadata: { name: 'Kitchen' },
+            enabled: true,
+            configuration: {
+              motion: {
+                motion_service: { rtype: 'convenience_area_motion', rid: 'motion-1' },
+              },
+            },
+          },
+        ],
+      };
+
+      const motionAreasData = {
+        data: [{ id: 'motion-1', enabled: true, motion: { motion: false, motion_valid: true } }],
+      };
+
+      hueClient.getResource
+        .mockResolvedValueOnce(behaviorsData)
+        .mockResolvedValueOnce(motionAreasData)
+        .mockRejectedValueOnce(new Error('Resource not found')); // motion_area_configuration fails
+
+      const result = await motionService.getMotionZones(bridgeIp, username);
+
+      // Should still return the MotionAware zone (graceful degradation)
+      expect(result.zones).toHaveLength(1);
+      expect(result.zones[0].name).toBe('Kitchen');
     });
   });
 });
