@@ -1,23 +1,36 @@
 /**
  * Settings Service
- * Manages per-session user settings (location, units)
- * Settings persist in memory (reset on server restart)
+ * Manages user settings (location, units) with file persistence
+ * Settings persist across server restarts
  */
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { getMockSettings } from './mockData.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('SETTINGS');
+
+// Get the directory of this module for default settings path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const VALID_UNITS = ['celsius', 'fahrenheit'];
 
 // In-memory storage: sessionId -> settings
 const sessionSettings = new Map();
 
-// Default settings for new sessions
-const getDefaultSettings = () => ({
+// Global settings (persisted to file)
+let globalSettings = {
   location: null,
   units: 'celsius',
+};
+
+// Default settings for new sessions
+const getDefaultSettings = () => ({
+  location: globalSettings.location,
+  units: globalSettings.units,
 });
 
 /**
@@ -53,6 +66,14 @@ const validateLocation = (location) => {
 };
 
 class SettingsService {
+  constructor() {
+    // Default path for settings file
+    this.settingsFilePath = path.join(__dirname, '..', 'data', 'settings.json');
+
+    // Load persisted settings on startup
+    this._loadSettings();
+  }
+
   /**
    * Get settings for a session
    * @param {string} sessionId - Session identifier
@@ -65,8 +86,8 @@ class SettingsService {
       return { ...sessionSettings.get(sessionId) };
     }
 
-    // Demo mode returns mock settings as defaults
-    if (demoMode) {
+    // Demo mode returns mock settings as defaults (if no global settings)
+    if (demoMode && !globalSettings.location) {
       return getMockSettings();
     }
 
@@ -102,6 +123,16 @@ class SettingsService {
     };
 
     sessionSettings.set(sessionId, newSettings);
+
+    // Update global settings and persist
+    if (updates.location !== undefined) {
+      globalSettings.location = updates.location;
+    }
+    if (updates.units !== undefined) {
+      globalSettings.units = updates.units;
+    }
+    this._saveSettings();
+
     logger.debug('Updated settings', { sessionId, updates });
 
     return { ...newSettings };
@@ -131,7 +162,71 @@ class SettingsService {
    */
   clearAll() {
     sessionSettings.clear();
+    globalSettings = { location: null, units: 'celsius' };
     logger.debug('Cleared all session settings');
+  }
+
+  /**
+   * Save settings to file
+   * @private
+   */
+  _saveSettings() {
+    try {
+      // Ensure directory exists
+      const dir = path.dirname(this.settingsFilePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      const data = {
+        location: globalSettings.location,
+        units: globalSettings.units,
+      };
+
+      fs.writeFileSync(this.settingsFilePath, JSON.stringify(data, null, 2));
+      logger.debug('Saved settings to file');
+    } catch (error) {
+      logger.warn('Failed to save settings', { error: error.message });
+    }
+  }
+
+  /**
+   * Load settings from file
+   * @private
+   */
+  _loadSettings() {
+    try {
+      if (!fs.existsSync(this.settingsFilePath)) {
+        logger.debug('No settings file found');
+        return;
+      }
+
+      const contents = fs.readFileSync(this.settingsFilePath, 'utf8');
+      if (!contents || contents.trim() === '') {
+        logger.debug('Settings file is empty');
+        return;
+      }
+
+      const data = JSON.parse(contents);
+
+      // Load location if present
+      if (data.location !== undefined) {
+        globalSettings.location = data.location;
+      }
+
+      // Load units if present
+      if (data.units !== undefined) {
+        globalSettings.units = data.units;
+      }
+
+      if (globalSettings.location) {
+        logger.info('Loaded settings from file', { location: globalSettings.location.name });
+      }
+    } catch (error) {
+      logger.warn('Failed to load settings', { error: error.message });
+      // Start with default settings on error
+      globalSettings = { location: null, units: 'celsius' };
+    }
   }
 }
 
