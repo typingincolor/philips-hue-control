@@ -99,4 +99,22 @@ export const UI_TEXT = {
   SETTINGS_DETECTING: 'Detecting...',
   SETTINGS_WEATHER_ENABLED: 'Show Weather',
   SETTINGS_AUTO_SAVED: 'Changes saved automatically',
+
+  // Hive Heating
+  HIVE_HEATING_STATUS: 'Heating status',
+  HIVE_HOT_WATER_STATUS: 'Hot water status',
+  HIVE_CURRENT_TEMP: 'Current temperature',
+  HIVE_SCHEDULES: 'Heating schedules',
+  HIVE_NO_SCHEDULES: 'No schedules configured',
+  HIVE_LOADING: 'Loading Hive data...',
+
+  // Hive Settings & Navigation
+  NAV_HIVE: 'Hive',
+  SETTINGS_HIVE: 'Hive Heating',
+  HIVE_USERNAME_PLACEHOLDER: 'Email / Username',
+  HIVE_PASSWORD_PLACEHOLDER: 'Password',
+  HIVE_CONNECT: 'Connect',
+  HIVE_CONNECTING: 'Connecting...',
+  HIVE_CONNECTED: 'Connected',
+  HIVE_DISCONNECT: 'Disconnect',
 };

@@ -49,18 +49,18 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (261 frontend + 562 backend = 823 tests)
+### Unit Test Results (332 frontend + 588 backend = 920 tests)
 
-#### Frontend (261 tests)
+#### Frontend (332 tests)
 
-- **Hooks**: useSession (23), useSettings (10), useWeather (10), useWebSocket (19), useLocation (16)
-- **Services**: hueApi (24)
-- **Components**: App (4), MotionZones (9), DashboardSummary (5), SceneSelector (8), SettingsDrawer (16), WeatherDisplay (11), WeatherTooltip (11), LightControl/index (25), index.zones (9)
+- **Hooks**: useSession (23), useSettings (10), useWeather (10), useWebSocket (19), useLocation (16), useHive (12)
+- **Services**: hueApi (34)
+- **Components**: App (4), MotionZones (9), DashboardSummary (5), SceneSelector (8), SettingsDrawer (16), WeatherDisplay (11), WeatherTooltip (11), HiveView (18), LightControl/index (25), index.zones (9)
 - **Context**: DemoModeContext (8)
 - **Utils**: validation (8)
 - **Integration**: integration.test.jsx (10)
 
-#### Backend (562 tests)
+#### Backend (588 tests)
 
 Business logic tests including colorConversion (49), roomService, zoneService, automationService (16), sessionManager (53), websocketService (26), and more.
 
@@ -129,7 +129,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 823 tests run in <5 seconds
+   - 920 tests run in <5 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 
@@ -310,7 +310,7 @@ npm run test:e2e:ui
 npm run test:e2e:headed
 ```
 
-### Test Files (233 tests)
+### Test Files (217 tests)
 
 ```
 e2e/

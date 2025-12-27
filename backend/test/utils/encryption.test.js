@@ -282,9 +282,7 @@ describe('encryption', () => {
       expect(fs.existsSync(nestedPath)).toBe(true);
 
       // Cleanup
-      fs.unlinkSync(nestedPath);
-      fs.rmdirSync('/tmp/nested/encryption');
-      fs.rmdirSync('/tmp/nested');
+      fs.rmSync('/tmp/nested', { recursive: true, force: true });
     });
 
     it('should validate key length from environment', () => {

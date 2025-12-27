@@ -193,3 +193,29 @@ export const hueApi = {
     }
   },
 };
+
+// Hive integration - exported separately for hook consumption
+// Note: These also exist on hueApi object for consistency
+export const connectHive = async (username, password) => {
+  try {
+    const { data } = await api.post('/v1/hive/connect', { username, password });
+    return data;
+  } catch (error) {
+    return { success: false, error: error.data?.error || 'Failed to connect to Hive' };
+  }
+};
+
+export const disconnectHive = () => api.post('/v1/hive/disconnect').then((r) => r.data);
+
+export const getHiveStatus = () => api.get('/v1/hive/status').then((r) => r.data);
+
+export const getHiveSchedules = () => api.get('/v1/hive/schedules').then((r) => r.data);
+
+export const getHiveConnectionStatus = () => api.get('/v1/hive/connection').then((r) => r.data);
+
+// Add to hueApi object for consistency
+hueApi.connectHive = connectHive;
+hueApi.disconnectHive = disconnectHive;
+hueApi.getHiveStatus = getHiveStatus;
+hueApi.getHiveSchedules = getHiveSchedules;
+hueApi.getHiveConnectionStatus = getHiveConnectionStatus;

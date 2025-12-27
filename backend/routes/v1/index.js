@@ -10,6 +10,7 @@ import statsRouter from './stats.js';
 import settingsRouter from './settings.js';
 import weatherRouter from './weather.js';
 import automationsRouter from './automations.js';
+import hiveRouter from './hive.js';
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use('/stats', statsRouter);
 router.use('/settings', settingsRouter);
 router.use('/weather', weatherRouter);
 router.use('/automations', automationsRouter);
+router.use('/hive', hiveRouter);
 
 export default router;

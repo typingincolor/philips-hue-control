@@ -14,6 +14,7 @@ import {
   Tree,
   Door,
   Clock,
+  Thermometer,
 } from './Icons';
 
 // Icon size for nav tabs
@@ -54,11 +55,13 @@ export const BottomNav = ({
   rooms = [],
   zones = [],
   hasAutomations = false,
+  hasHive = false,
   selectedId,
   onSelect,
 }) => {
   const isZonesSelected = selectedId === 'zones';
   const isAutomationsSelected = selectedId === 'automations';
+  const isHiveSelected = selectedId === 'hive';
   const navRef = useDragScroll();
 
   return (
@@ -100,6 +103,16 @@ export const BottomNav = ({
           <span className="nav-tab-label">{UI_TEXT.NAV_AUTOMATIONS}</span>
         </button>
       )}
+
+      {hasHive && (
+        <button
+          className={`nav-tab ${isHiveSelected ? 'active' : ''}`}
+          onClick={() => onSelect('hive')}
+        >
+          <Thermometer size={NAV_ICON_SIZE} className="nav-tab-icon" />
+          <span className="nav-tab-label">{UI_TEXT.NAV_HIVE}</span>
+        </button>
+      )}
     </nav>
   );
 };
@@ -116,6 +129,7 @@ BottomNav.propTypes = {
   ),
   zones: PropTypes.array,
   hasAutomations: PropTypes.bool,
+  hasHive: PropTypes.bool,
   selectedId: PropTypes.string,
   onSelect: PropTypes.func.isRequired,
 };

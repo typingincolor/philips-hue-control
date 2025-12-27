@@ -105,9 +105,7 @@ describe('HiveCredentialsManager', () => {
       expect(fs.existsSync(nestedPath)).toBe(true);
 
       // Cleanup
-      fs.unlinkSync(nestedPath);
-      fs.rmdirSync('/tmp/nested/hive');
-      fs.rmdirSync('/tmp/nested');
+      fs.rmSync('/tmp/nested', { recursive: true, force: true });
     });
 
     it('should overwrite existing credentials', () => {

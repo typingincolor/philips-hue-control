@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X, MapPin, Spinner } from './Icons';
 import { UI_TEXT } from '../../constants/uiText';
 
 /**
- * Settings drawer component for weather configuration
- * Allows location detection and temperature unit selection
+ * Settings drawer component for weather and Hive configuration
+ * Allows location detection, temperature unit selection, and Hive connection
  */
 export const SettingsDrawer = ({
   isOpen,
@@ -15,7 +15,14 @@ export const SettingsDrawer = ({
   onDetectLocation,
   isDetecting,
   locationError,
+  hiveConnected,
+  hiveConnecting,
+  hiveError,
+  onHiveConnect,
+  onHiveDisconnect,
 }) => {
+  const [hiveUsername, setHiveUsername] = useState('');
+  const [hivePassword, setHivePassword] = useState('');
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -102,6 +109,46 @@ export const SettingsDrawer = ({
                 {UI_TEXT.SETTINGS_FAHRENHEIT}
               </button>
             </div>
+          </div>
+
+          {/* Hive Section */}
+          <div className="settings-section">
+            <div className="settings-section-label">{UI_TEXT.SETTINGS_HIVE}</div>
+            {hiveConnected ? (
+              <div className="settings-hive-connected">
+                <span className="settings-hive-status">{UI_TEXT.HIVE_CONNECTED}</span>
+                <button className="settings-hive-btn" onClick={onHiveDisconnect}>
+                  {UI_TEXT.HIVE_DISCONNECT}
+                </button>
+              </div>
+            ) : (
+              <div className="settings-hive-login">
+                <input
+                  type="email"
+                  className="settings-hive-input"
+                  placeholder={UI_TEXT.HIVE_USERNAME_PLACEHOLDER}
+                  value={hiveUsername}
+                  onChange={(e) => setHiveUsername(e.target.value)}
+                  disabled={hiveConnecting}
+                />
+                <input
+                  type="password"
+                  className="settings-hive-input"
+                  placeholder={UI_TEXT.HIVE_PASSWORD_PLACEHOLDER}
+                  value={hivePassword}
+                  onChange={(e) => setHivePassword(e.target.value)}
+                  disabled={hiveConnecting}
+                />
+                <button
+                  className="settings-hive-btn"
+                  onClick={() => onHiveConnect(hiveUsername, hivePassword)}
+                  disabled={hiveConnecting}
+                >
+                  {hiveConnecting ? UI_TEXT.HIVE_CONNECTING : UI_TEXT.HIVE_CONNECT}
+                </button>
+                {hiveError && <div className="settings-error">{hiveError}</div>}
+              </div>
+            )}
           </div>
         </div>
 

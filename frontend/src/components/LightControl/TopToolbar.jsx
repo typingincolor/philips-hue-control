@@ -39,7 +39,7 @@ export const TopToolbar = ({
   return (
     <div className="top-toolbar">
       <div className="toolbar-left">
-        <button className="toolbar-settings" onClick={onOpenSettings} aria-label="Settings">
+        <button className="toolbar-settings" onClick={onOpenSettings} aria-label="settings">
           <Settings size={18} />
         </button>
 

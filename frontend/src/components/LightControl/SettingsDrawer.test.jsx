@@ -146,4 +146,107 @@ describe('SettingsDrawer', () => {
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('hive section', () => {
+    const hiveProps = {
+      ...defaultProps,
+      hiveConnected: false,
+      hiveConnecting: false,
+      hiveError: null,
+      onHiveConnect: vi.fn(),
+      onHiveDisconnect: vi.fn(),
+    };
+
+    it('should display Hive section label', () => {
+      render(<SettingsDrawer {...hiveProps} />);
+
+      expect(screen.getByText(UI_TEXT.SETTINGS_HIVE)).toBeInTheDocument();
+    });
+
+    it('should show username input when disconnected', () => {
+      render(<SettingsDrawer {...hiveProps} />);
+
+      expect(screen.getByPlaceholderText(UI_TEXT.HIVE_USERNAME_PLACEHOLDER)).toBeInTheDocument();
+    });
+
+    it('should show password input when disconnected', () => {
+      render(<SettingsDrawer {...hiveProps} />);
+
+      expect(screen.getByPlaceholderText(UI_TEXT.HIVE_PASSWORD_PLACEHOLDER)).toBeInTheDocument();
+    });
+
+    it('should show Connect button when disconnected', () => {
+      render(<SettingsDrawer {...hiveProps} />);
+
+      expect(screen.getByRole('button', { name: UI_TEXT.HIVE_CONNECT })).toBeInTheDocument();
+    });
+
+    it('should call onHiveConnect with credentials when Connect clicked', async () => {
+      const user = userEvent.setup();
+      render(<SettingsDrawer {...hiveProps} />);
+
+      await user.type(
+        screen.getByPlaceholderText(UI_TEXT.HIVE_USERNAME_PLACEHOLDER),
+        'test@hive.com'
+      );
+      await user.type(
+        screen.getByPlaceholderText(UI_TEXT.HIVE_PASSWORD_PLACEHOLDER),
+        'password123'
+      );
+      await user.click(screen.getByRole('button', { name: UI_TEXT.HIVE_CONNECT }));
+
+      expect(hiveProps.onHiveConnect).toHaveBeenCalledWith('test@hive.com', 'password123');
+    });
+
+    it('should disable inputs while connecting', () => {
+      render(<SettingsDrawer {...hiveProps} hiveConnecting={true} />);
+
+      expect(screen.getByPlaceholderText(UI_TEXT.HIVE_USERNAME_PLACEHOLDER)).toBeDisabled();
+      expect(screen.getByPlaceholderText(UI_TEXT.HIVE_PASSWORD_PLACEHOLDER)).toBeDisabled();
+    });
+
+    it('should show connecting state on button', () => {
+      render(<SettingsDrawer {...hiveProps} hiveConnecting={true} />);
+
+      expect(screen.getByRole('button', { name: UI_TEXT.HIVE_CONNECTING })).toBeInTheDocument();
+    });
+
+    it('should show error message when hiveError is set', () => {
+      render(<SettingsDrawer {...hiveProps} hiveError="Invalid credentials" />);
+
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+    });
+
+    it('should show Connected status when connected', () => {
+      render(<SettingsDrawer {...hiveProps} hiveConnected={true} />);
+
+      expect(screen.getByText(UI_TEXT.HIVE_CONNECTED)).toBeInTheDocument();
+    });
+
+    it('should show Disconnect button when connected', () => {
+      render(<SettingsDrawer {...hiveProps} hiveConnected={true} />);
+
+      expect(screen.getByRole('button', { name: UI_TEXT.HIVE_DISCONNECT })).toBeInTheDocument();
+    });
+
+    it('should hide credential inputs when connected', () => {
+      render(<SettingsDrawer {...hiveProps} hiveConnected={true} />);
+
+      expect(
+        screen.queryByPlaceholderText(UI_TEXT.HIVE_USERNAME_PLACEHOLDER)
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText(UI_TEXT.HIVE_PASSWORD_PLACEHOLDER)
+      ).not.toBeInTheDocument();
+    });
+
+    it('should call onHiveDisconnect when Disconnect clicked', async () => {
+      const user = userEvent.setup();
+      render(<SettingsDrawer {...hiveProps} hiveConnected={true} />);
+
+      await user.click(screen.getByRole('button', { name: UI_TEXT.HIVE_DISCONNECT }));
+
+      expect(hiveProps.onHiveDisconnect).toHaveBeenCalled();
+    });
+  });
 });

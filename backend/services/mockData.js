@@ -525,3 +525,48 @@ export const resetMockData = () => {
   currentLights = JSON.parse(JSON.stringify(initialLights));
   currentMotionZones = JSON.parse(JSON.stringify(initialMotionZones));
 };
+
+/**
+ * Get mock Hive thermostat and hot water status
+ * @returns {object} Mock Hive status
+ */
+export const getMockHiveStatus = () => ({
+  heating: {
+    currentTemperature: 19.5,
+    targetTemperature: 21,
+    isHeating: true,
+    mode: 'schedule',
+  },
+  hotWater: {
+    isOn: false,
+    mode: 'schedule',
+  },
+});
+
+/**
+ * Get mock Hive schedules
+ * @returns {Array} Mock schedules
+ */
+export const getMockHiveSchedules = () => [
+  {
+    id: 'schedule-1',
+    name: 'Morning Warmup',
+    type: 'heating',
+    time: '06:00',
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  },
+  {
+    id: 'schedule-2',
+    name: 'Evening Heat',
+    type: 'heating',
+    time: '17:00',
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  },
+  {
+    id: 'schedule-3',
+    name: 'Hot Water AM',
+    type: 'hotWater',
+    time: '07:00',
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  },
+];

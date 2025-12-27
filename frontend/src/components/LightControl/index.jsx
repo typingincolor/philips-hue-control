@@ -5,6 +5,7 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import { useSettings } from '../../hooks/useSettings';
 import { useLocation } from '../../hooks/useLocation';
 import { useWeather } from '../../hooks/useWeather';
+import { useHive } from '../../hooks/useHive';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { createLogger } from '../../utils/logger';
 import { TopToolbar } from './TopToolbar';
@@ -12,6 +13,7 @@ import { BottomNav } from './BottomNav';
 import { RoomContent } from './RoomContent';
 import { ZonesView } from './ZonesView';
 import { AutomationsView } from './AutomationsView';
+import { HiveView } from './HiveView';
 import { MotionZones } from '../MotionZones';
 import { SettingsDrawer } from './SettingsDrawer';
 
@@ -54,6 +56,19 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     error: weatherError,
     refetch: refetchWeather,
   } = useWeather(sessionToken);
+
+  // Hive heating integration
+  const {
+    isConnected: hiveConnected,
+    isConnecting: hiveConnecting,
+    isLoading: hiveLoading,
+    status: hiveStatus,
+    schedules: hiveSchedules,
+    error: hiveError,
+    connect: hiveConnect,
+    disconnect: hiveDisconnect,
+    refresh: hiveRefresh,
+  } = useHive(isDemoMode);
 
   // Refetch weather when settings change (location or units updated)
   useEffect(() => {
@@ -378,7 +393,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
 
   // Get the selected room from dashboard
   const selectedRoom =
-    selectedId !== 'zones' && selectedId !== 'automations'
+    selectedId !== 'zones' && selectedId !== 'automations' && selectedId !== 'hive'
       ? dashboard?.rooms?.find((r) => r.id === selectedId)
       : null;
 
@@ -424,7 +439,15 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       />
 
       <div className="main-panel">
-        {selectedId === 'automations' ? (
+        {selectedId === 'hive' ? (
+          <HiveView
+            status={hiveStatus}
+            schedules={hiveSchedules}
+            isLoading={hiveLoading}
+            error={hiveError}
+            onRetry={hiveRefresh}
+          />
+        ) : selectedId === 'automations' ? (
           <AutomationsView
             automations={automations}
             onTrigger={handleTriggerAutomation}
@@ -459,6 +482,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
         rooms={dashboard?.rooms || []}
         zones={dashboard?.zones || []}
         hasAutomations={true}
+        hasHive={hiveConnected}
         selectedId={selectedId}
         onSelect={setSelectedId}
       />
@@ -472,6 +496,11 @@ export const LightControl = ({ sessionToken, onLogout }) => {
         onDetectLocation={detectLocation}
         isDetecting={isDetecting}
         locationError={locationError}
+        hiveConnected={hiveConnected}
+        hiveConnecting={hiveConnecting}
+        hiveError={hiveError}
+        onHiveConnect={hiveConnect}
+        onHiveDisconnect={hiveDisconnect}
       />
     </div>
   );
