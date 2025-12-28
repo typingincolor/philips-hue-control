@@ -314,4 +314,85 @@ describe('BottomNav', () => {
       expect(kitchenTab.querySelector('.nav-tab-badge')).not.toBeInTheDocument();
     });
   });
+
+  describe('Home tab', () => {
+    const mockHomeDevices = [
+      { id: 'hive:heating', type: 'thermostat', name: 'Heating' },
+      { id: 'hive:hotwater', type: 'hotWater', name: 'Hot Water' },
+    ];
+
+    it('should show Home tab as first item when home devices exist', () => {
+      render(<BottomNav {...defaultProps} homeDevices={mockHomeDevices} />);
+
+      // Home should be the first tab
+      const tabs = document.querySelectorAll('.nav-tab');
+      expect(tabs[0]).toHaveTextContent(UI_TEXT.NAV_HOME);
+    });
+
+    it('should show Home tab even when no other services are connected', () => {
+      render(
+        <BottomNav
+          {...defaultProps}
+          rooms={[]}
+          zones={[]}
+          hasAutomations={false}
+          hueConnected={false}
+          hiveConnected={false}
+          homeDevices={mockHomeDevices}
+        />
+      );
+
+      expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
+    });
+
+    it('should mark Home tab as active when selected', () => {
+      render(<BottomNav {...defaultProps} selectedId="home" homeDevices={mockHomeDevices} />);
+
+      const homeTab = screen.getByText(UI_TEXT.NAV_HOME).closest('.nav-tab');
+      expect(homeTab).toHaveClass('active');
+    });
+
+    it('should call onSelect with "home" when Home tab is clicked', async () => {
+      const user = userEvent.setup();
+      render(<BottomNav {...defaultProps} homeDevices={mockHomeDevices} />);
+
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
+
+      expect(defaultProps.onSelect).toHaveBeenCalledWith('home');
+    });
+
+    it('should NOT show Home tab when no home devices exist', () => {
+      render(<BottomNav {...defaultProps} homeDevices={[]} />);
+
+      expect(screen.queryByText(UI_TEXT.NAV_HOME)).not.toBeInTheDocument();
+    });
+
+    it('should NOT show Home tab when homeDevices prop is undefined', () => {
+      const propsWithoutHomeDevices = { ...defaultProps };
+      delete propsWithoutHomeDevices.homeDevices;
+
+      render(<BottomNav {...propsWithoutHomeDevices} />);
+
+      expect(screen.queryByText(UI_TEXT.NAV_HOME)).not.toBeInTheDocument();
+    });
+
+    it('should NOT show separate Hive tab when Home tab is present', () => {
+      render(
+        <BottomNav
+          {...defaultProps}
+          homeDevices={mockHomeDevices}
+          hiveConnected={true}
+          services={{
+            hue: { enabled: true },
+            hive: { enabled: true },
+          }}
+        />
+      );
+
+      // Home tab should be present
+      expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
+      // Hive tab should NOT be present (replaced by Home)
+      expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
+    });
+  });
 });

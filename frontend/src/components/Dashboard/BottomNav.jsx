@@ -60,7 +60,9 @@ export const BottomNav = ({
   services,
   hueConnected = false,
   hiveConnected = false,
+  homeDevices = [],
 }) => {
+  const isHomeSelected = selectedId === 'home';
   const isZonesSelected = selectedId === 'zones';
   const isAutomationsSelected = selectedId === 'automations';
   const isHiveSelected = selectedId === 'hive';
@@ -73,10 +75,24 @@ export const BottomNav = ({
 
   // Combined visibility: must be both enabled in settings AND connected
   const showHueTabs = hueEnabled && hueConnected;
-  const showHiveTab = hiveEnabled && hiveConnected;
+  // Hive tab is replaced by Home tab when homeDevices is provided
+  const showHiveTab = hiveEnabled && hiveConnected && homeDevices.length === 0;
+  // Show Home tab when there are home-level devices
+  const showHomeTab = homeDevices.length > 0;
 
   return (
     <nav className="bottom-nav" ref={navRef}>
+      {/* Home tab - shown when there are home-level devices */}
+      {showHomeTab && (
+        <button
+          className={`nav-tab ${isHomeSelected ? 'active' : ''}`}
+          onClick={() => onSelect('home')}
+        >
+          <Home size={NAV_ICON_SIZE} className="nav-tab-icon" />
+          <span className="nav-tab-label">{UI_TEXT.NAV_HOME}</span>
+        </button>
+      )}
+
       {/* Rooms - only shown when Hue is enabled AND connected */}
       {showHueTabs &&
         rooms.map((room) => {
@@ -153,4 +169,11 @@ BottomNav.propTypes = {
   }),
   hueConnected: PropTypes.bool,
   hiveConnected: PropTypes.bool,
+  homeDevices: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      type: PropTypes.string.isRequired,
+      name: PropTypes.string,
+    })
+  ),
 };

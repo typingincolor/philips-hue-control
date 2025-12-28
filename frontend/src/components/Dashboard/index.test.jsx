@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LightControl } from './index';
+import { Dashboard } from './index';
 import {
   getDashboardFromHome,
   updateLight,
@@ -96,7 +96,7 @@ vi.mock('../../hooks/useWebSocket', () => ({
 const mockAlert = vi.fn();
 global.alert = mockAlert;
 
-describe('LightControl', () => {
+describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDashboardData = JSON.parse(JSON.stringify(baseDashboard));
@@ -140,13 +140,13 @@ describe('LightControl', () => {
     it('should show loading state initially', async () => {
       getDashboardFromHome.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       expect(screen.getByText('Connecting to bridge...')).toBeInTheDocument();
     });
 
     it('should hide loading when dashboard loads', async () => {
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.queryByText('Connecting to bridge...')).not.toBeInTheDocument();
@@ -158,7 +158,7 @@ describe('LightControl', () => {
     it('should show error state when fetch fails', async () => {
       getDashboardFromHome.mockRejectedValue(new Error('Network error'));
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText(/Connection failed/)).toBeInTheDocument();
@@ -170,7 +170,7 @@ describe('LightControl', () => {
       const onLogout = vi.fn();
       getDashboardFromHome.mockRejectedValue(new Error('Network error'));
 
-      render(<LightControl sessionToken="test-token" onLogout={onLogout} />);
+      render(<Dashboard sessionToken="test-token" onLogout={onLogout} />);
 
       await waitFor(() => {
         expect(screen.getByText(/Connection failed/)).toBeInTheDocument();
@@ -185,7 +185,7 @@ describe('LightControl', () => {
     it('should fetch dashboard in demo mode', async () => {
       mockIsDemoMode = true;
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(getDashboardFromHome).toHaveBeenCalledWith(true);
@@ -205,7 +205,7 @@ describe('LightControl', () => {
         error: null,
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -222,7 +222,7 @@ describe('LightControl', () => {
         error: null,
       };
 
-      render(<LightControl sessionToken="test-token" onLogout={() => {}} />);
+      render(<Dashboard sessionToken="test-token" onLogout={() => {}} />);
 
       await waitFor(() => {
         // Should show 'Connected' status when WebSocket is connected
@@ -233,7 +233,7 @@ describe('LightControl', () => {
 
   describe('Dark theme', () => {
     it('should add dark-theme class to body on mount', async () => {
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(document.body.classList.contains('dark-theme')).toBe(true);
@@ -241,7 +241,7 @@ describe('LightControl', () => {
     });
 
     it('should remove dark-theme class from body on unmount', async () => {
-      const { unmount } = render(<LightControl sessionToken="test-token" />);
+      const { unmount } = render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(document.body.classList.contains('dark-theme')).toBe(true);
@@ -255,7 +255,7 @@ describe('LightControl', () => {
 
   describe('Room navigation', () => {
     it('should select first room by default', async () => {
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         // First room's lights should be visible
@@ -265,7 +265,7 @@ describe('LightControl', () => {
 
     it('should switch rooms when nav tab is clicked', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -283,7 +283,7 @@ describe('LightControl', () => {
   describe('Toggle light', () => {
     it('should toggle light on click', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Lamp')).toBeInTheDocument();
@@ -308,7 +308,7 @@ describe('LightControl', () => {
       const user = userEvent.setup();
       updateLight.mockRejectedValue(new Error('Bridge unreachable'));
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Lamp')).toBeInTheDocument();
@@ -327,7 +327,7 @@ describe('LightControl', () => {
   describe('Toggle room (via drawer)', () => {
     it('should toggle all lights in room when room toggle clicked in drawer', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -355,7 +355,7 @@ describe('LightControl', () => {
       const user = userEvent.setup();
       updateRoomLights.mockRejectedValue(new Error('Room toggle failed'));
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -377,7 +377,7 @@ describe('LightControl', () => {
   describe('Scene activation (via drawer)', () => {
     it('should activate scene when selected from drawer', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -399,7 +399,7 @@ describe('LightControl', () => {
 
     it('should update lights after scene activation', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -421,7 +421,7 @@ describe('LightControl', () => {
       const user = userEvent.setup();
       activateSceneV1.mockRejectedValue(new Error('Scene not found'));
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -442,7 +442,7 @@ describe('LightControl', () => {
 
   describe('TopToolbar', () => {
     it('should display summary stats', async () => {
-      render(<LightControl sessionToken="test-token" onLogout={() => {}} />);
+      render(<Dashboard sessionToken="test-token" onLogout={() => {}} />);
 
       await waitFor(() => {
         // Check that stats are rendered in toolbar
@@ -457,7 +457,7 @@ describe('LightControl', () => {
       const user = userEvent.setup();
       const onLogout = vi.fn();
 
-      render(<LightControl sessionToken="test-token" onLogout={onLogout} />);
+      render(<Dashboard sessionToken="test-token" onLogout={onLogout} />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -477,7 +477,7 @@ describe('LightControl', () => {
     it('should render MotionZones component', async () => {
       mockDashboardData.motionZones = [{ id: 'motion-1', name: 'Hallway', motionDetected: true }];
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -491,7 +491,7 @@ describe('LightControl', () => {
   describe('getLightByUuid helper', () => {
     it('should find light across rooms', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Lamp')).toBeInTheDocument();
@@ -513,7 +513,7 @@ describe('LightControl', () => {
         throw new Error('Light not found');
       });
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Lamp')).toBeInTheDocument();
@@ -535,7 +535,7 @@ describe('LightControl', () => {
         rooms: [],
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         // Should not crash, component should render
@@ -546,7 +546,7 @@ describe('LightControl', () => {
     it('should handle null dashboard gracefully', async () => {
       getDashboardFromHome.mockResolvedValue(null);
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       // Should show loading since dashboard is null
       await waitFor(() => {
@@ -558,7 +558,7 @@ describe('LightControl', () => {
   describe('Settings navigation', () => {
     it('should open settings page when gear icon clicked', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -574,7 +574,7 @@ describe('LightControl', () => {
 
     it('should close settings page when gear icon clicked while settings is open', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -597,7 +597,7 @@ describe('LightControl', () => {
 
     it('should close settings page when nav tab clicked', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -623,7 +623,7 @@ describe('LightControl', () => {
 
     it('should close settings page when back button clicked', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();

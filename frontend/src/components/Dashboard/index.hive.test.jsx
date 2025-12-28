@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LightControl } from './index';
+import { Dashboard } from './index';
 import { UI_TEXT } from '../../constants/uiText';
 
 // Create mutable reference for mock API
@@ -100,7 +100,7 @@ vi.mock('../../hooks/useHive', () => ({
   useHive: () => mockHiveState,
 }));
 
-describe('LightControl - Hive Integration', () => {
+describe('Dashboard - Hive Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDashboardData = { ...baseDashboard };
@@ -132,18 +132,18 @@ describe('LightControl - Hive Integration', () => {
   });
 
   describe('Navigation', () => {
-    it('should hide Hive tab when not connected', async () => {
-      render(<LightControl sessionToken="test-token" />);
+    it('should hide Home tab when Hive not connected', async () => {
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
       });
 
-      // Hive tab should NOT be visible when not connected (connection-based visibility)
-      expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
+      // Home tab should NOT be visible when Hive not connected (no home devices)
+      expect(screen.queryByText(UI_TEXT.NAV_HOME)).not.toBeInTheDocument();
     });
 
-    it('should show Hive tab when connected', async () => {
+    it('should show Home tab when Hive connected', async () => {
       mockHiveState = {
         ...mockHiveState,
         isConnected: true,
@@ -151,14 +151,14 @@ describe('LightControl - Hive Integration', () => {
         schedules: mockHiveSchedules,
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
     });
 
-    it('should navigate to Hive view when Hive tab is clicked', async () => {
+    it('should navigate to Home view when Home tab is clicked', async () => {
       const user = userEvent.setup();
       mockHiveState = {
         ...mockHiveState,
@@ -167,21 +167,21 @@ describe('LightControl - Hive Integration', () => {
         schedules: mockHiveSchedules,
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
-        // Should show current temperature
+        // Should show current temperature (Hive is inside Home view)
         expect(screen.getByText('19.5°')).toBeInTheDocument();
       });
     });
 
-    it('should highlight Hive tab when selected', async () => {
+    it('should highlight Home tab when selected', async () => {
       const user = userEvent.setup();
       mockHiveState = {
         ...mockHiveState,
@@ -190,19 +190,25 @@ describe('LightControl - Hive Integration', () => {
         schedules: mockHiveSchedules,
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
-      await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+      // Wait for Home tab to appear and click it
+      const homeTab = await waitFor(() => {
+        const tab = document.querySelector('.nav-tab');
+        expect(tab).toBeInTheDocument();
+        expect(tab).toHaveTextContent(UI_TEXT.NAV_HOME);
+        return tab;
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(homeTab);
 
-      const hiveTab = screen.getByText(UI_TEXT.NAV_HIVE).closest('.nav-tab');
-      expect(hiveTab).toHaveClass('active');
+      // Verify tab is active
+      await waitFor(() => {
+        expect(homeTab).toHaveClass('active');
+      });
     });
 
-    it('should hide Hive tab after disconnect (connection-based visibility)', async () => {
+    it('should hide Home tab after disconnect (connection-based visibility)', async () => {
       const disconnectFn = vi.fn();
       mockHiveState = {
         ...mockHiveState,
@@ -212,10 +218,10 @@ describe('LightControl - Hive Integration', () => {
         disconnect: disconnectFn,
       };
 
-      const { rerender } = render(<LightControl sessionToken="test-token" />);
+      const { rerender } = render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
       // Simulate disconnect
@@ -226,11 +232,11 @@ describe('LightControl - Hive Integration', () => {
         schedules: [],
       };
 
-      rerender(<LightControl sessionToken="test-token" />);
+      rerender(<Dashboard sessionToken="test-token" />);
 
-      // Hive tab should be hidden after disconnect (connection-based visibility)
+      // Home tab should be hidden after disconnect (no home devices)
       await waitFor(() => {
-        expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
+        expect(screen.queryByText(UI_TEXT.NAV_HOME)).not.toBeInTheDocument();
       });
     });
   });
@@ -247,13 +253,13 @@ describe('LightControl - Hive Integration', () => {
 
     it('should display current temperature', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByText('19.5°')).toBeInTheDocument();
@@ -262,13 +268,13 @@ describe('LightControl - Hive Integration', () => {
 
     it('should display heating status indicator', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS)).toBeInTheDocument();
@@ -277,13 +283,13 @@ describe('LightControl - Hive Integration', () => {
 
     it('should display hot water status indicator', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByLabelText(UI_TEXT.HIVE_HOT_WATER_STATUS)).toBeInTheDocument();
@@ -292,13 +298,13 @@ describe('LightControl - Hive Integration', () => {
 
     it('should display schedule list', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByText('Morning Warmup')).toBeInTheDocument();
@@ -308,13 +314,13 @@ describe('LightControl - Hive Integration', () => {
 
     it('should show heating indicator as active when heating is on', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         const heatingIndicator = screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS);
@@ -326,7 +332,7 @@ describe('LightControl - Hive Integration', () => {
   describe('Settings Integration', () => {
     it('should pass Hive state to SettingsPage', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -344,7 +350,7 @@ describe('LightControl - Hive Integration', () => {
 
     it('should show link to Hive tab in settings when not connected', async () => {
       const user = userEvent.setup();
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -366,7 +372,7 @@ describe('LightControl - Hive Integration', () => {
         schedules: mockHiveSchedules,
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -381,7 +387,7 @@ describe('LightControl - Hive Integration', () => {
   });
 
   describe('Loading and Error States', () => {
-    it('should show loading state in Hive view', async () => {
+    it('should show loading state in Home view', async () => {
       const user = userEvent.setup();
       mockHiveState = {
         ...mockHiveState,
@@ -391,20 +397,20 @@ describe('LightControl - Hive Integration', () => {
         schedules: [],
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByText(UI_TEXT.HIVE_LOADING)).toBeInTheDocument();
       });
     });
 
-    it('should show error state in Hive view', async () => {
+    it('should show error state in Home view', async () => {
       const user = userEvent.setup();
       mockHiveState = {
         ...mockHiveState,
@@ -414,13 +420,13 @@ describe('LightControl - Hive Integration', () => {
         schedules: [],
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByText(/Failed to fetch/)).toBeInTheDocument();
@@ -437,13 +443,13 @@ describe('LightControl - Hive Integration', () => {
         schedules: [],
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: UI_TEXT.RETRY })).toBeInTheDocument();
@@ -462,13 +468,13 @@ describe('LightControl - Hive Integration', () => {
         refresh: refreshFn,
       };
 
-      render(<LightControl sessionToken="test-token" />);
+      render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(UI_TEXT.NAV_HIVE));
+      await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: UI_TEXT.RETRY })).toBeInTheDocument();

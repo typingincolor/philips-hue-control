@@ -3191,6 +3191,43 @@ body.dark-theme {
    HIVE VIEW STYLES
    ============================================== */
 
+/* Home View (for home-level devices) */
+.home-view {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px var(--min-edge-spacing);
+  box-sizing: border-box;
+  width: 100%;
+  height: fit-content;
+}
+
+.home-view-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.home-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.home-empty-message {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.home-devices {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .hive-view {
   max-width: 800px;
   margin: 0 auto;
@@ -3363,7 +3400,6 @@ body.dark-theme {
 .settings-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: var(--bg-primary);
   padding: 16px;
 }
@@ -3406,8 +3442,6 @@ body.dark-theme {
 }
 
 .settings-content {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;

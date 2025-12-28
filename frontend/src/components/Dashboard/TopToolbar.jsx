@@ -22,6 +22,23 @@ export const TopToolbar = ({
   const { isDemoMode } = useDemoMode();
   const { lightsOn = 0, roomCount = 0, sceneCount = 0 } = summary;
   const [showWeatherTooltip, setShowWeatherTooltip] = useState(false);
+  const [weatherDropdownOpen, setWeatherDropdownOpen] = useState(false);
+
+  // Handle weather click - show dropdown if weather available, otherwise open settings
+  const handleWeatherClick = () => {
+    if (weather?.current && location) {
+      // Toggle dropdown when weather is available
+      setWeatherDropdownOpen((prev) => {
+        const newState = !prev;
+        // Clear hover tooltip when toggling dropdown
+        setShowWeatherTooltip(false);
+        return newState;
+      });
+    } else {
+      // Open settings for no location, loading, or error states
+      onOpenSettings?.();
+    }
+  };
 
   // Determine connection status text and style
   const getConnectionStatus = () => {
@@ -65,7 +82,7 @@ export const TopToolbar = ({
         {/* Weather display */}
         <div
           className="toolbar-weather-container"
-          onMouseEnter={() => setShowWeatherTooltip(true)}
+          onMouseEnter={() => !weatherDropdownOpen && setShowWeatherTooltip(true)}
           onMouseLeave={() => setShowWeatherTooltip(false)}
         >
           <WeatherDisplay
@@ -74,9 +91,9 @@ export const TopToolbar = ({
             isLoading={weatherLoading}
             error={weatherError}
             units={units}
-            onClick={onOpenSettings}
+            onClick={handleWeatherClick}
           />
-          {showWeatherTooltip && weather && location && (
+          {(showWeatherTooltip || weatherDropdownOpen) && weather && location && (
             <WeatherTooltip weather={weather} location={location} units={units} />
           )}
         </div>

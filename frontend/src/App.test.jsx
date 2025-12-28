@@ -30,8 +30,8 @@ vi.mock('./components/Authentication', () => ({
   Authentication: () => <div data-testid="authentication">Authentication</div>,
 }));
 
-vi.mock('./components/LightControl', () => ({
-  LightControl: () => <div data-testid="light-control">Light Control</div>,
+vi.mock('./components/Dashboard', () => ({
+  Dashboard: () => <div data-testid="dashboard">Dashboard</div>,
 }));
 
 // Mock localStorage
@@ -57,7 +57,7 @@ Object.defineProperty(global, 'localStorage', {
 });
 
 // Mock SettingsPage component for settings step testing
-vi.mock('./components/LightControl/SettingsPage', () => ({
+vi.mock('./components/Dashboard/SettingsPage', () => ({
   SettingsPage: ({ onEnableHue }) => (
     <div data-testid="settings-page">
       Settings Page
@@ -136,10 +136,10 @@ describe('App - Login Page Flicker Fix', () => {
     expect(screen.queryByTestId('bridge-discovery')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authentication')).not.toBeInTheDocument();
 
-    // Initially shows restoring state, then transitions to light-control
+    // Initially shows restoring state, then transitions to dashboard
     // The key is that login pages (discovery/auth) NEVER appear
     await waitFor(() => {
-      expect(screen.getByTestId('light-control')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard')).toBeInTheDocument();
     });
 
     // Verify login pages still didn't appear
@@ -153,7 +153,7 @@ describe('App - Login Page Flicker Fix', () => {
 
     // Should show settings page (deferred service activation)
     expect(screen.getByTestId('settings-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
   });
 
   it('should show settings page when session is EXPIRED', () => {
@@ -169,7 +169,7 @@ describe('App - Login Page Flicker Fix', () => {
 
     // Should show settings page (deferred service activation)
     expect(screen.getByTestId('settings-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
   });
 
   it('should handle missing session fields gracefully', () => {
@@ -182,6 +182,6 @@ describe('App - Login Page Flicker Fix', () => {
 
     // Should show settings page (deferred service activation)
     expect(screen.getByTestId('settings-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
   });
 });

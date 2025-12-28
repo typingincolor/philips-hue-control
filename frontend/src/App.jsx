@@ -2,8 +2,8 @@ import { useHueBridge } from './hooks/useHueBridge';
 import { DemoModeProvider, useDemoMode } from './context/DemoModeContext';
 import { BridgeDiscovery } from './components/BridgeDiscovery';
 import { Authentication } from './components/Authentication';
-import { LightControl } from './components/LightControl';
-import { SettingsPage } from './components/LightControl/SettingsPage';
+import { Dashboard } from './components/Dashboard';
+import { SettingsPage } from './components/Dashboard/SettingsPage';
 import { UI_TEXT } from './constants/uiText';
 import './App.css';
 
@@ -100,7 +100,7 @@ function AppContent() {
         )}
 
         {effectiveStep === 'connected' && (
-          <LightControl sessionToken={effectiveSessionToken} onLogout={reset} />
+          <Dashboard sessionToken={effectiveSessionToken} onLogout={reset} />
         )}
       </main>
 

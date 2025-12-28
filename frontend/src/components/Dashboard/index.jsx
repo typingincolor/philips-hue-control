@@ -22,12 +22,13 @@ import { RoomContent } from './RoomContent';
 import { ZonesView } from './ZonesView';
 import { AutomationsView } from './AutomationsView';
 import { HiveView } from './HiveView';
+import { HomeView } from './HomeView';
 import { MotionZones } from '../MotionZones';
 import { SettingsPage } from './SettingsPage';
 
 const logger = createLogger('Dashboard');
 
-export const LightControl = ({ sessionToken, onLogout }) => {
+export const Dashboard = ({ sessionToken, onLogout }) => {
   const { isDemoMode, api } = useDemoMode();
 
   // WebSocket connection (disabled in demo mode)
@@ -394,13 +395,14 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only fetch when navigating to automations
   }, [selectedId]);
 
-  // Check Hive connection when navigating to hive tab
+  // Check Hive connection on mount (auto-connect if credentials are saved)
   useEffect(() => {
-    if (selectedId === 'hive' && !hiveConnected && !hiveConnecting && !hiveRequires2fa) {
+    const hiveEnabled = settings.services?.hive?.enabled;
+    if (hiveEnabled && !hiveConnected && !hiveConnecting && !hiveRequires2fa) {
       hiveCheckConnection();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only check when navigating to hive
-  }, [selectedId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only check on mount and when settings change
+  }, [settings.services?.hive?.enabled]);
 
   const handleTriggerAutomation = async (automationId) => {
     setTriggeringId(automationId);
@@ -418,9 +420,18 @@ export const LightControl = ({ sessionToken, onLogout }) => {
 
   // Get the selected room from dashboard
   const selectedRoom =
-    selectedId !== 'zones' && selectedId !== 'automations' && selectedId !== 'hive'
+    selectedId !== 'zones' && selectedId !== 'automations' && selectedId !== 'hive' && selectedId !== 'home'
       ? dashboard?.rooms?.find((r) => r.id === selectedId)
       : null;
+
+  // Compute home-level devices (devices not associated with a specific room)
+  // For now, Hive devices are home-level when Hive is enabled and connected
+  const homeDevices = hiveConnected
+    ? [
+        { id: 'hive:heating', type: 'thermostat', name: 'Heating', source: 'hive' },
+        { id: 'hive:hotwater', type: 'hotWater', name: 'Hot Water', source: 'hive' },
+      ]
+    : [];
 
   // Loading state
   if (loading && !dashboard) {
@@ -473,7 +484,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
             onDetectLocation={detectLocation}
             isDetecting={isDetecting}
             locationError={locationError}
-            hueConnected={true} // Always true here - LightControl only renders when Hue is connected
+            hueConnected={true} // Always true here - Dashboard only renders when Hue is connected
             hiveConnected={hiveConnected}
             onHiveDisconnect={hiveDisconnect}
             onEnableHive={() => {
@@ -495,6 +506,24 @@ export const LightControl = ({ sessionToken, onLogout }) => {
               // Update settings to mark as disabled
               updateSettings({ services: { hive: { enabled: false } } });
             }}
+          />
+        ) : selectedId === 'home' ? (
+          <HomeView
+            homeDevices={homeDevices}
+            hiveConnected={hiveConnected}
+            hiveStatus={hiveStatus}
+            hiveSchedules={hiveSchedules}
+            hiveLoading={hiveLoading}
+            hiveError={hiveError}
+            onHiveRetry={hiveRefresh}
+            onHiveConnect={hiveConnect}
+            onHiveVerify2fa={hiveSubmit2fa}
+            onHiveCancel2fa={hiveCancel2fa}
+            onHiveClearError={hiveClearError}
+            hiveRequires2fa={hiveRequires2fa}
+            hiveConnecting={hiveConnecting}
+            hiveVerifying={hiveVerifying}
+            hivePendingUsername={hivePendingUsername}
           />
         ) : selectedId === 'hive' ? (
           <HiveView
@@ -554,14 +583,15 @@ export const LightControl = ({ sessionToken, onLogout }) => {
           setSettingsOpen(false);
         }}
         services={settings.services}
-        hueConnected={true} // Always true here - LightControl only renders when Hue is connected
+        hueConnected={true} // Always true here - Dashboard only renders when Hue is connected
         hiveConnected={hiveConnected}
+        homeDevices={homeDevices}
       />
     </div>
   );
 };
 
-LightControl.propTypes = {
+Dashboard.propTypes = {
   sessionToken: PropTypes.string.isRequired,
   onLogout: PropTypes.func,
 };

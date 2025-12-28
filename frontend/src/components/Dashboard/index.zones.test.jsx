@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LightControl } from './index';
+import { Dashboard } from './index';
 import {
   getDashboardFromHome,
   updateLight,
@@ -82,7 +82,7 @@ vi.mock('../../hooks/useWebSocket', () => ({
   }),
 }));
 
-describe('LightControl - Zones (Navigation)', () => {
+describe('Dashboard - Zones (Navigation)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDashboardData = { ...baseDashboard };
@@ -95,7 +95,7 @@ describe('LightControl - Zones (Navigation)', () => {
   });
 
   it('should render Zones tab in bottom nav when zones are present', async () => {
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       // Look for Zones tab in bottom navigation
@@ -105,7 +105,7 @@ describe('LightControl - Zones (Navigation)', () => {
 
   it('should show zones view when Zones tab is clicked', async () => {
     const user = userEvent.setup();
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     // Wait for dashboard to load
     await waitFor(() => {
@@ -123,7 +123,7 @@ describe('LightControl - Zones (Navigation)', () => {
 
   it('should display zone stats in zones view', async () => {
     const user = userEvent.setup();
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Zones')).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('LightControl - Zones (Navigation)', () => {
   it('should not render Zones tab when no zones exist', async () => {
     mockDashboardData = { ...baseDashboard, zones: [] };
 
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       // Dashboard should load - check for room name in nav
@@ -156,7 +156,7 @@ describe('LightControl - Zones (Navigation)', () => {
     delete dashboardWithoutZones.zones;
     mockDashboardData = dashboardWithoutZones;
 
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Living Room')).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('LightControl - Zones (Navigation)', () => {
 
   it('should render zone scenes in zones view', async () => {
     const user = userEvent.setup();
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Zones')).toBeInTheDocument();
@@ -182,7 +182,7 @@ describe('LightControl - Zones (Navigation)', () => {
 
   it('should render zone toggle buttons in zones view', async () => {
     const user = userEvent.setup();
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Zones')).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('LightControl - Zones (Navigation)', () => {
   it('should call toggleZone when zone Off button is clicked', async () => {
     const user = userEvent.setup();
 
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Zones')).toBeInTheDocument();
@@ -228,7 +228,7 @@ describe('LightControl - Zones (Navigation)', () => {
   });
 
   it('should show zone count badge on Zones tab', async () => {
-    render(<LightControl sessionToken="test-token" />);
+    render(<Dashboard sessionToken="test-token" />);
 
     await waitFor(() => {
       expect(screen.getByText('Zones')).toBeInTheDocument();
