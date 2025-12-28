@@ -66,21 +66,21 @@ Implemented a unified "Home" abstraction layer that decouples the application fr
 
 ### Changes Reviewed
 
-| File | Assessment |
-|------|------------|
-| `backend/models/Device.js` | Clean model with validation. Globally unique IDs via `serviceId:deviceId`. |
-| `backend/models/Home.js` | Good stats calculation. Factory functions for rooms and home. |
-| `backend/services/homeService.js` | Clean aggregation logic. Handles plugin errors gracefully. |
-| `backend/services/roomMappingService.js` | JSON persistence. Supports room merging. |
-| `backend/services/deviceNormalizer.js` | Individual normalizers kept, transformation logic moved to services. |
-| `backend/services/hiveService.js` | Added `transformStatusToDevices()` method. |
-| `backend/services/dashboardService.js` | Added `transformRoomToHomeFormat()` method. |
-| `backend/routes/v2/home.js` | REST endpoints for Home API. |
-| `frontend/src/services/homeApi.js` | Clean fetch-based API client. |
-| `frontend/src/hooks/useHome.js` | Standard React hook pattern. |
-| `frontend/src/components/LightControl/DeviceTile.jsx` | Universal device tile with type-specific rendering. |
-| Plugin files | Properly delegate to service transformation methods. |
-| Test files | Comprehensive coverage. Mocks updated for new methods. |
+| File                                                  | Assessment                                                                 |
+| ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| `backend/models/Device.js`                            | Clean model with validation. Globally unique IDs via `serviceId:deviceId`. |
+| `backend/models/Home.js`                              | Good stats calculation. Factory functions for rooms and home.              |
+| `backend/services/homeService.js`                     | Clean aggregation logic. Handles plugin errors gracefully.                 |
+| `backend/services/roomMappingService.js`              | JSON persistence. Supports room merging.                                   |
+| `backend/services/deviceNormalizer.js`                | Individual normalizers kept, transformation logic moved to services.       |
+| `backend/services/hiveService.js`                     | Added `transformStatusToDevices()` method.                                 |
+| `backend/services/dashboardService.js`                | Added `transformRoomToHomeFormat()` method.                                |
+| `backend/routes/v2/home.js`                           | REST endpoints for Home API.                                               |
+| `frontend/src/services/homeApi.js`                    | Clean fetch-based API client.                                              |
+| `frontend/src/hooks/useHome.js`                       | Standard React hook pattern.                                               |
+| `frontend/src/components/LightControl/DeviceTile.jsx` | Universal device tile with type-specific rendering.                        |
+| Plugin files                                          | Properly delegate to service transformation methods.                       |
+| Test files                                            | Comprehensive coverage. Mocks updated for new methods.                     |
 
 ### Test Results
 
@@ -92,6 +92,7 @@ Implemented a unified "Home" abstraction layer that decouples the application fr
 ### Issues Found
 
 Fixed during review:
+
 - Lint warnings for unused parameters in test mocks (fixed with underscore prefix)
 
 ### Non-Blocking Suggestions

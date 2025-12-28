@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { load } from 'js-yaml';
 import swaggerUi from 'swagger-ui-express';
 import v1Routes from './routes/v1/index.js';
+import v2Routes from './routes/v2/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { detectDemoMode } from './middleware/demoMode.js';
 import { rateLimit, discoveryRateLimit } from './middleware/rateLimit.js';
@@ -54,6 +55,15 @@ app.use('/api/v1', rateLimit);
 
 // Mount v1 API routes
 app.use('/api/v1', v1Routes);
+
+// Demo mode detection for v2 routes
+app.use('/api/v2', detectDemoMode);
+
+// Rate limiting for v2 API routes
+app.use('/api/v2', rateLimit);
+
+// Mount v2 API routes
+app.use('/api/v2', v2Routes);
 
 // Discovery endpoint (no bridge IP needed, stricter rate limit)
 app.get('/api/discovery', discoveryRateLimit, async (req, res) => {

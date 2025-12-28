@@ -129,13 +129,13 @@ Backend-based demo allows testing without Hue Bridge:
 
 ### V2 API (Unified Home)
 
-| Method | Endpoint                            | Purpose               |
-| ------ | ----------------------------------- | --------------------- |
-| GET    | `/api/v2/home`                      | Full home structure   |
-| GET    | `/api/v2/home/rooms/:id`            | Single room           |
-| GET    | `/api/v2/home/devices`              | Home-level devices    |
-| PUT    | `/api/v2/home/devices/:id`          | Update device         |
-| POST   | `/api/v2/home/scenes/:id/activate`  | Activate scene        |
+| Method | Endpoint                           | Purpose             |
+| ------ | ---------------------------------- | ------------------- |
+| GET    | `/api/v2/home`                     | Full home structure |
+| GET    | `/api/v2/home/rooms/:id`           | Single room         |
+| GET    | `/api/v2/home/devices`             | Home-level devices  |
+| PUT    | `/api/v2/home/devices/:id`         | Update device       |
+| POST   | `/api/v2/home/scenes/:id/activate` | Activate scene      |
 
 **Device ID Format:** `serviceId:deviceId` (e.g., `hue:light-1`, `hive:heating`)
 
