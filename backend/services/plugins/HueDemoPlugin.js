@@ -169,6 +169,58 @@ class HueDemoPluginClass extends ServicePlugin {
   }
 
   /**
+   * Update all devices in a room
+   * @param {string} roomId - Room ID
+   * @param {Object} state - New state to apply
+   * @returns {Promise<Object>} Result object with updatedLights
+   */
+  async updateRoomDevices(roomId, state) {
+    // Get room from mock data
+    const status = await this.getStatus();
+    const room = status.rooms?.find((r) => r.id === roomId);
+
+    if (!room) {
+      throw new Error(`Room not found: ${roomId}`);
+    }
+
+    // Update all lights in room
+    const lightUpdates = room.lights.map((light) => ({
+      lightId: light.id,
+      state,
+    }));
+
+    await mockHueClient.updateLights(DEMO_BRIDGE_IP, DEMO_USERNAME, lightUpdates);
+
+    return { success: true, updatedLights: room.lights };
+  }
+
+  /**
+   * Update all devices in a zone
+   * @param {string} zoneId - Zone ID
+   * @param {Object} state - New state to apply
+   * @returns {Promise<Object>} Result object with updatedLights
+   */
+  async updateZoneDevices(zoneId, state) {
+    // Get zone from mock data
+    const status = await this.getStatus();
+    const zone = status.zones?.find((z) => z.id === zoneId);
+
+    if (!zone) {
+      throw new Error(`Zone not found: ${zoneId}`);
+    }
+
+    // Update all lights in zone
+    const lightUpdates = zone.lights.map((light) => ({
+      lightId: light.id,
+      state,
+    }));
+
+    await mockHueClient.updateLights(DEMO_BRIDGE_IP, DEMO_USERNAME, lightUpdates);
+
+    return { success: true, updatedLights: zone.lights };
+  }
+
+  /**
    * Detect changes between previous and current status
    */
   detectChanges(previous, current) {

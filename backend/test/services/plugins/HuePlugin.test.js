@@ -390,11 +390,12 @@ describe('HuePlugin', () => {
 
       const result = await HuePlugin.updateDevice('light-1', { on: false, brightness: 50 });
 
+      // State should be converted to V2 format
       expect(mockClient.updateLight).toHaveBeenCalledWith(
         '192.168.1.100',
         'test-username',
         'light-1',
-        { on: false, brightness: 50 }
+        { on: { on: false }, dimming: { brightness: 50 } }
       );
       expect(result.success).toBe(true);
     });

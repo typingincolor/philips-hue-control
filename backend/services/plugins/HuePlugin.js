@@ -8,6 +8,7 @@ import sessionManager from '../sessionManager.js';
 import dashboardService from '../dashboardService.js';
 import { getHueClient, getHueClientForBridge } from '../hueClientFactory.js';
 import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../mockData.js';
+import { convertToHueState } from '../../utils/stateConversion.js';
 import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger('HUE_PLUGIN');
@@ -89,7 +90,9 @@ class HuePluginClass extends ServicePlugin {
     if (demoMode) {
       return true;
     }
-    return this._bridgeIp && sessionManager.hasBridgeCredentials(this._bridgeIp);
+    // Check stored bridgeIp first, fall back to any stored credentials
+    const bridgeIp = this._bridgeIp || sessionManager.getDefaultBridgeIp();
+    return bridgeIp && sessionManager.hasBridgeCredentials(bridgeIp);
   }
 
   /**
@@ -99,9 +102,10 @@ class HuePluginClass extends ServicePlugin {
     if (demoMode) {
       return { connected: true, bridgeIp: DEMO_BRIDGE_IP };
     }
+    const bridgeIp = this._bridgeIp || sessionManager.getDefaultBridgeIp();
     return {
       connected: this.isConnected(false),
-      bridgeIp: this._bridgeIp,
+      bridgeIp,
     };
   }
 
@@ -113,19 +117,21 @@ class HuePluginClass extends ServicePlugin {
       return dashboardService.getDashboard(DEMO_BRIDGE_IP, DEMO_USERNAME);
     }
 
-    const username = sessionManager.getBridgeCredentials(this._bridgeIp);
+    const bridgeIp = this._bridgeIp || sessionManager.getDefaultBridgeIp();
+    const username = sessionManager.getBridgeCredentials(bridgeIp);
     if (!username) {
       throw new Error('Not connected');
     }
 
-    return dashboardService.getDashboard(this._bridgeIp, username);
+    return dashboardService.getDashboard(bridgeIp, username);
   }
 
   /**
    * Check if credentials exist for the current bridge
    */
   hasCredentials() {
-    return this._bridgeIp && sessionManager.hasBridgeCredentials(this._bridgeIp);
+    const bridgeIp = this._bridgeIp || sessionManager.getDefaultBridgeIp();
+    return bridgeIp && sessionManager.hasBridgeCredentials(bridgeIp);
   }
 
   /**
@@ -270,7 +276,9 @@ class HuePluginClass extends ServicePlugin {
     const username = sessionManager.getBridgeCredentials(bridgeIp);
     const client = getHueClientForBridge(bridgeIp);
 
-    return client.updateLight(bridgeIp, username, deviceId, state);
+    // Convert simplified state to Hue API v2 format
+    const hueState = convertToHueState(state);
+    return client.updateLight(bridgeIp, username, deviceId, hueState);
   }
 
   /**
@@ -311,9 +319,11 @@ class HuePluginClass extends ServicePlugin {
       throw new Error(`Room not found: ${roomId}`);
     }
 
+    // Convert simplified state to Hue API v2 format
+    const hueState = convertToHueState(state);
     const lightUpdates = room.lights.map((light) => ({
       lightId: light.id,
-      state,
+      state: hueState,
     }));
 
     await client.updateLights(bridgeIp, username, lightUpdates);
@@ -343,9 +353,11 @@ class HuePluginClass extends ServicePlugin {
       throw new Error(`Zone not found: ${zoneId}`);
     }
 
+    // Convert simplified state to Hue API v2 format
+    const hueState = convertToHueState(state);
     const lightUpdates = zone.lights.map((light) => ({
       lightId: light.id,
-      state,
+      state: hueState,
     }));
 
     await client.updateLights(bridgeIp, username, lightUpdates);
