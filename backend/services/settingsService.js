@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getMockSettings } from './mockData.js';
 import { createLogger } from '../utils/logger.js';
+import ServiceRegistry from './ServiceRegistry.js';
 
 const logger = createLogger('SETTINGS');
 
@@ -17,7 +18,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const VALID_UNITS = ['celsius', 'fahrenheit'];
-const VALID_SERVICES = ['hue', 'hive'];
 
 // In-memory storage: sessionId -> settings
 const sessionSettings = new Map();
@@ -59,8 +59,10 @@ const validateServices = (services) => {
     throw new Error('Invalid services: must be an object');
   }
 
+  const validServices = ServiceRegistry.getIds();
+
   for (const [serviceName, config] of Object.entries(services)) {
-    if (!VALID_SERVICES.includes(serviceName)) {
+    if (!validServices.includes(serviceName)) {
       throw new Error(`Invalid services structure: unknown service '${serviceName}'`);
     }
 

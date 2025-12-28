@@ -8,6 +8,7 @@ import hiveCredentialsManager, { HIVE_DEMO_CREDENTIALS } from './hiveCredentials
 import hiveAuthService from './hiveAuthService.js';
 import { getMockHiveStatus, getMockHiveSchedules } from './mockData.js';
 import { createLogger } from '../utils/logger.js';
+import { normalizeHiveThermostat, normalizeHiveHotWater } from './deviceNormalizer.js';
 
 const logger = createLogger('HIVE');
 
@@ -368,6 +369,25 @@ class HiveService {
     logger.debug('Transformed Hive schedules', { count: schedules.length });
 
     return schedules;
+  }
+
+  /**
+   * Transform Hive status to normalized Home devices
+   * @param {Object} status - Hive status object with heating and hotWater
+   * @returns {Array} Array of normalized devices
+   */
+  transformStatusToDevices(status) {
+    const devices = [];
+
+    if (status.heating) {
+      devices.push(normalizeHiveThermostat(status.heating));
+    }
+
+    if (status.hotWater) {
+      devices.push(normalizeHiveHotWater(status.hotWater));
+    }
+
+    return devices;
   }
 }
 

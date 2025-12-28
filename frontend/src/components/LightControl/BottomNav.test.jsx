@@ -85,12 +85,7 @@ describe('BottomNav', () => {
     });
 
     it('should hide Hive tab when Hive is not connected', () => {
-      render(
-        <BottomNav
-          {...defaultProps}
-          hiveConnected={false}
-        />
-      );
+      render(<BottomNav {...defaultProps} hiveConnected={false} />);
 
       expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
     });
@@ -107,12 +102,7 @@ describe('BottomNav', () => {
 
   describe('connection-based visibility - Hue', () => {
     it('should show Hue tabs when hueConnected is true', () => {
-      render(
-        <BottomNav
-          {...defaultProps}
-          hueConnected={true}
-        />
-      );
+      render(<BottomNav {...defaultProps} hueConnected={true} />);
 
       expect(screen.getByText('Living Room')).toBeInTheDocument();
       expect(screen.getByText('Kitchen')).toBeInTheDocument();
@@ -121,12 +111,7 @@ describe('BottomNav', () => {
     });
 
     it('should hide Hue tabs when hueConnected is false', () => {
-      render(
-        <BottomNav
-          {...defaultProps}
-          hueConnected={false}
-        />
-      );
+      render(<BottomNav {...defaultProps} hueConnected={false} />);
 
       expect(screen.queryByText('Living Room')).not.toBeInTheDocument();
       expect(screen.queryByText('Kitchen')).not.toBeInTheDocument();

@@ -91,12 +91,18 @@ Backend-based demo allows testing without Hue Bridge:
 | `hiveService.js`                    | UK Hive heating integration |
 | `hiveAuthService.js`                | Hive AWS Cognito auth + 2FA |
 | `hiveCredentialsManager.js`         | Encrypted Hive credentials  |
+| `homeService.js`                    | Unified Home aggregation    |
+| `roomMappingService.js`             | Service room → Home room    |
+| `deviceNormalizer.js`               | Device format normalization |
+| `ServiceRegistry.js`                | Plugin registration         |
+| `plugins/HuePlugin.js`              | Hue service plugin          |
+| `plugins/HivePlugin.js`             | Hive service plugin         |
 
 ## Frontend Structure
 
 **Main Flow:** App.jsx (auth) → LightControl/index.jsx → TopToolbar + BottomNav + MainPanel
 
-**Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences), `useHive` (Hive heating)
+**Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences), `useHive` (Hive heating), `useHome` (unified Home model)
 
 **UI Text:** All user-facing text in `constants/uiText.js` - tests use these constants.
 
@@ -120,6 +126,18 @@ Backend-based demo allows testing without Hue Bridge:
 | GET     | `/api/v1/hive/connection`         | Hive connection status |
 | GET     | `/api/v1/hive/status`             | Hive thermostat status |
 | GET     | `/api/v1/hive/schedules`          | Hive heating schedules |
+
+### V2 API (Unified Home)
+
+| Method | Endpoint                            | Purpose               |
+| ------ | ----------------------------------- | --------------------- |
+| GET    | `/api/v2/home`                      | Full home structure   |
+| GET    | `/api/v2/home/rooms/:id`            | Single room           |
+| GET    | `/api/v2/home/devices`              | Home-level devices    |
+| PUT    | `/api/v2/home/devices/:id`          | Update device         |
+| POST   | `/api/v2/home/scenes/:id/activate`  | Activate scene        |
+
+**Device ID Format:** `serviceId:deviceId` (e.g., `hue:light-1`, `hive:heating`)
 
 **WebSocket:** Connect to `/api/v1/ws`, auth with `{ sessionToken }` or `{ demoMode: true }`
 

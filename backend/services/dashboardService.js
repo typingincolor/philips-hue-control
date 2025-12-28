@@ -5,6 +5,7 @@ import statsService from './statsService.js';
 import motionService from './motionService.js';
 import zoneService from './zoneService.js';
 import { createLogger } from '../utils/logger.js';
+import { normalizeDashboardLight } from './deviceNormalizer.js';
 
 const logger = createLogger('DASHBOARD');
 
@@ -120,6 +121,24 @@ class DashboardService {
       rooms,
       zones,
       motionZones: motionZonesResult.zones || [],
+    };
+  }
+
+  /**
+   * Transform a dashboard room to Home format
+   * @param {Object} room - Dashboard room object
+   * @returns {Object} Home-formatted room with normalized devices
+   */
+  transformRoomToHomeFormat(room) {
+    return {
+      id: room.id,
+      name: room.name,
+      devices: (room.lights || []).map(normalizeDashboardLight),
+      scenes: (room.scenes || []).map((scene) => ({
+        id: `hue:${scene.id}`,
+        name: scene.name,
+        serviceId: 'hue',
+      })),
     };
   }
 }

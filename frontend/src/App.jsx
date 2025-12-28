@@ -13,8 +13,17 @@ import './App.css';
 function AppContent() {
   const { isDemoMode } = useDemoMode();
 
-  const { step, bridgeIp, sessionToken, loading, error, setBridgeIp, authenticate, reset, enableHue } =
-    useHueBridge();
+  const {
+    step,
+    bridgeIp,
+    sessionToken,
+    loading,
+    error,
+    setBridgeIp,
+    authenticate,
+    reset,
+    enableHue,
+  } = useHueBridge();
 
   // In demo mode, use dummy credentials and skip to connected step
   const effectiveStep = isDemoMode ? 'connected' : step;
