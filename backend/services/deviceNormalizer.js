@@ -3,6 +3,7 @@
  */
 
 import { createDevice, DeviceTypes } from '../models/Device.js';
+import slugMappingService from './slugMappingService.js';
 
 /**
  * Normalize a Hue light to unified device format
@@ -37,17 +38,20 @@ export function normalizeHueLight(hueLight) {
     capabilities.push('colorTemperature');
   }
 
+  const name = hueLight.metadata?.name || 'Light';
+  const slug = slugMappingService.getSlug('hue', hueLight.id, name);
+
   const device = createDevice({
-    id: hueLight.id,
-    name: hueLight.metadata?.name || 'Light',
+    id: slug,
+    name,
     type: DeviceTypes.LIGHT,
     serviceId: 'hue',
     state,
     capabilities,
   });
 
-  // Preserve original ID for reference
-  device.originalId = hueLight.id;
+  // Preserve original UUID for reference (internal use only)
+  device._uuid = hueLight.id;
 
   return device;
 }
@@ -110,8 +114,10 @@ export function normalizeHiveHotWater(hiveHotWater) {
  * @returns {Object} Normalized device
  */
 export function normalizeDashboardLight(light) {
-  return createDevice({
-    id: light.id,
+  const slug = slugMappingService.getSlug('hue', light.id, light.name);
+
+  const device = createDevice({
+    id: slug,
     name: light.name,
     type: DeviceTypes.LIGHT,
     serviceId: 'hue',
@@ -122,6 +128,11 @@ export function normalizeDashboardLight(light) {
     },
     capabilities: ['on', 'dimming', 'color'],
   });
+
+  // Preserve original UUID for reference (internal use only)
+  device._uuid = light.id;
+
+  return device;
 }
 
 /**

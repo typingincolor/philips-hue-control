@@ -4,6 +4,11 @@ import { getHome, updateDevice, activateScene, getHomeDevices } from './homeApi'
 // Mock fetch
 global.fetch = vi.fn();
 
+// Mock authApi for session token
+vi.mock('./authApi', () => ({
+  getSessionToken: vi.fn(() => 'test-token'),
+}));
+
 describe('homeApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();

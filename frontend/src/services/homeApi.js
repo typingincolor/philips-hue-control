@@ -2,36 +2,9 @@
  * Home API - Client for the unified Home abstraction API
  */
 
+import { getHeaders, handleResponse } from './apiUtils';
+
 const API_BASE = '/api/v2/home';
-
-/**
- * Get request headers including demo mode if enabled
- * @param {boolean} demoMode - Whether demo mode is enabled
- * @returns {Object} Headers object
- */
-function getHeaders(demoMode = false) {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-
-  if (demoMode) {
-    headers['X-Demo-Mode'] = 'true';
-  }
-
-  return headers;
-}
-
-/**
- * Handle fetch response, throwing on error
- * @param {Response} response - Fetch response
- * @returns {Promise<Object>} Response data
- */
-async function handleResponse(response) {
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
 
 /**
  * Get the full home structure
@@ -41,7 +14,7 @@ async function handleResponse(response) {
 export async function getHome(demoMode = false) {
   const response = await fetch(API_BASE, {
     method: 'GET',
-    headers: getHeaders(demoMode),
+    headers: getHeaders({ demoMode }),
   });
   return handleResponse(response);
 }
@@ -54,7 +27,7 @@ export async function getHome(demoMode = false) {
 export async function getHomeDevices(demoMode = false) {
   const response = await fetch(`${API_BASE}/devices`, {
     method: 'GET',
-    headers: getHeaders(demoMode),
+    headers: getHeaders({ demoMode }),
   });
   return handleResponse(response);
 }
@@ -69,7 +42,7 @@ export async function getHomeDevices(demoMode = false) {
 export async function updateDevice(deviceId, state, demoMode = false) {
   const response = await fetch(`${API_BASE}/devices/${deviceId}`, {
     method: 'PUT',
-    headers: getHeaders(demoMode),
+    headers: getHeaders({ demoMode }),
     body: JSON.stringify(state),
   });
   return handleResponse(response);
@@ -84,7 +57,7 @@ export async function updateDevice(deviceId, state, demoMode = false) {
 export async function activateScene(sceneId, demoMode = false) {
   const response = await fetch(`${API_BASE}/scenes/${sceneId}/activate`, {
     method: 'POST',
-    headers: getHeaders(demoMode),
+    headers: getHeaders({ demoMode }),
   });
   return handleResponse(response);
 }
@@ -99,7 +72,7 @@ export async function activateScene(sceneId, demoMode = false) {
 export async function updateRoomDevices(roomId, state, demoMode = false) {
   const response = await fetch(`${API_BASE}/rooms/${roomId}/devices`, {
     method: 'PUT',
-    headers: getHeaders(demoMode),
+    headers: getHeaders({ demoMode }),
     body: JSON.stringify(state),
   });
   return handleResponse(response);
@@ -115,7 +88,7 @@ export async function updateRoomDevices(roomId, state, demoMode = false) {
 export async function updateZoneDevices(zoneId, state, demoMode = false) {
   const response = await fetch(`${API_BASE}/zones/${zoneId}/devices`, {
     method: 'PUT',
-    headers: getHeaders(demoMode),
+    headers: getHeaders({ demoMode }),
     body: JSON.stringify(state),
   });
   return handleResponse(response);

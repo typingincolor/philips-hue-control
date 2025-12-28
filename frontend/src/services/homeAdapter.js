@@ -48,9 +48,7 @@ function transformScene(scene) {
  * @returns {Object} V1-compatible room object
  */
 function transformRoom(room) {
-  const lights = (room.devices || [])
-    .map(transformDeviceToLight)
-    .filter((light) => light !== null);
+  const lights = (room.devices || []).map(transformDeviceToLight).filter((light) => light !== null);
 
   // Calculate room stats from lights
   const lightsOnCount = lights.filter((l) => l.on).length;
@@ -137,9 +135,7 @@ export async function updateLight(lightId, state, demoMode = false, existingLigh
   const result = await homeApi.updateDevice(fullId, state, demoMode);
 
   // Merge applied state with existing light data for optimistic update
-  const mergedLight = existingLight
-    ? { ...existingLight, ...state }
-    : { id: lightId, ...state };
+  const mergedLight = existingLight ? { ...existingLight, ...state } : { id: lightId, ...state };
 
   return {
     success: result.success,

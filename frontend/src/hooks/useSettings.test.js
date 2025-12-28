@@ -5,14 +5,12 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 vi.unmock('./useSettings');
 
 import { useSettings } from './useSettings';
-import { hueApi } from '../services/hueApi';
+import * as settingsApi from '../services/settingsApi';
 
-// Mock hueApi
-vi.mock('../services/hueApi', () => ({
-  hueApi: {
-    getSettings: vi.fn(),
-    updateSettings: vi.fn(),
-  },
+// Mock settingsApi
+vi.mock('../services/settingsApi', () => ({
+  getSettings: vi.fn(),
+  updateSettings: vi.fn(),
 }));
 
 describe('useSettings', () => {
@@ -43,7 +41,7 @@ describe('useSettings', () => {
     });
 
     it('should fetch settings when enabled', async () => {
-      hueApi.getSettings.mockResolvedValue({ ...mockSettings, services: defaultServices });
+      settingsApi.getSettings.mockResolvedValue({ ...mockSettings, services: defaultServices });
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -51,12 +49,12 @@ describe('useSettings', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(hueApi.getSettings).toHaveBeenCalledWith();
+      expect(settingsApi.getSettings).toHaveBeenCalledWith(false);
       expect(result.current.settings).toEqual({ ...mockSettings, services: defaultServices });
     });
 
     it('should set isLoading while fetching', async () => {
-      hueApi.getSettings.mockReturnValue(new Promise(() => {})); // Never resolves
+      settingsApi.getSettings.mockReturnValue(new Promise(() => {})); // Never resolves
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -66,7 +64,7 @@ describe('useSettings', () => {
     });
 
     it('should handle API error gracefully', async () => {
-      hueApi.getSettings.mockRejectedValue(new Error('Network error'));
+      settingsApi.getSettings.mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -84,7 +82,7 @@ describe('useSettings', () => {
     });
 
     it('should handle missing fields in API response', async () => {
-      hueApi.getSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -102,8 +100,8 @@ describe('useSettings', () => {
 
   describe('updateSettings', () => {
     it('should optimistically update settings', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettings);
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue(mockSettings);
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -116,16 +114,19 @@ describe('useSettings', () => {
       });
 
       expect(result.current.settings.units).toBe('fahrenheit');
-      expect(hueApi.updateSettings).toHaveBeenCalledWith({
-        ...mockSettings,
-        services: defaultServices,
-        units: 'fahrenheit',
-      });
+      expect(settingsApi.updateSettings).toHaveBeenCalledWith(
+        {
+          ...mockSettings,
+          services: defaultServices,
+          units: 'fahrenheit',
+        },
+        false
+      );
     });
 
     it('should rollback on API error', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettings);
-      hueApi.updateSettings.mockRejectedValue(new Error('Update failed'));
+      settingsApi.getSettings.mockResolvedValue(mockSettings);
+      settingsApi.updateSettings.mockRejectedValue(new Error('Update failed'));
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -143,7 +144,7 @@ describe('useSettings', () => {
     });
 
     it('should call API even when default settings (always enabled)', async () => {
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(false));
 
@@ -152,16 +153,19 @@ describe('useSettings', () => {
       });
 
       // API is called even when disabled, just won't fetch on init
-      expect(hueApi.updateSettings).toHaveBeenCalledWith({
-        units: 'fahrenheit',
-        location: null,
-        services: defaultServices,
-      });
+      expect(settingsApi.updateSettings).toHaveBeenCalledWith(
+        {
+          units: 'fahrenheit',
+          location: null,
+          services: defaultServices,
+        },
+        false
+      );
     });
 
     it('should merge partial updates with existing settings', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettings);
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue(mockSettings);
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -198,7 +202,7 @@ describe('useSettings', () => {
     });
 
     it('should fetch settings with services when enabled', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettingsWithServices);
+      settingsApi.getSettings.mockResolvedValue(mockSettingsWithServices);
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -210,8 +214,8 @@ describe('useSettings', () => {
     });
 
     it('should update hive service enabled state', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettingsWithServices);
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue(mockSettingsWithServices);
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -224,18 +228,19 @@ describe('useSettings', () => {
       });
 
       expect(result.current.settings.services.hive.enabled).toBe(true);
-      expect(hueApi.updateSettings).toHaveBeenCalledWith(
+      expect(settingsApi.updateSettings).toHaveBeenCalledWith(
         expect.objectContaining({
           services: expect.objectContaining({
             hive: { enabled: true },
           }),
-        })
+        }),
+        false
       );
     });
 
     it('should update hue service enabled state', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettingsWithServices);
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue(mockSettingsWithServices);
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -251,8 +256,8 @@ describe('useSettings', () => {
     });
 
     it('should preserve other service states when updating one', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettingsWithServices);
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue(mockSettingsWithServices);
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -270,8 +275,8 @@ describe('useSettings', () => {
     });
 
     it('should preserve location and units when updating services', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettingsWithServices);
-      hueApi.updateSettings.mockResolvedValue({});
+      settingsApi.getSettings.mockResolvedValue(mockSettingsWithServices);
+      settingsApi.updateSettings.mockResolvedValue({});
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -289,7 +294,7 @@ describe('useSettings', () => {
 
     it('should handle missing services in API response', async () => {
       // API returns old format without services
-      hueApi.getSettings.mockResolvedValue({
+      settingsApi.getSettings.mockResolvedValue({
         units: 'celsius',
         location: null,
       });
@@ -307,8 +312,8 @@ describe('useSettings', () => {
     });
 
     it('should rollback services on API error', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettingsWithServices);
-      hueApi.updateSettings.mockRejectedValue(new Error('Update failed'));
+      settingsApi.getSettings.mockResolvedValue(mockSettingsWithServices);
+      settingsApi.updateSettings.mockRejectedValue(new Error('Update failed'));
 
       const { result } = renderHook(() => useSettings(true));
 
@@ -327,21 +332,42 @@ describe('useSettings', () => {
 
   describe('enabled changes', () => {
     it('should refetch when enabled changes from false to true', async () => {
-      hueApi.getSettings.mockResolvedValue(mockSettings);
+      settingsApi.getSettings.mockResolvedValue(mockSettings);
 
       const { result, rerender } = renderHook(({ enabled }) => useSettings(enabled), {
         initialProps: { enabled: false },
       });
 
-      expect(hueApi.getSettings).not.toHaveBeenCalled();
+      expect(settingsApi.getSettings).not.toHaveBeenCalled();
 
       rerender({ enabled: true });
 
       await waitFor(() => {
-        expect(hueApi.getSettings).toHaveBeenCalledWith();
+        expect(settingsApi.getSettings).toHaveBeenCalledWith(false);
       });
 
       expect(result.current.settings).toEqual({ ...mockSettings, services: defaultServices });
+    });
+  });
+
+  describe('demo mode', () => {
+    it('should pass demoMode to API calls', async () => {
+      settingsApi.getSettings.mockResolvedValue(mockSettings);
+      settingsApi.updateSettings.mockResolvedValue({});
+
+      const { result } = renderHook(() => useSettings(true, true));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(settingsApi.getSettings).toHaveBeenCalledWith(true);
+
+      await act(async () => {
+        await result.current.updateSettings({ units: 'fahrenheit' });
+      });
+
+      expect(settingsApi.updateSettings).toHaveBeenCalledWith(expect.any(Object), true);
     });
   });
 });

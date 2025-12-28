@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { hueApi } from '../services/hueApi';
+import * as settingsApi from '../services/settingsApi';
 
 /**
  * Reverse geocode coordinates to get city name
@@ -60,9 +60,10 @@ const getGeolocationErrorMessage = (code) => {
  * Location is stored on the backend via settings API
  * @param {object|null} currentLocation - Current location from settings
  * @param {function} onLocationUpdate - Callback when location changes (to update settings)
+ * @param {boolean} demoMode - Whether demo mode is enabled
  * @returns {object} { isDetecting, error, detectLocation, clearLocation }
  */
-export const useLocation = (currentLocation, onLocationUpdate) => {
+export const useLocation = (currentLocation, onLocationUpdate, demoMode = false) => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -100,7 +101,7 @@ export const useLocation = (currentLocation, onLocationUpdate) => {
       };
 
       // Save to backend
-      await hueApi.updateLocation(newLocation);
+      await settingsApi.updateLocation(newLocation, demoMode);
 
       // Notify parent to update settings
       if (onLocationUpdate) {
@@ -117,14 +118,14 @@ export const useLocation = (currentLocation, onLocationUpdate) => {
     } finally {
       setIsDetecting(false);
     }
-  }, [onLocationUpdate]);
+  }, [onLocationUpdate, demoMode]);
 
   /**
    * Clear stored location
    */
   const clearLocation = useCallback(async () => {
     try {
-      await hueApi.clearLocation();
+      await settingsApi.clearLocation(demoMode);
 
       // Notify parent to update settings
       if (onLocationUpdate) {
@@ -133,7 +134,7 @@ export const useLocation = (currentLocation, onLocationUpdate) => {
     } catch (err) {
       setError(err.message || 'Failed to clear location');
     }
-  }, [onLocationUpdate]);
+  }, [onLocationUpdate, demoMode]);
 
   return {
     location: currentLocation,

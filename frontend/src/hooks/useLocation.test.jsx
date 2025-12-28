@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLocation } from './useLocation';
-import { hueApi } from '../services/hueApi';
+import * as settingsApi from '../services/settingsApi';
 
-// Mock hueApi
-vi.mock('../services/hueApi', () => ({
-  hueApi: {
-    updateLocation: vi.fn(),
-    clearLocation: vi.fn(),
-  },
+// Mock settingsApi
+vi.mock('../services/settingsApi', () => ({
+  updateLocation: vi.fn(),
+  clearLocation: vi.fn(),
 }));
 
 // Mock geolocation
@@ -76,7 +74,7 @@ describe('useLocation', () => {
         json: () => Promise.resolve({ address: { city: 'New York' } }),
       });
 
-      hueApi.updateLocation.mockResolvedValue({});
+      settingsApi.updateLocation.mockResolvedValue({});
 
       const onLocationUpdate = vi.fn();
       const { result } = renderHook(() => useLocation(null, onLocationUpdate));
@@ -85,11 +83,14 @@ describe('useLocation', () => {
         await result.current.detectLocation();
       });
 
-      expect(hueApi.updateLocation).toHaveBeenCalledWith({
-        lat: 40.7128,
-        lon: -74.006,
-        name: 'New York',
-      });
+      expect(settingsApi.updateLocation).toHaveBeenCalledWith(
+        {
+          lat: 40.7128,
+          lon: -74.006,
+          name: 'New York',
+        },
+        false
+      );
 
       expect(onLocationUpdate).toHaveBeenCalledWith({
         lat: 40.7128,
@@ -174,7 +175,7 @@ describe('useLocation', () => {
         });
       });
 
-      hueApi.updateLocation.mockResolvedValue({});
+      settingsApi.updateLocation.mockResolvedValue({});
 
       const { result } = renderHook(() => useLocation(null, vi.fn()));
 
@@ -199,7 +200,7 @@ describe('useLocation', () => {
 
   describe('clearLocation', () => {
     it('should clear location via API', async () => {
-      hueApi.clearLocation.mockResolvedValue({});
+      settingsApi.clearLocation.mockResolvedValue({});
       const onLocationUpdate = vi.fn();
 
       const { result } = renderHook(() => useLocation(mockLocation, onLocationUpdate));
@@ -208,12 +209,12 @@ describe('useLocation', () => {
         await result.current.clearLocation();
       });
 
-      expect(hueApi.clearLocation).toHaveBeenCalled();
+      expect(settingsApi.clearLocation).toHaveBeenCalledWith(false);
       expect(onLocationUpdate).toHaveBeenCalledWith(null);
     });
 
     it('should set error on API failure', async () => {
-      hueApi.clearLocation.mockRejectedValue(new Error('API error'));
+      settingsApi.clearLocation.mockRejectedValue(new Error('API error'));
       const onLocationUpdate = vi.fn();
 
       const { result } = renderHook(() => useLocation(mockLocation, onLocationUpdate));
@@ -241,7 +242,7 @@ describe('useLocation', () => {
         ok: false,
       });
 
-      hueApi.updateLocation.mockResolvedValue({});
+      settingsApi.updateLocation.mockResolvedValue({});
       const onLocationUpdate = vi.fn();
 
       const { result } = renderHook(() => useLocation(null, onLocationUpdate));
@@ -271,7 +272,7 @@ describe('useLocation', () => {
         json: () => Promise.resolve({ address: { town: 'SmallTown' } }),
       });
 
-      hueApi.updateLocation.mockResolvedValue({});
+      settingsApi.updateLocation.mockResolvedValue({});
       const onLocationUpdate = vi.fn();
 
       const { result } = renderHook(() => useLocation(null, onLocationUpdate));
@@ -301,7 +302,7 @@ describe('useLocation', () => {
         json: () => Promise.resolve({ address: { village: 'TinyVillage' } }),
       });
 
-      hueApi.updateLocation.mockResolvedValue({});
+      settingsApi.updateLocation.mockResolvedValue({});
       const onLocationUpdate = vi.fn();
 
       const { result } = renderHook(() => useLocation(null, onLocationUpdate));
@@ -328,7 +329,7 @@ describe('useLocation', () => {
 
       fetch.mockRejectedValue(new Error('Network error'));
 
-      hueApi.updateLocation.mockResolvedValue({});
+      settingsApi.updateLocation.mockResolvedValue({});
       const onLocationUpdate = vi.fn();
 
       const { result } = renderHook(() => useLocation(null, onLocationUpdate));
@@ -342,6 +343,36 @@ describe('useLocation', () => {
         lon: -74.006,
         name: 'Unknown',
       });
+    });
+  });
+
+  describe('demo mode', () => {
+    it('should pass demoMode to API calls', async () => {
+      const mockPosition = {
+        coords: { latitude: 40.7128, longitude: -74.006 },
+      };
+
+      mockGeolocation.getCurrentPosition.mockImplementation((success) => {
+        success(mockPosition);
+      });
+
+      settingsApi.updateLocation.mockResolvedValue({});
+      settingsApi.clearLocation.mockResolvedValue({});
+
+      const onLocationUpdate = vi.fn();
+      const { result } = renderHook(() => useLocation(null, onLocationUpdate, true));
+
+      await act(async () => {
+        await result.current.detectLocation();
+      });
+
+      expect(settingsApi.updateLocation).toHaveBeenCalledWith(expect.any(Object), true);
+
+      await act(async () => {
+        await result.current.clearLocation();
+      });
+
+      expect(settingsApi.clearLocation).toHaveBeenCalledWith(true);
     });
   });
 });

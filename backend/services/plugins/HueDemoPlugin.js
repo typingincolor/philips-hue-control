@@ -8,6 +8,7 @@ import ServicePlugin from '../ServicePlugin.js';
 import dashboardService from '../dashboardService.js';
 import mockHueClient from '../mockHueClient.js';
 import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../mockData.js';
+import slugMappingService from '../slugMappingService.js';
 
 class HueDemoPluginClass extends ServicePlugin {
   static id = 'hue';
@@ -151,12 +152,15 @@ class HueDemoPluginClass extends ServicePlugin {
 
   /**
    * Update a device state
-   * @param {string} deviceId - Device ID
+   * @param {string} deviceId - Device ID (slug)
    * @param {Object} state - New state to apply (simple format: { on, brightness })
    * @returns {Promise<Object>} Result object with success and applied state
    */
   async updateDevice(deviceId, state) {
-    await mockHueClient.updateLight(DEMO_BRIDGE_IP, DEMO_USERNAME, deviceId, state);
+    // Translate slug to UUID for API call
+    const uuid = slugMappingService.getUuid('hue', deviceId) || deviceId;
+
+    await mockHueClient.updateLight(DEMO_BRIDGE_IP, DEMO_USERNAME, uuid, state);
 
     return {
       success: true,
@@ -167,21 +171,24 @@ class HueDemoPluginClass extends ServicePlugin {
 
   /**
    * Activate a scene
-   * @param {string} sceneId - Scene ID
+   * @param {string} sceneId - Scene ID (slug)
    * @returns {Promise<Object>} Result object
    */
   async activateScene(sceneId) {
-    return mockHueClient.activateScene(DEMO_BRIDGE_IP, DEMO_USERNAME, sceneId);
+    // Translate slug to UUID for API call
+    const uuid = slugMappingService.getUuid('hue:scene', sceneId) || sceneId;
+
+    return mockHueClient.activateScene(DEMO_BRIDGE_IP, DEMO_USERNAME, uuid);
   }
 
   /**
    * Update all devices in a room
-   * @param {string} roomId - Room ID
+   * @param {string} roomId - Room ID (slug)
    * @param {Object} state - New state to apply
    * @returns {Promise<Object>} Result object with updatedLights
    */
   async updateRoomDevices(roomId, state) {
-    // Get room from mock data
+    // Get room from mock data (room.id is already a slug)
     const status = await this.getStatus();
     const room = status.rooms?.find((r) => r.id === roomId);
 
@@ -189,9 +196,9 @@ class HueDemoPluginClass extends ServicePlugin {
       throw new Error(`Room not found: ${roomId}`);
     }
 
-    // Update all lights in room
+    // Update all lights in room using original UUIDs
     const lightUpdates = room.lights.map((light) => ({
-      lightId: light.id,
+      lightId: light._uuid || light.id,
       state,
     }));
 
@@ -208,12 +215,12 @@ class HueDemoPluginClass extends ServicePlugin {
 
   /**
    * Update all devices in a zone
-   * @param {string} zoneId - Zone ID
+   * @param {string} zoneId - Zone ID (slug)
    * @param {Object} state - New state to apply
    * @returns {Promise<Object>} Result object with updatedLights
    */
   async updateZoneDevices(zoneId, state) {
-    // Get zone from mock data
+    // Get zone from mock data (zone.id is already a slug)
     const status = await this.getStatus();
     const zone = status.zones?.find((z) => z.id === zoneId);
 
@@ -221,9 +228,9 @@ class HueDemoPluginClass extends ServicePlugin {
       throw new Error(`Zone not found: ${zoneId}`);
     }
 
-    // Update all lights in zone
+    // Update all lights in zone using original UUIDs
     const lightUpdates = zone.lights.map((light) => ({
-      lightId: light.id,
+      lightId: light._uuid || light.id,
       state,
     }));
 

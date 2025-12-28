@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'path';
+import os from 'os';
 import {
   xyToRgb,
   mirekToRgb,
@@ -7,8 +9,18 @@ import {
   enrichLight,
   enrichLights,
 } from '../../utils/colorConversion.js';
+import slugMappingService from '../../services/slugMappingService.js';
 
 describe('colorConversion', () => {
+  beforeEach(() => {
+    // Use a temporary file path and clear slug mappings before each test
+    const testFilePath = path.join(
+      os.tmpdir(),
+      `slug-mappings-test-${process.pid}-${Date.now()}.json`
+    );
+    slugMappingService.setFilePath(testFilePath);
+    slugMappingService.clear();
+  });
   describe('xyToRgb', () => {
     it('should convert xy coordinates to RGB with default brightness', () => {
       const result = xyToRgb(0.3127, 0.329); // D65 white point
@@ -283,7 +295,7 @@ describe('colorConversion', () => {
   describe('enrichLight', () => {
     it('should enrich light with xy color data', () => {
       const light = {
-        id: 'light-1',
+        id: 'uuid-1',
         metadata: { name: 'Living Room 1' },
         on: { on: true },
         dimming: { brightness: 80 },
@@ -292,7 +304,9 @@ describe('colorConversion', () => {
 
       const result = enrichLight(light);
 
-      expect(result.id).toBe('light-1');
+      // ID should be slug-based, original UUID stored in _uuid
+      expect(result.id).toBe('living-room-1');
+      expect(result._uuid).toBe('uuid-1');
       expect(result.name).toBe('Living Room 1');
       expect(result.on).toBe(true);
       expect(result.brightness).toBe(80);
@@ -313,7 +327,9 @@ describe('colorConversion', () => {
 
       const result = enrichLight(light);
 
-      expect(result.id).toBe('light-2');
+      // ID should be slug-based, original UUID stored in _uuid
+      expect(result.id).toBe('bedroom');
+      expect(result._uuid).toBe('light-2');
       expect(result.name).toBe('Bedroom');
       expect(result.colorSource).toBe('temperature');
       expect(result.color).toMatch(/^rgb\(\d+, \d+, \d+\)$/);
@@ -503,14 +519,14 @@ describe('colorConversion', () => {
     it('should enrich multiple lights', () => {
       const lights = [
         {
-          id: 'light-1',
+          id: 'uuid-1',
           metadata: { name: 'Light 1' },
           on: { on: true },
           dimming: { brightness: 80 },
           color: { xy: { x: 0.6915, y: 0.3083 } },
         },
         {
-          id: 'light-2',
+          id: 'uuid-2',
           metadata: { name: 'Light 2' },
           on: { on: false },
           dimming: { brightness: 0 },
@@ -520,10 +536,13 @@ describe('colorConversion', () => {
       const result = enrichLights(lights);
 
       expect(result).toHaveLength(2);
+      // IDs should be slug-based
       expect(result[0].id).toBe('light-1');
+      expect(result[0]._uuid).toBe('uuid-1');
       expect(result[0].on).toBe(true);
       expect(result[0].color).toMatch(/^rgb\(\d+, \d+, \d+\)$/);
       expect(result[1].id).toBe('light-2');
+      expect(result[1]._uuid).toBe('uuid-2');
       expect(result[1].on).toBe(false);
       expect(result[1].color).toBeNull();
     });
@@ -535,16 +554,21 @@ describe('colorConversion', () => {
 
     it('should preserve order of lights', () => {
       const lights = [
-        { id: 'light-a', on: { on: true } },
-        { id: 'light-b', on: { on: true } },
-        { id: 'light-c', on: { on: true } },
+        { id: 'uuid-a', metadata: { name: 'First' }, on: { on: true } },
+        { id: 'uuid-b', metadata: { name: 'Second' }, on: { on: true } },
+        { id: 'uuid-c', metadata: { name: 'Third' }, on: { on: true } },
       ];
 
       const result = enrichLights(lights);
 
-      expect(result[0].id).toBe('light-a');
-      expect(result[1].id).toBe('light-b');
-      expect(result[2].id).toBe('light-c');
+      // IDs should be slug-based
+      expect(result[0].id).toBe('first');
+      expect(result[1].id).toBe('second');
+      expect(result[2].id).toBe('third');
+      // Original UUIDs preserved
+      expect(result[0]._uuid).toBe('uuid-a');
+      expect(result[1]._uuid).toBe('uuid-b');
+      expect(result[2]._uuid).toBe('uuid-c');
     });
   });
 });

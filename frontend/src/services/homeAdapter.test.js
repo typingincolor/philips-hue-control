@@ -175,9 +175,7 @@ describe('homeAdapter', () => {
           {
             id: 'room-1',
             name: 'Room',
-            devices: [
-              { id: 'light-1', name: 'Lamp', type: 'light', state: { on: true } },
-            ],
+            devices: [{ id: 'light-1', name: 'Lamp', type: 'light', state: { on: true } }],
             scenes: [{ id: 'scene-1', name: 'Scene' }],
           },
         ],
@@ -197,9 +195,7 @@ describe('homeAdapter', () => {
           {
             id: 'room-1',
             name: 'Room',
-            devices: [
-              { id: 'hue:light-1', name: 'Lamp', type: 'light', state: {} },
-            ],
+            devices: [{ id: 'hue:light-1', name: 'Lamp', type: 'light', state: {} }],
             scenes: [],
           },
         ],
@@ -224,7 +220,12 @@ describe('homeAdapter', () => {
             id: 'room-1',
             name: 'Room',
             devices: [
-              { id: 'hue:light-1', name: 'Lamp', type: 'light', state: { on: true, brightness: 75 } },
+              {
+                id: 'hue:light-1',
+                name: 'Lamp',
+                type: 'light',
+                state: { on: true, brightness: 75 },
+              },
             ],
             scenes: [],
           },

@@ -1,16 +1,28 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'path';
+import os from 'os';
 import {
   normalizeHueLight,
   normalizeHiveThermostat,
   normalizeHiveHotWater,
 } from '../../services/deviceNormalizer.js';
 import { DeviceTypes } from '../../models/Device.js';
+import slugMappingService from '../../services/slugMappingService.js';
 
 describe('deviceNormalizer', () => {
+  beforeEach(() => {
+    // Use a temporary file path and clear slug mappings before each test
+    const testFilePath = path.join(
+      os.tmpdir(),
+      `slug-mappings-test-${process.pid}-${Date.now()}.json`
+    );
+    slugMappingService.setFilePath(testFilePath);
+    slugMappingService.clear();
+  });
   describe('normalizeHueLight', () => {
     it('should normalize a Hue light with color', () => {
       const hueLight = {
-        id: 'light-1',
+        id: 'uuid-1',
         metadata: { name: 'Floor Lamp' },
         on: { on: true },
         dimming: { brightness: 80 },
@@ -19,7 +31,9 @@ describe('deviceNormalizer', () => {
 
       const device = normalizeHueLight(hueLight);
 
-      expect(device.id).toBe('hue:light-1');
+      // ID should be slug-based (hue:floor-lamp), original UUID stored in _uuid
+      expect(device.id).toBe('hue:floor-lamp');
+      expect(device._uuid).toBe('uuid-1');
       expect(device.name).toBe('Floor Lamp');
       expect(device.type).toBe(DeviceTypes.LIGHT);
       expect(device.serviceId).toBe('hue');
@@ -76,16 +90,18 @@ describe('deviceNormalizer', () => {
       expect(device.capabilities).toContain('colorTemperature');
     });
 
-    it('should preserve original service ID for reference', () => {
+    it('should preserve original UUID for reference', () => {
       const hueLight = {
         id: 'abc-123-def',
-        metadata: { name: 'Test' },
+        metadata: { name: 'Test Light' },
         on: { on: true },
       };
 
       const device = normalizeHueLight(hueLight);
 
-      expect(device.originalId).toBe('abc-123-def');
+      // ID should be slug-based, original UUID stored in _uuid
+      expect(device.id).toBe('hue:test-light');
+      expect(device._uuid).toBe('abc-123-def');
     });
   });
 

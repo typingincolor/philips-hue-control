@@ -10,6 +10,7 @@ import { getHueClient, getHueClientForBridge } from '../hueClientFactory.js';
 import { DEMO_BRIDGE_IP, DEMO_USERNAME } from '../mockData.js';
 import { convertToHueState } from '../../utils/stateConversion.js';
 import { createLogger } from '../../utils/logger.js';
+import slugMappingService from '../slugMappingService.js';
 
 const logger = createLogger('HUE_PLUGIN');
 
@@ -264,7 +265,7 @@ class HuePluginClass extends ServicePlugin {
 
   /**
    * Update a device state
-   * @param {string} deviceId - Device ID (without service prefix)
+   * @param {string} deviceId - Device ID (slug, without service prefix)
    * @param {Object} state - New state to apply (simple format: { on, brightness })
    * @returns {Promise<Object>} Result object with success and applied state
    */
@@ -276,9 +277,12 @@ class HuePluginClass extends ServicePlugin {
     const username = sessionManager.getBridgeCredentials(bridgeIp);
     const client = getHueClientForBridge(bridgeIp);
 
+    // Translate slug to UUID for API call
+    const uuid = slugMappingService.getUuid('hue', deviceId) || deviceId;
+
     // Convert simplified state to Hue API v2 format internally
     const hueState = convertToHueState(state);
-    await client.updateLight(bridgeIp, username, deviceId, hueState);
+    await client.updateLight(bridgeIp, username, uuid, hueState);
 
     // Return normalized response (not raw Hue format)
     return {
@@ -290,7 +294,7 @@ class HuePluginClass extends ServicePlugin {
 
   /**
    * Activate a scene
-   * @param {string} sceneId - Scene ID (without service prefix)
+   * @param {string} sceneId - Scene ID (slug, without service prefix)
    * @returns {Promise<Object>} Result object
    */
   async activateScene(sceneId) {
@@ -301,12 +305,15 @@ class HuePluginClass extends ServicePlugin {
     const username = sessionManager.getBridgeCredentials(bridgeIp);
     const client = getHueClientForBridge(bridgeIp);
 
-    return client.activateScene(bridgeIp, username, sceneId);
+    // Translate slug to UUID for API call
+    const uuid = slugMappingService.getUuid('hue:scene', sceneId) || sceneId;
+
+    return client.activateScene(bridgeIp, username, uuid);
   }
 
   /**
    * Update all devices in a room
-   * @param {string} roomId - Room ID (without service prefix)
+   * @param {string} roomId - Room ID (slug, without service prefix)
    * @param {Object} state - New state to apply
    * @returns {Promise<Object>} Result object with updatedLights
    */
@@ -318,7 +325,7 @@ class HuePluginClass extends ServicePlugin {
     const username = sessionManager.getBridgeCredentials(bridgeIp);
     const client = getHueClientForBridge(bridgeIp);
 
-    // Get room hierarchy to find lights
+    // Get room hierarchy to find lights (room.id is already a slug)
     const status = await this.getStatus(false);
     const room = status.rooms?.find((r) => r.id === roomId);
 
@@ -328,8 +335,10 @@ class HuePluginClass extends ServicePlugin {
 
     // Convert simplified state to Hue API v2 format
     const hueState = convertToHueState(state);
+
+    // Use original UUIDs for light updates (stored in _uuid from enrichLight)
     const lightUpdates = room.lights.map((light) => ({
-      lightId: light.id,
+      lightId: light._uuid || light.id,
       state: hueState,
     }));
 
@@ -346,7 +355,7 @@ class HuePluginClass extends ServicePlugin {
 
   /**
    * Update all devices in a zone
-   * @param {string} zoneId - Zone ID (without service prefix)
+   * @param {string} zoneId - Zone ID (slug, without service prefix)
    * @param {Object} state - New state to apply
    * @returns {Promise<Object>} Result object with updatedLights
    */
@@ -358,7 +367,7 @@ class HuePluginClass extends ServicePlugin {
     const username = sessionManager.getBridgeCredentials(bridgeIp);
     const client = getHueClientForBridge(bridgeIp);
 
-    // Get zones from dashboard
+    // Get zones from dashboard (zone.id is already a slug)
     const status = await this.getStatus(false);
     const zone = status.zones?.find((z) => z.id === zoneId);
 
@@ -368,8 +377,10 @@ class HuePluginClass extends ServicePlugin {
 
     // Convert simplified state to Hue API v2 format
     const hueState = convertToHueState(state);
+
+    // Use original UUIDs for light updates (stored in _uuid from enrichLight)
     const lightUpdates = zone.lights.map((light) => ({
-      lightId: light.id,
+      lightId: light._uuid || light.id,
       state: hueState,
     }));
 

@@ -105,8 +105,14 @@ Backend-based demo allows testing without Hue Bridge:
 **Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences), `useHive` (Hive heating)
 
 **Key Services:**
-- `homeAdapter.js` - Transforms V2 Home format to V1 Dashboard format
+
+- `apiUtils.js` - Shared `getHeaders()`, `handleResponse()` for V2 clients
+- `authApi.js` - V2 Auth API client with session token management
+- `settingsApi.js` - V2 Settings API client
+- `weatherApi.js` - V2 Weather API client
+- `automationsApi.js` - V2 Automations API client
 - `homeApi.js` - V2 Home API client
+- `homeAdapter.js` - Transforms V2 Home format to V1 Dashboard format
 - `servicesApi.js` - V2 Services API client (Hue/Hive connection)
 
 **UI Text:** All user-facing text in `constants/uiText.js` - tests use these constants.
@@ -134,15 +140,23 @@ Backend-based demo allows testing without Hue Bridge:
 
 ### V2 API (Unified Home)
 
-| Method | Endpoint                           | Purpose                  |
-| ------ | ---------------------------------- | ------------------------ |
-| GET    | `/api/v2/home`                     | Full home structure      |
-| GET    | `/api/v2/home/rooms/:id`           | Single room              |
-| GET    | `/api/v2/home/devices`             | Home-level devices       |
-| PUT    | `/api/v2/home/devices/:id`         | Update device            |
-| PUT    | `/api/v2/home/rooms/:id/devices`   | Update all room devices  |
-| PUT    | `/api/v2/home/zones/:id/devices`   | Update all zone devices  |
-| POST   | `/api/v2/home/scenes/:id/activate` | Activate scene           |
+| Method  | Endpoint                           | Purpose                  |
+| ------- | ---------------------------------- | ------------------------ |
+| GET     | `/api/v2/home`                     | Full home structure      |
+| GET     | `/api/v2/home/rooms/:id`           | Single room              |
+| GET     | `/api/v2/home/devices`             | Home-level devices       |
+| PUT     | `/api/v2/home/devices/:id`         | Update device            |
+| PUT     | `/api/v2/home/rooms/:id/devices`   | Update all room devices  |
+| PUT     | `/api/v2/home/zones/:id/devices`   | Update all zone devices  |
+| POST    | `/api/v2/home/scenes/:id/activate` | Activate scene           |
+| POST    | `/api/v2/auth/pair`                | Pair with bridge         |
+| POST    | `/api/v2/auth/connect`             | Connect with credentials |
+| POST    | `/api/v2/auth/session`             | Create session           |
+| GET/PUT | `/api/v2/settings`                 | Settings CRUD            |
+| PUT/DEL | `/api/v2/settings/location`        | Location management      |
+| GET     | `/api/v2/weather`                  | Weather data             |
+| GET     | `/api/v2/automations`              | List automations         |
+| POST    | `/api/v2/automations/:id/trigger`  | Trigger automation       |
 
 **Device ID Format:** `serviceId:deviceId` (e.g., `hue:light-1`, `hive:heating`)
 
@@ -174,6 +188,14 @@ npm run test:mutation:all # Mutation testing
 ## Common Tasks
 
 ### Adding a New API Endpoint
+
+**V2 API (preferred):**
+
+1. Add route in `backend/routes/v2/`
+2. Register in `backend/routes/v2/index.js`
+3. Create frontend client in `frontend/src/services/` using `apiUtils.js`
+
+**V1 API (legacy):**
 
 1. Add route in `backend/routes/v1/`
 2. Add to `backend/routes/v1/index.js`
