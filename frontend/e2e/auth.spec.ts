@@ -22,8 +22,8 @@ test.describe('Authentication Flow', () => {
       await connectButton.click();
 
       // Should transition to authentication or show pairing instructions
-      // Wait for either auth screen or error
-      await page.waitForTimeout(1000);
+      // App should remain functional after button click
+      await expect(page.locator('body')).toBeVisible();
     }
   });
 
@@ -98,10 +98,7 @@ test.describe('Authentication Error Handling', () => {
     if (await connectButton.isVisible()) {
       await connectButton.click();
 
-      // Wait for potential error or timeout
-      await page.waitForTimeout(2000);
-
-      // App should still be functional
+      // App should remain functional after failed connection attempt
       await expect(page.locator('body')).toBeVisible();
     }
   });

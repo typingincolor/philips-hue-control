@@ -41,10 +41,12 @@ The root cause was that `_demoConnected` in HiveService is a singleton that pers
 **Review Status:** Approved
 
 **Test Results:**
+
 - Unit: 657 passed
 - E2E: 260 passed, 9 skipped
 
 **Files Reviewed:**
+
 - `backend/services/settingsService.js` - Services schema with deep merge, proper validation
 - `backend/services/mockData.js` - Demo mode defaults with Hive enabled
 - `frontend/src/components/LightControl/SettingsPage.jsx` - Service toggles with accessibility
@@ -55,10 +57,48 @@ The root cause was that `_demoConnected` in HiveService is a singleton that pers
 **Issues Found:** None
 
 **Skipped Tests (9 total):**
+
 - 1 spacing-layout test: Settings reset API needed for test isolation
 - 8 settings-page tests: Features not yet implemented (gear toggle, keyboard navigation, settings reset)
 
 **Notes for Docs Phase:**
+
 - New settings page with service toggles (Hue, Hive)
 - Services can be enabled/disabled, hiding corresponding nav tabs
 - Settings persist to file and survive server restarts
+
+## E2E Timeout Configuration (2025-12-28)
+
+**Review Status:** Approved
+
+**Test Results:**
+
+- Unit: 657 passed
+- E2E: 264 passed, 9 skipped
+
+**Files Reviewed:**
+
+- `frontend/playwright.config.ts` - Added global timeout configuration (2s requirement)
+- `frontend/e2e/hive.spec.ts` - Removed 10 explicit timeout overrides
+- `frontend/e2e/hive-2fa.spec.ts` - Removed 9 explicit timeout overrides
+- `frontend/e2e/auth.spec.ts` - Replaced waitForTimeout with assertions
+- `frontend/e2e/session.spec.ts` - Replaced waitForTimeout with assertions
+- `frontend/e2e/weather-settings.spec.ts` - Removed unnecessary waitForTimeout
+- `frontend/e2e/spacing-layout.spec.ts` - Removed animation waitForTimeout
+- `frontend/e2e/timeout-config.spec.ts` - New test file verifying 2s timeout
+
+**Issues Found:** None
+
+**Key Configuration:**
+
+```typescript
+timeout: 10000,        // Test timeout
+expect.timeout: 2000,  // Assertion timeout (2s requirement)
+actionTimeout: 2000,   // Click, fill, waitForSelector
+navigationTimeout: 5000 // Page loads
+```
+
+**Notes for Docs Phase:**
+
+- E2E tests now fail within 2 seconds when functionality is missing
+- Global timeout configuration in playwright.config.ts

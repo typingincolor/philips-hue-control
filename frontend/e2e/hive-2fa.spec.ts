@@ -40,8 +40,8 @@ async function navigateToHiveLogin(page: Page) {
 
   // Wait for either to appear
   await Promise.race([
-    loginForm.waitFor({ state: 'visible', timeout: 3000 }),
-    thermostat.waitFor({ state: 'visible', timeout: 3000 }),
+    loginForm.waitFor({ state: 'visible' }),
+    thermostat.waitFor({ state: 'visible' }),
   ]);
 
   // If thermostat appeared, another test connected - reset and retry once
@@ -50,7 +50,7 @@ async function navigateToHiveLogin(page: Page) {
     await navigateToHive(page);
   }
 
-  await page.waitForSelector('.hive-login-form', { timeout: 5000 });
+  await page.waitForSelector('.hive-login-form');
 }
 
 // Run Hive 2FA tests serially to avoid demo mode state conflicts
@@ -145,7 +145,7 @@ test.describe('Hive 2FA Authentication', () => {
       await page.click('button:has-text("Connect")');
 
       // Should briefly show connecting state then transition to 2FA form
-      await expect(page.locator('.hive-2fa-form')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.hive-2fa-form')).toBeVisible();
     });
 
     test('should transition to 2FA form when required', async ({ page }) => {
@@ -154,7 +154,7 @@ test.describe('Hive 2FA Authentication', () => {
       await page.click('button:has-text("Connect")');
 
       // Should show 2FA form (all demo logins require 2FA like real Hive)
-      await expect(page.locator('.hive-2fa-form')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.hive-2fa-form')).toBeVisible();
     });
 
     test('should show 2FA title', async ({ page }) => {
@@ -162,7 +162,7 @@ test.describe('Hive 2FA Authentication', () => {
       await page.fill('input[type="password"]', 'demo');
       await page.click('button:has-text("Connect")');
 
-      await expect(page.locator('text=Verify Your Identity')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('text=Verify Your Identity')).toBeVisible();
     });
 
     test('should show 2FA code input', async ({ page }) => {
@@ -229,14 +229,14 @@ test.describe('Hive 2FA Authentication', () => {
       // Should briefly show verifying state or proceed to thermostat
       await expect(
         page.locator('button:has-text("Verifying")').or(page.locator('.hive-thermostat'))
-      ).toBeVisible({ timeout: 5000 });
+      ).toBeVisible();
     });
 
     test('should show thermostat view after valid 2FA code', async ({ page }) => {
       await page.fill('input[placeholder*="code" i]', '123456');
       await page.click('button:has-text("Verify")');
 
-      await expect(page.locator('.hive-thermostat')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.hive-thermostat')).toBeVisible();
     });
 
     test('should return to login form when clicking back', async ({ page }) => {
@@ -396,7 +396,7 @@ test.describe('Hive 2FA Authentication', () => {
       await page.keyboard.press('Enter');
 
       // Should proceed to 2FA form (all demo logins require 2FA)
-      await expect(page.locator('.hive-2fa-form')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.hive-2fa-form')).toBeVisible();
     });
 
     test('should move focus to 2FA input when transitioning', async ({ page }) => {

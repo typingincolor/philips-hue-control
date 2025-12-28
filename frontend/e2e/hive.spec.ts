@@ -16,7 +16,7 @@ async function resetHiveDemoState(page: Page) {
 // Helper to close settings page
 async function closeSettingsPage(page: Page) {
   await page.keyboard.press('Escape');
-  await page.waitForSelector('.settings-page', { state: 'hidden', timeout: 5000 });
+  await page.waitForSelector('.settings-page', { state: 'hidden' });
 }
 
 // Helper to ensure Hive is disconnected (uses API reset + fresh navigation to sync frontend)
@@ -41,17 +41,14 @@ async function connectToHive(page: Page) {
   const thermostat = page.locator('.hive-thermostat');
 
   await Promise.race([
-    loginForm.waitFor({ state: 'visible', timeout: 5000 }),
-    thermostat.waitFor({ state: 'visible', timeout: 5000 }),
+    loginForm.waitFor({ state: 'visible' }),
+    thermostat.waitFor({ state: 'visible' }),
   ]);
 
   // If already connected (thermostat visible), we're done
   if (await thermostat.isVisible()) {
     return;
   }
-
-  // Additional wait for React re-render to complete
-  await page.waitForTimeout(100);
 
   // Use locator-based fill which handles re-renders better
   await page.locator('input[placeholder*="Email" i]').fill('demo@hive.com');
@@ -61,14 +58,14 @@ async function connectToHive(page: Page) {
   await page.locator('button:has-text("Connect")').click();
 
   // Wait for 2FA form (all demo logins require 2FA like real Hive)
-  await page.waitForSelector('.hive-2fa-form', { timeout: 5000 });
+  await page.waitForSelector('.hive-2fa-form');
 
   // Enter 2FA code and verify
   await page.locator('input[placeholder*="code" i]').fill('123456');
   await page.locator('button:has-text("Verify")').click();
 
   // Wait for connection to complete (thermostat appears)
-  await page.waitForSelector('.hive-thermostat', { timeout: 5000 });
+  await page.waitForSelector('.hive-thermostat');
 }
 
 // Helper to navigate to Hive view
@@ -116,7 +113,7 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       await page.click('[aria-label="settings"]');
       await page.waitForSelector('.settings-page');
 
-      await expect(page.locator('button:has-text("Disconnect")')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('button:has-text("Disconnect")')).toBeVisible();
     });
 
     test('should show link to Hive tab after disconnect', async ({ page }) => {
@@ -124,11 +121,11 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       await page.click('[aria-label="settings"]');
       await page.waitForSelector('.settings-page');
 
-      await page.waitForSelector('button:has-text("Disconnect")', { timeout: 5000 });
+      await page.waitForSelector('button:has-text("Disconnect")');
       await page.click('button:has-text("Disconnect")');
 
       // Link to Hive tab should appear after disconnect
-      await expect(page.locator('.settings-hive-link')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.settings-hive-link')).toBeVisible();
     });
   });
 
@@ -190,7 +187,7 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       await closeSettingsPage(page);
 
       // Hive tab should still be visible (login form shown when clicked)
-      await expect(page.locator('.nav-tab:has-text("Hive")')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.nav-tab:has-text("Hive")')).toBeVisible();
     });
   });
 
@@ -273,7 +270,7 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       // Loading state should appear briefly
       // Due to fast demo mode response, we may not catch it
       // This test verifies the view loads correctly
-      await expect(page.locator('.hive-view')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.hive-view')).toBeVisible();
     });
 
     test('should show retry button on error', async ({ page }) => {

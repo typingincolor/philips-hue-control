@@ -439,9 +439,6 @@ test.describe('Weather Unit Integration', () => {
     // Return to previous view
     await page.click('.settings-back-btn');
 
-    // Wait for weather to update
-    await page.waitForTimeout(500);
-
     // Temperature should still be valid format
     const newTemp = await tempElement.textContent();
     expect(newTemp).toMatch(/\d+°/);

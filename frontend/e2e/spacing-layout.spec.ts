@@ -206,9 +206,6 @@ test.describe('Layout Spacing - iPad (1024x768)', () => {
     const drawer = page.locator('.scene-drawer');
     await expect(drawer).toBeVisible();
 
-    // Wait for slide-in animation to complete (250ms)
-    await page.waitForTimeout(300);
-
     const drawerBox = await drawer.boundingBox();
     expect(drawerBox).not.toBeNull();
 

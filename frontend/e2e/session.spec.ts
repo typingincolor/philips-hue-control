@@ -26,7 +26,6 @@ test.describe('Session Persistence', () => {
     const connectButton = page.getByRole('button', { name: /connect|next|continue/i });
     if (await connectButton.isVisible()) {
       await connectButton.click();
-      await page.waitForTimeout(500);
     }
 
     // Verify localStorage has the bridge IP
@@ -90,9 +89,6 @@ test.describe('Session Expiration', () => {
     await page.reload();
 
     // App should handle gracefully - either show login or recovery
-    // Wait for any redirect/recovery
-    await page.waitForTimeout(2000);
-
     // App should still be functional
     await expect(page.locator('body')).toBeVisible();
   });
@@ -108,9 +104,6 @@ test.describe('Session Expiration', () => {
 
     // Reload and check for restoring indicator
     await page.reload();
-
-    // Either shows restoring message or proceeds to dashboard/login
-    await page.waitForTimeout(1000);
 
     // App should be in a valid state
     await expect(page.locator('body')).toBeVisible();
