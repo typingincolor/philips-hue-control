@@ -9,7 +9,11 @@ import { test, expect, Page } from '@playwright/test';
 
 // Helper to reset Hive demo state via API (reliable way to ensure disconnected)
 async function resetHiveDemoState(page: Page) {
+  // Reset both Hive connection and settings to ensure clean state
   await page.request.post('/api/v1/hive/reset-demo', {
+    headers: { 'X-Demo-Mode': 'true' },
+  });
+  await page.request.post('/api/v1/settings/reset-demo', {
     headers: { 'X-Demo-Mode': 'true' },
   });
 }
@@ -22,9 +26,22 @@ async function ensureHiveDisconnected(page: Page) {
   await page.waitForSelector('.main-panel');
 }
 
-// Helper to navigate to Hive tab
+// Helper to navigate to Hive view via settings (needed for deferred service activation)
 async function navigateToHive(page: Page) {
-  await page.click('.nav-tab:has-text("Hive")');
+  // Enable Hive service via settings API
+  await page.request.put('/api/v1/settings', {
+    headers: { 'X-Demo-Mode': 'true' },
+    data: { services: { hive: { enabled: true } } },
+  });
+
+  // Reload to pick up the new settings
+  await page.reload();
+  await page.waitForSelector('.main-panel');
+
+  // Open settings and click the Hive link to navigate to HiveView
+  await page.click('[aria-label="settings"]');
+  await page.waitForSelector('.settings-page');
+  await page.locator('.settings-hive-link').click();
   await page.waitForSelector('.hive-view');
 }
 
@@ -64,8 +81,11 @@ test.describe('Hive 2FA Authentication', () => {
       await ensureHiveDisconnected(page);
     });
 
-    test('should always show Hive tab in navigation', async ({ page }) => {
-      await expect(page.locator('.nav-tab:has-text("Hive")')).toBeVisible();
+    test('should not show Hive tab when disconnected (deferred service activation)', async ({
+      page,
+    }) => {
+      // With deferred service activation, Hive tab only shows when connected
+      await expect(page.locator('.nav-tab:has-text("Hive")')).not.toBeVisible();
     });
 
     test('should show login form when not connected', async ({ page }) => {

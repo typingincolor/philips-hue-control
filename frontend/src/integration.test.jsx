@@ -294,13 +294,22 @@ afterAll(() => server.close());
 
 describe('Integration Tests', () => {
   describe('Full Authentication Flow', () => {
-    it('completes discovery → pairing → session → dashboard', async () => {
+    it('completes settings → discovery → pairing → session → dashboard', async () => {
       const user = userEvent.setup();
 
       render(<App />);
 
-      // Step 1: Should show discovery screen
-      expect(screen.getByText(UI_TEXT.APP_TITLE)).toBeInTheDocument();
+      // Step 0: Should show settings page first (deferred service activation)
+      expect(screen.getByText(UI_TEXT.SETTINGS_TITLE)).toBeInTheDocument();
+
+      // Enable Hue service
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
+      // Step 1: Should show discovery screen after enabling Hue
+      await waitFor(() => {
+        expect(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE)).toBeInTheDocument();
+      });
 
       // Click discover button
       const discoverButton = screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE);
@@ -358,7 +367,12 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
+      // Enable Hue from settings page first
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
       // Navigate to authentication
+      await waitFor(() => screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await waitFor(() => screen.getByText(mockBridgeIp));
       await user.click(screen.getByText(UI_TEXT.BUTTON_USE_THIS_BRIDGE));
@@ -381,7 +395,12 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
+      // Enable Hue from settings page first
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
       // Complete authentication
+      await waitFor(() => screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await waitFor(() => screen.getByText(mockBridgeIp));
       await user.click(screen.getByText(UI_TEXT.BUTTON_USE_THIS_BRIDGE));
@@ -425,7 +444,12 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
+      // Enable Hue from settings page first
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
       // Complete authentication
+      await waitFor(() => screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await waitFor(() => screen.getByText(mockBridgeIp));
       await user.click(screen.getByText(UI_TEXT.BUTTON_USE_THIS_BRIDGE));
@@ -450,7 +474,12 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
+      // Enable Hue from settings page first
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
       // Complete authentication
+      await waitFor(() => screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await waitFor(() => screen.getByText(mockBridgeIp));
       await user.click(screen.getByText(UI_TEXT.BUTTON_USE_THIS_BRIDGE));
@@ -561,6 +590,11 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
+      // Enable Hue from settings page first
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
+      await waitFor(() => screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
 
       // Should show error message
@@ -587,7 +621,12 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
+      // Enable Hue from settings page first
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      await user.click(hueToggle);
+
       // Complete authentication
+      await waitFor(() => screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await user.click(screen.getByText(UI_TEXT.BUTTON_DISCOVER_BRIDGE));
       await waitFor(() => screen.getByText(mockBridgeIp));
       await user.click(screen.getByText(UI_TEXT.BUTTON_USE_THIS_BRIDGE));

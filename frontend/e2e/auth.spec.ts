@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+// Helper to enable Hue from settings page
+async function enableHueFromSettings(page) {
+  // Settings page shows first when no credentials
+  await expect(page.getByText(/Settings/i)).toBeVisible();
+
+  // Enable Hue service by clicking the label (input is visually hidden)
+  await page.getByText('Philips Hue').click();
+
+  // Should transition to discovery
+  await expect(page.getByRole('heading', { name: 'Auto-Discovery' })).toBeVisible();
+}
+
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Clear any stored session data
@@ -9,8 +21,25 @@ test.describe('Authentication Flow', () => {
     });
   });
 
+  test('should show settings page first when no credentials', async ({ page }) => {
+    await page.goto('/');
+
+    // Should show settings page with Hue toggle
+    await expect(page.getByText(/Settings/i)).toBeVisible();
+    await expect(page.getByText('Philips Hue')).toBeVisible();
+  });
+
+  test('should show discovery after enabling Hue', async ({ page }) => {
+    await page.goto('/');
+    await enableHueFromSettings(page);
+
+    // Should now show discovery/bridge IP input
+    await expect(page.getByRole('heading', { name: 'Auto-Discovery' })).toBeVisible();
+  });
+
   test('should show authentication screen after entering bridge IP', async ({ page }) => {
     await page.goto('/');
+    await enableHueFromSettings(page);
 
     // Enter a bridge IP
     const ipInput = page.getByPlaceholder(/192\.168/i);
@@ -25,29 +54,6 @@ test.describe('Authentication Flow', () => {
       // App should remain functional after button click
       await expect(page.locator('body')).toBeVisible();
     }
-  });
-
-  test('should display link button instructions', async ({ page }) => {
-    // This test checks that the auth flow shows proper instructions
-    // In a real scenario, we'd mock the API to get to the auth screen
-    await page.goto('/');
-
-    // The auth screen typically shows instructions about pressing the link button
-    // Since we can't fully simulate this without mocking, we verify the discovery page works
-    await expect(page.getByText(/Bridge IP/i)).toBeVisible();
-  });
-
-  test('should have authenticate button on auth screen', async ({ page }) => {
-    // Navigate to discovery
-    await page.goto('/');
-
-    // The authenticate/pair button should be available after IP entry
-    const ipInput = page.getByPlaceholder(/192\.168/i);
-    await ipInput.fill('192.168.1.100');
-
-    // Look for action buttons
-    const buttons = page.getByRole('button');
-    await expect(buttons.first()).toBeVisible();
   });
 });
 
@@ -79,15 +85,26 @@ test.describe('Authentication - Demo Mode', () => {
 });
 
 test.describe('Authentication Error Handling', () => {
-  test('should handle network errors gracefully', async ({ page }) => {
+  test('should show settings page on fresh start', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
     await page.goto('/');
 
-    // The app should show the discovery screen even without network
-    await expect(page.getByText(/Bridge IP/i)).toBeVisible();
+    // The app should show the settings page for deferred service activation
+    await expect(page.getByText(/Settings/i)).toBeVisible();
   });
 
-  test('should show error for invalid bridge', async ({ page }) => {
+  test('should show error for invalid bridge after enabling Hue', async ({ page }) => {
     await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto('/');
+
+    // Enable Hue from settings
+    await expect(page.getByText(/Settings/i)).toBeVisible();
+    await page.getByText('Philips Hue').click();
+
+    // Wait for discovery page
+    await expect(page.getByRole('heading', { name: 'Auto-Discovery' })).toBeVisible();
 
     // Enter an IP and try to connect
     const ipInput = page.getByPlaceholder(/192\.168/i);

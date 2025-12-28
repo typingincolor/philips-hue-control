@@ -18,7 +18,12 @@ test.describe('Session Persistence', () => {
   test('should store bridge IP in localStorage', async ({ page }) => {
     await page.goto('/');
 
-    // Enter a bridge IP
+    // Enable Hue from settings page first (deferred service activation)
+    await expect(page.getByText(/Settings/i)).toBeVisible();
+    await page.getByText('Philips Hue').click();
+
+    // Now on discovery page - enter a bridge IP
+    await expect(page.getByRole('heading', { name: 'Auto-Discovery' })).toBeVisible();
     const ipInput = page.getByPlaceholder(/192\.168/i);
     await ipInput.fill('192.168.1.100');
 

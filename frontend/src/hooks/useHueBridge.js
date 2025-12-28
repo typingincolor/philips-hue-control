@@ -23,8 +23,8 @@ const getInitialStep = () => {
     }
   }
 
-  // Otherwise, start at 'discovery'
-  return 'discovery';
+  // Otherwise, start at 'settings' (deferred service activation)
+  return 'settings';
 };
 
 export const useHueBridge = () => {
@@ -105,10 +105,10 @@ export const useHueBridge = () => {
           step: 'authentication',
         }));
       } else {
-        // No saved bridge IP, go to discovery
+        // No saved bridge IP, go to settings
         setState((prev) => ({
           ...prev,
-          step: 'discovery',
+          step: 'settings',
         }));
       }
     };
@@ -203,7 +203,7 @@ export const useHueBridge = () => {
     localStorage.removeItem(STORAGE_KEYS.BRIDGE_IP);
 
     setState({
-      step: 'discovery',
+      step: 'settings',
       bridgeIp: null,
       lights: null,
       loading: false,
@@ -213,11 +213,21 @@ export const useHueBridge = () => {
     logger.info('Reset authentication');
   };
 
+  // Transition from settings to discovery (when user enables Hue)
+  const enableHue = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      step: 'discovery',
+    }));
+    logger.info('Enabling Hue - starting discovery');
+  }, []);
+
   return {
     ...state,
     sessionToken,
     setBridgeIp,
     authenticate,
     reset,
+    enableHue,
   };
 };

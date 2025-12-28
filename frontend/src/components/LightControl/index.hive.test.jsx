@@ -127,15 +127,15 @@ describe('LightControl - Hive Integration', () => {
   });
 
   describe('Navigation', () => {
-    it('should always show Hive tab (even when not connected)', async () => {
+    it('should hide Hive tab when not connected', async () => {
       render(<LightControl sessionToken="test-token" />);
 
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
       });
 
-      // Hive tab should always be visible (login form shown when not connected)
-      expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+      // Hive tab should NOT be visible when not connected (connection-based visibility)
+      expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
     });
 
     it('should show Hive tab when connected', async () => {
@@ -197,7 +197,7 @@ describe('LightControl - Hive Integration', () => {
       expect(hiveTab).toHaveClass('active');
     });
 
-    it('should keep Hive tab visible after disconnect (shows login form)', async () => {
+    it('should hide Hive tab after disconnect (connection-based visibility)', async () => {
       const disconnectFn = vi.fn();
       mockHiveState = {
         ...mockHiveState,
@@ -223,9 +223,9 @@ describe('LightControl - Hive Integration', () => {
 
       rerender(<LightControl sessionToken="test-token" />);
 
-      // Hive tab should still be visible (login form will be shown when clicked)
+      // Hive tab should be hidden after disconnect (connection-based visibility)
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+        expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
       });
     });
   });

@@ -334,4 +334,119 @@ describe('SettingsPage', () => {
       expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
     });
   });
+
+  describe('deferred service activation', () => {
+    it('should call onEnableHue when Hue toggle turned ON while not connected', async () => {
+      const user = userEvent.setup();
+      const onEnableHue = vi.fn();
+      const props = {
+        ...defaultProps,
+        hueConnected: false,
+        onEnableHue,
+        settings: {
+          ...defaultProps.settings,
+          services: {
+            hue: { enabled: false },
+            hive: { enabled: false },
+          },
+        },
+      };
+      render(<SettingsPage {...props} />);
+
+      await user.click(screen.getByRole('switch', { name: /hue/i }));
+
+      expect(onEnableHue).toHaveBeenCalledTimes(1);
+      // Should NOT call onUpdateSettings when triggering auth flow
+      expect(props.onUpdateSettings).not.toHaveBeenCalled();
+    });
+
+    it('should call onEnableHive when Hive toggle turned ON while not connected', async () => {
+      const user = userEvent.setup();
+      const onEnableHive = vi.fn();
+      const props = {
+        ...defaultProps,
+        hiveConnected: false,
+        onEnableHive,
+        settings: {
+          ...defaultProps.settings,
+          services: {
+            hue: { enabled: true },
+            hive: { enabled: false },
+          },
+        },
+      };
+      render(<SettingsPage {...props} />);
+
+      await user.click(screen.getByRole('switch', { name: /hive/i }));
+
+      expect(onEnableHive).toHaveBeenCalledTimes(1);
+      // Should NOT call onUpdateSettings when triggering auth flow
+      expect(props.onUpdateSettings).not.toHaveBeenCalled();
+    });
+
+    it('should call onUpdateSettings when disabling already-connected Hue', async () => {
+      const user = userEvent.setup();
+      const props = {
+        ...defaultProps,
+        hueConnected: true,
+        settings: {
+          ...defaultProps.settings,
+          services: {
+            hue: { enabled: true },
+            hive: { enabled: false },
+          },
+        },
+      };
+      render(<SettingsPage {...props} />);
+
+      await user.click(screen.getByRole('switch', { name: /hue/i }));
+
+      // When disabling a connected service, should update settings
+      expect(props.onUpdateSettings).toHaveBeenCalledWith({
+        services: { hue: { enabled: false } },
+      });
+    });
+
+    it('should call onUpdateSettings when disabling already-connected Hive', async () => {
+      const user = userEvent.setup();
+      const props = {
+        ...defaultProps,
+        hiveConnected: true,
+        settings: {
+          ...defaultProps.settings,
+          services: {
+            hue: { enabled: true },
+            hive: { enabled: true },
+          },
+        },
+      };
+      render(<SettingsPage {...props} />);
+
+      await user.click(screen.getByRole('switch', { name: /hive/i }));
+
+      // When disabling a connected service, should update settings
+      expect(props.onUpdateSettings).toHaveBeenCalledWith({
+        services: { hive: { enabled: false } },
+      });
+    });
+
+    it('should show connected indicator for Hue service', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={true} />);
+
+      // Find the Hue toggle's parent and check for connected status
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      const toggleWrapper = hueToggle.closest('.service-toggle');
+      const statusIndicator = toggleWrapper.querySelector('.service-status');
+      expect(statusIndicator).toHaveClass('connected');
+    });
+
+    it('should show disconnected indicator for Hue service when not connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={false} />);
+
+      const hueToggle = screen.getByRole('switch', { name: /hue/i });
+      const toggleWrapper = hueToggle.closest('.service-toggle');
+      const statusIndicator = toggleWrapper.querySelector('.service-status');
+      expect(statusIndicator).toHaveClass('disconnected');
+    });
+  });
 });

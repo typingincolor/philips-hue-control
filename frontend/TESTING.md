@@ -49,16 +49,16 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (401 frontend + 660 backend = 1061 tests)
+### Unit Test Results (411 frontend + 660 backend = 1071 tests)
 
-#### Frontend (401 tests)
+#### Frontend (411 tests)
 
-- **Hooks**: useSession (23), useSettings (10), useWeather (10), useWebSocket (19), useLocation (14), useHive (19)
+- **Hooks**: useSession (23), useSettings (18), useWeather (10), useWebSocket (19), useLocation (14), useHive (19)
 - **Services**: hueApi (41)
-- **Components**: App (4), MotionZones (8), DashboardSummary (5), SceneSelector (8), SettingsPage (32), WeatherDisplay (11), WeatherTooltip (11), HiveView (18), LightControl/index (25), index.zones (9)
+- **Components**: App (7), MotionZones (8), DashboardSummary (5), SceneSelector (8), SettingsPage (38), BottomNav (5), WeatherDisplay (11), WeatherTooltip (11), HiveView (18), LightControl/index (29), index.zones (9), index.hive (17)
 - **Context**: DemoModeContext (8)
 - **Utils**: validation (8)
-- **Integration**: integration.test.jsx (10)
+- **Integration**: integration.test.jsx (12)
 
 #### Backend (660 tests)
 
@@ -129,7 +129,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 927 tests run in <5 seconds
+   - 1071 tests run in <5 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 

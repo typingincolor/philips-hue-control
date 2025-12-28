@@ -450,7 +450,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
         weatherError={weatherError}
         location={settings.location}
         units={settings.units}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => setSettingsOpen((prev) => !prev)}
       />
 
       <div className="main-panel">
@@ -463,8 +463,13 @@ export const LightControl = ({ sessionToken, onLogout }) => {
             onDetectLocation={detectLocation}
             isDetecting={isDetecting}
             locationError={locationError}
+            hueConnected={true} // Always true here - LightControl only renders when Hue is connected
             hiveConnected={hiveConnected}
             onHiveDisconnect={hiveDisconnect}
+            onEnableHive={() => {
+              setSettingsOpen(false);
+              setSelectedId('hive');
+            }}
           />
         ) : selectedId === 'hive' ? (
           <HiveView
@@ -519,8 +524,12 @@ export const LightControl = ({ sessionToken, onLogout }) => {
         zones={dashboard?.zones || []}
         hasAutomations={true}
         selectedId={selectedId}
-        onSelect={setSelectedId}
+        onSelect={(id) => {
+          setSelectedId(id);
+          setSettingsOpen(false);
+        }}
         services={settings.services}
+        hueConnected={true} // Always true here - LightControl only renders when Hue is connected
         hiveConnected={hiveConnected}
       />
     </div>

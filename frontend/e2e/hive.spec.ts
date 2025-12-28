@@ -8,7 +8,11 @@ import { test, expect, Page } from '@playwright/test';
 
 // Helper to reset Hive demo state via API (reliable way to ensure disconnected)
 async function resetHiveDemoState(page: Page) {
+  // Reset both Hive connection and settings to ensure clean state
   await page.request.post('/api/v1/hive/reset-demo', {
+    headers: { 'X-Demo-Mode': 'true' },
+  });
+  await page.request.post('/api/v1/settings/reset-demo', {
     headers: { 'X-Demo-Mode': 'true' },
   });
 }
@@ -27,14 +31,36 @@ async function ensureHiveDisconnected(page: Page) {
   await page.waitForSelector('.main-panel');
 }
 
+// Helper to enable Hive service via API and navigate to Hive view
+async function navigateToHiveLogin(page: Page) {
+  // Enable Hive service via settings API
+  await page.request.put('/api/v1/settings', {
+    headers: { 'X-Demo-Mode': 'true' },
+    data: { services: { hive: { enabled: true } } },
+  });
+
+  // Reload to pick up the new settings
+  await page.reload();
+  await page.waitForSelector('.main-panel');
+
+  // Open settings and click the Hive link
+  await page.click('[aria-label="settings"]');
+  await page.waitForSelector('.settings-page');
+
+  // Click on the Hive section link that says "Use the Hive tab to connect"
+  await page.locator('.settings-hive-link').click();
+
+  // Wait for Hive view with login form to appear
+  await page.waitForSelector('.hive-view');
+}
+
 // Helper to connect to Hive in demo mode (now through HiveView with 2FA)
 async function connectToHive(page: Page) {
   // First ensure Hive is disconnected to avoid race conditions with hiveCheckConnection
   await ensureHiveDisconnected(page);
 
-  // Navigate to Hive tab
-  await page.click('.nav-tab:has-text("Hive")');
-  await page.waitForSelector('.hive-view');
+  // Navigate to Hive view via settings link
+  await navigateToHiveLogin(page);
 
   // Wait for either login form or thermostat to be visible
   const loginForm = page.locator('.hive-login-form');
@@ -130,14 +156,14 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
   });
 
   test.describe('Navigation', () => {
-    test('should always show Hive tab (displays login form when not connected)', async ({
+    test('should not show Hive tab when disconnected (deferred service activation)', async ({
       page,
     }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
       await ensureHiveDisconnected(page);
-      // Hive tab is always visible - clicking shows login form when not connected
-      await expect(page.locator('.nav-tab:has-text("Hive")')).toBeVisible();
+      // Hive tab is now only visible when connected
+      await expect(page.locator('.nav-tab:has-text("Hive")')).not.toBeVisible();
     });
 
     test('should show Hive tab after connecting', async ({ page }) => {
@@ -171,7 +197,7 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       await expect(hiveTab).toHaveClass(/active/);
     });
 
-    test('should keep Hive tab visible after disconnect (shows login form)', async ({ page }) => {
+    test('should hide Hive tab after disconnect', async ({ page }) => {
       await page.goto('/?demo=true');
       await page.waitForSelector('.main-panel');
 
@@ -186,8 +212,8 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       // Close settings page
       await closeSettingsPage(page);
 
-      // Hive tab should still be visible (login form shown when clicked)
-      await expect(page.locator('.nav-tab:has-text("Hive")')).toBeVisible();
+      // Hive tab should now be hidden (deferred service activation)
+      await expect(page.locator('.nav-tab:has-text("Hive")')).not.toBeVisible();
     });
   });
 

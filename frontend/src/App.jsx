@@ -3,6 +3,7 @@ import { DemoModeProvider, useDemoMode } from './context/DemoModeContext';
 import { BridgeDiscovery } from './components/BridgeDiscovery';
 import { Authentication } from './components/Authentication';
 import { LightControl } from './components/LightControl';
+import { SettingsPage } from './components/LightControl/SettingsPage';
 import { UI_TEXT } from './constants/uiText';
 import './App.css';
 
@@ -12,13 +13,33 @@ import './App.css';
 function AppContent() {
   const { isDemoMode } = useDemoMode();
 
-  const { step, bridgeIp, sessionToken, loading, error, setBridgeIp, authenticate, reset } =
+  const { step, bridgeIp, sessionToken, loading, error, setBridgeIp, authenticate, reset, enableHue } =
     useHueBridge();
 
   // In demo mode, use dummy credentials and skip to connected step
   const effectiveStep = isDemoMode ? 'connected' : step;
   const effectiveBridgeIp = isDemoMode ? 'demo-bridge' : bridgeIp;
   const effectiveSessionToken = isDemoMode ? 'demo-session-token' : sessionToken;
+
+  // Show settings page as a full-screen experience (no header/footer)
+  // This is the initial state before any service is enabled
+  if (effectiveStep === 'settings') {
+    return (
+      <div className="app">
+        <main className="app-main">
+          <SettingsPage
+            onBack={() => {}}
+            onEnableHue={enableHue}
+            hueConnected={false}
+            hiveConnected={false}
+            settings={{ services: { hue: { enabled: false }, hive: { enabled: false } } }}
+            onUpdateSettings={() => {}}
+            onDetectLocation={() => {}}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="app">

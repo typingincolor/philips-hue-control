@@ -42,8 +42,11 @@ export const SettingsPage = ({
   onDetectLocation,
   isDetecting,
   locationError,
+  hueConnected,
   hiveConnected,
   onHiveDisconnect,
+  onEnableHue,
+  onEnableHive,
 }) => {
   // Close on Escape key
   useEffect(() => {
@@ -61,6 +64,18 @@ export const SettingsPage = ({
   const hiveEnabled = services?.hive?.enabled ?? false;
 
   const handleServiceToggle = (service, enabled) => {
+    // When enabling a disconnected service, call the enable callback instead
+    if (enabled) {
+      if (service === 'hue' && !hueConnected && onEnableHue) {
+        onEnableHue();
+        return;
+      }
+      if (service === 'hive' && !hiveConnected && onEnableHive) {
+        onEnableHive();
+        return;
+      }
+    }
+    // When disabling, or if already connected, update settings
     onUpdateSettings({
       services: { [service]: { enabled } },
     });
@@ -84,7 +99,7 @@ export const SettingsPage = ({
               label={UI_TEXT.SETTINGS_HUE_SERVICE}
               checked={hueEnabled}
               onChange={(enabled) => handleServiceToggle('hue', enabled)}
-              connected={true}
+              connected={hueConnected}
             />
             <ServiceToggle
               label={UI_TEXT.SETTINGS_HIVE_SERVICE}
@@ -152,9 +167,9 @@ export const SettingsPage = ({
                 </button>
               </div>
             ) : (
-              <div className="settings-hive-link">
+              <button className="settings-hive-link" onClick={onEnableHive}>
                 <span>{UI_TEXT.HIVE_TAB_LINK}</span>
-              </div>
+              </button>
             )}
           </div>
         )}
@@ -185,6 +200,9 @@ SettingsPage.propTypes = {
   onDetectLocation: PropTypes.func.isRequired,
   isDetecting: PropTypes.bool,
   locationError: PropTypes.string,
+  hueConnected: PropTypes.bool,
   hiveConnected: PropTypes.bool,
   onHiveDisconnect: PropTypes.func,
+  onEnableHue: PropTypes.func,
+  onEnableHive: PropTypes.func,
 };

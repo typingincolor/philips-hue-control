@@ -27,6 +27,7 @@ describe('BottomNav', () => {
       hue: { enabled: true },
       hive: { enabled: false },
     },
+    hueConnected: true, // Default to connected so existing tests pass
     hiveConnected: false,
   };
 
@@ -64,108 +65,82 @@ describe('BottomNav', () => {
     });
   });
 
-  describe('service-based visibility - Hue', () => {
-    it('should show rooms when Hue service is enabled', () => {
-      render(<BottomNav {...defaultProps} />);
+  // Note: "service-based visibility" tests removed - now using connection-based visibility
+  // See "connection-based visibility - Hue" and "connection-based visibility - Hive" describes
 
-      expect(screen.getByText('Living Room')).toBeInTheDocument();
-      expect(screen.getByText('Kitchen')).toBeInTheDocument();
-    });
-
-    it('should hide rooms when Hue service is disabled', () => {
+  describe('connection-based visibility - Hive', () => {
+    it('should show Hive tab when Hive is connected', () => {
       render(
         <BottomNav
           {...defaultProps}
-          services={{ hue: { enabled: false }, hive: { enabled: false } }}
-        />
-      );
-
-      expect(screen.queryByText('Living Room')).not.toBeInTheDocument();
-      expect(screen.queryByText('Kitchen')).not.toBeInTheDocument();
-    });
-
-    it('should hide zones when Hue service is disabled', () => {
-      render(
-        <BottomNav
-          {...defaultProps}
-          services={{ hue: { enabled: false }, hive: { enabled: false } }}
-        />
-      );
-
-      expect(screen.queryByText(UI_TEXT.NAV_ZONES)).not.toBeInTheDocument();
-    });
-
-    it('should hide automations when Hue service is disabled', () => {
-      render(
-        <BottomNav
-          {...defaultProps}
-          services={{ hue: { enabled: false }, hive: { enabled: false } }}
-        />
-      );
-
-      expect(screen.queryByText(UI_TEXT.NAV_AUTOMATIONS)).not.toBeInTheDocument();
-    });
-  });
-
-  describe('service-based visibility - Hive', () => {
-    it('should show Hive tab when Hive service is enabled', () => {
-      render(
-        <BottomNav
-          {...defaultProps}
-          services={{ hue: { enabled: true }, hive: { enabled: true } }}
+          hiveConnected={true}
         />
       );
 
       expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
     });
 
-    it('should hide Hive tab when Hive service is disabled', () => {
+    it('should hide Hive tab when Hive is not connected', () => {
       render(
         <BottomNav
           {...defaultProps}
-          services={{ hue: { enabled: true }, hive: { enabled: false } }}
+          hiveConnected={false}
         />
       );
 
       expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
     });
 
-    it('should show warning badge when Hive enabled but not connected', () => {
+    it('should hide Hive tab when hiveConnected prop is missing (undefined)', () => {
+      const propsWithoutHiveConnected = { ...defaultProps };
+      delete propsWithoutHiveConnected.hiveConnected;
+
+      render(<BottomNav {...propsWithoutHiveConnected} />);
+
+      expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('connection-based visibility - Hue', () => {
+    it('should show Hue tabs when hueConnected is true', () => {
       render(
         <BottomNav
           {...defaultProps}
-          services={{ hue: { enabled: true }, hive: { enabled: true } }}
-          hiveConnected={false}
+          hueConnected={true}
         />
       );
 
-      const hiveTab = screen.getByText(UI_TEXT.NAV_HIVE).closest('.nav-tab');
-      expect(hiveTab).toHaveClass('warning');
+      expect(screen.getByText('Living Room')).toBeInTheDocument();
+      expect(screen.getByText('Kitchen')).toBeInTheDocument();
+      expect(screen.getByText(UI_TEXT.NAV_ZONES)).toBeInTheDocument();
+      expect(screen.getByText(UI_TEXT.NAV_AUTOMATIONS)).toBeInTheDocument();
     });
 
-    it('should not show warning badge when Hive is connected', () => {
+    it('should hide Hue tabs when hueConnected is false', () => {
       render(
         <BottomNav
           {...defaultProps}
-          services={{ hue: { enabled: true }, hive: { enabled: true } }}
-          hiveConnected={true}
+          hueConnected={false}
         />
       );
 
-      const hiveTab = screen.getByText(UI_TEXT.NAV_HIVE).closest('.nav-tab');
-      expect(hiveTab).not.toHaveClass('warning');
+      expect(screen.queryByText('Living Room')).not.toBeInTheDocument();
+      expect(screen.queryByText('Kitchen')).not.toBeInTheDocument();
+      expect(screen.queryByText(UI_TEXT.NAV_ZONES)).not.toBeInTheDocument();
+      expect(screen.queryByText(UI_TEXT.NAV_AUTOMATIONS)).not.toBeInTheDocument();
     });
   });
 
   describe('empty states', () => {
-    it('should render only Hive tab when only Hive is enabled', () => {
+    it('should render only Hive tab when only Hive is connected', () => {
       render(
         <BottomNav
           {...defaultProps}
           rooms={[]}
           zones={[]}
           hasAutomations={false}
-          services={{ hue: { enabled: false }, hive: { enabled: true } }}
+          hueConnected={false}
+          hiveConnected={true}
         />
       );
 
@@ -173,14 +148,15 @@ describe('BottomNav', () => {
       expect(screen.queryByText('Living Room')).not.toBeInTheDocument();
     });
 
-    it('should render nothing when all services disabled', () => {
+    it('should render nothing when no services are connected', () => {
       render(
         <BottomNav
           {...defaultProps}
           rooms={[]}
           zones={[]}
           hasAutomations={false}
-          services={{ hue: { enabled: false }, hive: { enabled: false } }}
+          hueConnected={false}
+          hiveConnected={false}
         />
       );
 
@@ -191,14 +167,14 @@ describe('BottomNav', () => {
   });
 
   describe('backwards compatibility', () => {
-    it('should default to showing all tabs when services prop is missing', () => {
+    it('should show Hue tabs when hueConnected is true and services prop is missing', () => {
       const propsWithoutServices = { ...defaultProps };
       delete propsWithoutServices.services;
 
-      render(<BottomNav {...propsWithoutServices} />);
+      render(<BottomNav {...propsWithoutServices} hueConnected={true} hiveConnected={false} />);
 
       expect(screen.getByText('Living Room')).toBeInTheDocument();
-      expect(screen.getByText(UI_TEXT.NAV_HIVE)).toBeInTheDocument();
+      expect(screen.queryByText(UI_TEXT.NAV_HIVE)).not.toBeInTheDocument();
     });
   });
 
@@ -215,7 +191,7 @@ describe('BottomNav', () => {
         <BottomNav
           {...defaultProps}
           selectedId="hive"
-          services={{ hue: { enabled: true }, hive: { enabled: true } }}
+          hiveConnected={true}
         />
       );
 

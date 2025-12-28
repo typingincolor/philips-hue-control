@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import App from './App';
 import { STORAGE_KEYS } from './constants/storage';
 
@@ -55,6 +56,63 @@ Object.defineProperty(global, 'localStorage', {
   writable: true,
 });
 
+// Mock SettingsPage component for settings step testing
+vi.mock('./components/LightControl/SettingsPage', () => ({
+  SettingsPage: ({ onEnableHue }) => (
+    <div data-testid="settings-page">
+      Settings Page
+      <button data-testid="enable-hue" onClick={onEnableHue}>
+        Enable Hue
+      </button>
+    </div>
+  ),
+}));
+
+describe('App - Deferred Service Activation', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('should show Settings page when no credentials exist', () => {
+    // No session in localStorage
+    render(<App />);
+
+    // Should show settings page, not discovery
+    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
+    expect(screen.queryByTestId('bridge-discovery')).not.toBeInTheDocument();
+  });
+
+  it('should transition to discovery when Enable Hue is clicked', async () => {
+    render(<App />);
+
+    // Settings page should be visible initially
+    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
+
+    // Click Enable Hue
+    const enableButton = screen.getByTestId('enable-hue');
+    await userEvent.click(enableButton);
+
+    // Should now show bridge discovery
+    expect(screen.getByTestId('bridge-discovery')).toBeInTheDocument();
+    expect(screen.queryByTestId('settings-page')).not.toBeInTheDocument();
+  });
+
+  it('should show restoring state when valid session exists', () => {
+    const now = Date.now();
+    const expiresAt = now + 86400000;
+
+    localStorage.setItem(STORAGE_KEYS.SESSION_TOKEN, 'test-token');
+    localStorage.setItem(STORAGE_KEYS.BRIDGE_IP, '192.168.1.100');
+    localStorage.setItem(STORAGE_KEYS.SESSION_EXPIRES_AT, expiresAt.toString());
+
+    render(<App />);
+
+    // Should NOT show settings page when valid session exists
+    expect(screen.queryByTestId('settings-page')).not.toBeInTheDocument();
+  });
+});
+
 describe('App - Login Page Flicker Fix', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -89,16 +147,16 @@ describe('App - Login Page Flicker Fix', () => {
     expect(screen.queryByTestId('authentication')).not.toBeInTheDocument();
   });
 
-  it('should show login page when NO session exists', () => {
+  it('should show settings page when NO session exists', () => {
     // No session in localStorage
     render(<App />);
 
-    // Should show discovery step
-    expect(screen.getByTestId('bridge-discovery')).toBeInTheDocument();
+    // Should show settings page (deferred service activation)
+    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
     expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
   });
 
-  it('should show login page when session is EXPIRED', () => {
+  it('should show settings page when session is EXPIRED', () => {
     // Setup: Store an expired session
     const now = Date.now();
     const expiresAt = now - 1000; // Expired 1 second ago
@@ -109,8 +167,8 @@ describe('App - Login Page Flicker Fix', () => {
 
     render(<App />);
 
-    // Should show discovery step (not dashboard)
-    expect(screen.getByTestId('bridge-discovery')).toBeInTheDocument();
+    // Should show settings page (deferred service activation)
+    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
     expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
   });
 
@@ -122,8 +180,8 @@ describe('App - Login Page Flicker Fix', () => {
 
     render(<App />);
 
-    // Should show discovery step
-    expect(screen.getByTestId('bridge-discovery')).toBeInTheDocument();
+    // Should show settings page (deferred service activation)
+    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
     expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
   });
 });

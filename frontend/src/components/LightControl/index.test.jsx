@@ -544,4 +544,94 @@ describe('LightControl', () => {
       });
     });
   });
+
+  describe('Settings navigation', () => {
+    it('should open settings page when gear icon clicked', async () => {
+      const user = userEvent.setup();
+      render(<LightControl sessionToken="test-token" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Living Room')).toBeInTheDocument();
+      });
+
+      // Click gear icon to open settings
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+
+      await waitFor(() => {
+        expect(document.querySelector('.settings-page')).toBeInTheDocument();
+      });
+    });
+
+    it('should close settings page when gear icon clicked while settings is open', async () => {
+      const user = userEvent.setup();
+      render(<LightControl sessionToken="test-token" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Living Room')).toBeInTheDocument();
+      });
+
+      // Open settings
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+
+      await waitFor(() => {
+        expect(document.querySelector('.settings-page')).toBeInTheDocument();
+      });
+
+      // Click gear icon again to close settings
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+
+      await waitFor(() => {
+        expect(document.querySelector('.settings-page')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should close settings page when nav tab clicked', async () => {
+      const user = userEvent.setup();
+      render(<LightControl sessionToken="test-token" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Living Room')).toBeInTheDocument();
+      });
+
+      // Open settings
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+
+      await waitFor(() => {
+        expect(document.querySelector('.settings-page')).toBeInTheDocument();
+      });
+
+      // Click a room tab in bottom nav
+      await user.click(screen.getByText('Bedroom'));
+
+      await waitFor(() => {
+        // Settings should be closed
+        expect(document.querySelector('.settings-page')).not.toBeInTheDocument();
+        // And Bedroom content should be visible
+        expect(screen.getByText('Bedside')).toBeInTheDocument();
+      });
+    });
+
+    it('should close settings page when back button clicked', async () => {
+      const user = userEvent.setup();
+      render(<LightControl sessionToken="test-token" />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Living Room')).toBeInTheDocument();
+      });
+
+      // Open settings
+      await user.click(screen.getByRole('button', { name: /settings/i }));
+
+      await waitFor(() => {
+        expect(document.querySelector('.settings-page')).toBeInTheDocument();
+      });
+
+      // Click back button
+      await user.click(screen.getByRole('button', { name: /back/i }));
+
+      await waitFor(() => {
+        expect(document.querySelector('.settings-page')).not.toBeInTheDocument();
+      });
+    });
+  });
 });
