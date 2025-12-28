@@ -59,21 +59,21 @@ test.describe('Layout Spacing - Desktop', () => {
     const toolbarBox = await toolbar.boundingBox();
     const settingsButton = page.locator('.toolbar-settings');
     const settingsBox = await settingsButton.boundingBox();
-    const logoutButton = page.locator('.toolbar-logout');
-    const logoutBox = await logoutButton.boundingBox();
+    const toolbarRight = page.locator('.toolbar-right');
+    const toolbarRightBox = await toolbarRight.boundingBox();
 
     expect(toolbarBox).not.toBeNull();
     expect(settingsBox).not.toBeNull();
-    expect(logoutBox).not.toBeNull();
+    expect(toolbarRightBox).not.toBeNull();
 
-    if (toolbarBox && settingsBox && logoutBox) {
+    if (toolbarBox && settingsBox && toolbarRightBox) {
       // Settings button should be at least MIN_EDGE_SPACING from left edge
       expect(settingsBox.x).toBeGreaterThanOrEqual(MIN_EDGE_SPACING);
 
-      // Logout button should be at least MIN_EDGE_SPACING from right edge
+      // Right toolbar section should be at least MIN_EDGE_SPACING from right edge
       const viewportSize = page.viewportSize();
       if (viewportSize) {
-        const rightEdgeGap = viewportSize.width - (logoutBox.x + logoutBox.width);
+        const rightEdgeGap = viewportSize.width - (toolbarRightBox.x + toolbarRightBox.width);
         expect(rightEdgeGap).toBeGreaterThanOrEqual(MIN_EDGE_SPACING);
       }
     }
@@ -241,25 +241,25 @@ test.describe('Layout Spacing - iPhone 14 (390x844)', () => {
   test('toolbar essential items should be visible', async ({ page }) => {
     // On mobile, some toolbar items may be hidden but essential ones should remain
     const settingsButton = page.locator('.toolbar-settings');
-    const logoutButton = page.locator('.toolbar-logout');
+    const toolbarRight = page.locator('.toolbar-right');
 
-    // Essential buttons should be visible
+    // Essential elements should be visible
     await expect(settingsButton).toBeVisible();
-    await expect(logoutButton).toBeVisible();
+    await expect(toolbarRight).toBeVisible();
 
-    // Both buttons should be on screen
+    // Elements should be on screen
     const settingsBox = await settingsButton.boundingBox();
-    const logoutBox = await logoutButton.boundingBox();
+    const toolbarRightBox = await toolbarRight.boundingBox();
 
     expect(settingsBox).not.toBeNull();
-    expect(logoutBox).not.toBeNull();
+    expect(toolbarRightBox).not.toBeNull();
 
-    if (settingsBox && logoutBox) {
+    if (settingsBox && toolbarRightBox) {
       // Settings should be on left side
       expect(settingsBox.x).toBeLessThan(VIEWPORTS.iphone14.width / 2);
 
-      // Logout should be fully visible (not cut off)
-      expect(logoutBox.x + logoutBox.width).toBeLessThanOrEqual(VIEWPORTS.iphone14.width);
+      // Right toolbar section should be fully visible (not cut off)
+      expect(toolbarRightBox.x + toolbarRightBox.width).toBeLessThanOrEqual(VIEWPORTS.iphone14.width);
     }
   });
 

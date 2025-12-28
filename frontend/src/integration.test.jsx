@@ -137,7 +137,7 @@ const mockDashboard = {
 // Setup MSW server
 const server = setupServer(
   // Health check endpoint
-  http.get('/health', () => {
+  http.get('/api/health', () => {
     return HttpResponse.json({ status: 'ok', version: '2.0.0' });
   }),
 

@@ -105,31 +105,20 @@ test.describe('Demo Mode Dashboard', () => {
     await expect(drawer).not.toBeVisible();
   });
 
-  test('should display zones navigation', async ({ page }) => {
-    // Check for Zones button in bottom navigation
-    const zonesButton = page.getByRole('button', { name: /Zones/i });
-    await expect(zonesButton).toBeVisible();
+  test('should have settings button in toolbar', async ({ page }) => {
+    // Settings button should be visible in toolbar
+    const settingsButton = page.locator('.toolbar-settings');
+    await expect(settingsButton).toBeVisible();
   });
 
-  test('should have logout button', async ({ page }) => {
-    // Look for logout button by class (it's an icon button without text)
-    const logoutButton = page.locator('.toolbar-logout');
-    await expect(logoutButton).toBeVisible();
-  });
+  test('should open settings page when settings clicked', async ({ page }) => {
+    // Click settings button
+    const settingsButton = page.locator('.toolbar-settings');
+    await settingsButton.click();
 
-  test('should call logout handler when logout clicked', async ({ page }) => {
-    // In demo mode, clicking logout clears session state
-    // Note: Demo mode URL parameter keeps user on dashboard
-    // We verify the logout button is clickable and session is cleared
-
-    const logoutButton = page.locator('.toolbar-logout');
-    await logoutButton.click();
-
-    // Session token should be cleared from localStorage
-    const sessionToken = await page.evaluate(() => {
-      return localStorage.getItem('hue_session_token');
-    });
-    expect(sessionToken).toBeNull();
+    // Settings page should appear
+    const settingsPage = page.locator('.settings-page');
+    await expect(settingsPage).toBeVisible();
   });
 });
 

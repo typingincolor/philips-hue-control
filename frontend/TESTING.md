@@ -49,9 +49,9 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (488 frontend + 891 backend = 1379 tests)
+### Unit Test Results (493 frontend + 891 backend = 1384 tests)
 
-#### Frontend (488 tests)
+#### Frontend (493 tests)
 
 - **Hooks**: useSession (23), useSettings (19), useWeather (11), useWebSocket (19), useLocation (17), useHive (19), useHome (13)
 - **Services**: hueApi (5), authApi (12), settingsApi (10), weatherApi (6), automationsApi (5), homeApi (5), homeAdapter (9), servicesApi (13)
@@ -310,18 +310,20 @@ npm run test:e2e:ui
 npm run test:e2e:headed
 ```
 
-### Test Files (155+ tests)
+### Test Files (170 tests)
 
 ```
 e2e/
-├── auth.spec.ts            # Authentication flow
-├── automations.spec.ts     # Automation triggering
-├── demo-mode.spec.ts       # Dashboard tests in demo mode
-├── discovery.spec.ts       # Bridge discovery flow
+├── auth.spec.ts              # Authentication flow
+├── automations.spec.ts       # Automation triggering
+├── demo-mode.spec.ts         # Dashboard tests in demo mode
+├── discovery.spec.ts         # Bridge discovery flow
 ├── responsive-layout.spec.ts # Responsive design tests
-├── session.spec.ts         # Session persistence
-├── spacing-layout.spec.ts  # Layout spacing tests
-└── weather-settings.spec.ts # Weather settings
+├── session.spec.ts           # Session persistence
+├── settings-page.spec.ts     # Settings page tests
+├── spacing-layout.spec.ts    # Layout spacing tests
+├── timeout-config.spec.ts    # Timeout configuration
+└── weather-settings.spec.ts  # Weather settings
 ```
 
 Note: Hive integration tests were converted to manual tests (see `docs/MANUAL_TESTS.md`).

@@ -42,41 +42,26 @@ test.describe('Session Persistence', () => {
     expect(storedIp).toBe('192.168.1.100');
   });
 
-  test('should clear session on logout', async ({ page }) => {
+  test('should display service toggles in settings', async ({ page }) => {
     // Load demo mode
     await page.goto('/?demo=true');
 
     // Wait for dashboard
     await expect(page.getByText('Living Room')).toBeVisible();
 
-    // Click logout (icon button with class)
-    const logoutButton = page.locator('.toolbar-logout');
-    await logoutButton.click();
+    // Open settings page
+    const settingsButton = page.locator('.toolbar-settings');
+    await settingsButton.click();
 
-    // Session should be cleared from localStorage
-    // Note: Demo mode URL parameter keeps user on dashboard visually
-    const sessionToken = await page.evaluate(() => {
-      return localStorage.getItem('hue_session_token');
-    });
+    // Wait for settings page to appear
+    await expect(page.locator('.settings-page')).toBeVisible();
 
-    expect(sessionToken).toBeNull();
-  });
+    // Find the service toggles using label container (checkbox is visually hidden)
+    const hueToggle = page.locator('.service-toggle:has-text("Hue")');
+    const hiveToggle = page.locator('.service-toggle:has-text("Hive")');
 
-  test('should clear bridge IP on logout', async ({ page }) => {
-    // Load demo mode first to set some state
-    await page.goto('/?demo=true');
-    await expect(page.getByText('Living Room')).toBeVisible();
-
-    // Logout (icon button with class)
-    const logoutButton = page.locator('.toolbar-logout');
-    await logoutButton.click();
-
-    // Bridge IP should be cleared after logout
-    const bridgeIp = await page.evaluate(() => {
-      return localStorage.getItem('hue_bridge_ip');
-    });
-
-    expect(bridgeIp).toBeNull();
+    await expect(hueToggle).toBeVisible();
+    await expect(hiveToggle).toBeVisible();
   });
 });
 
