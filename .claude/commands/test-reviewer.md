@@ -31,13 +31,22 @@ Analyze the test suite and provide a comprehensive review. For each test file an
 
 ## Process
 
-1. **Discover tests**: Find all test files in the codebase (look for common patterns like `*.test.*`, `*.spec.*`, `__tests__/`, `test/`, `tests/`, `*_test.*`)
+1. **Run code coverage**: Run coverage to identify untested code paths
 
-2. **Analyze each test file**: Read and understand what each test is verifying
+   ```bash
+   npm run test:coverage:all
+   ```
 
-3. **Cross-reference with source**: Check that tested code still exists and the tests align with current implementation
+   Note the coverage percentages and any files with low coverage.
 
-4. **Generate report**: Provide a structured report with:
+2. **Discover tests**: Find all test files in the codebase (look for common patterns like `*.test.*`, `*.spec.*`, `__tests__/`, `test/`, `tests/`, `*_test.*`)
+
+3. **Analyze each test file**: Read and understand what each test is verifying
+
+4. **Cross-reference with source**: Check that tested code still exists and the tests align with current implementation
+
+5. **Generate report**: Provide a structured report with:
+   - Coverage summary (overall and per-package percentages)
    - Summary statistics (total tests, issues found by category)
    - List of problematic tests with specific issues
    - Recommended actions (remove, refactor, or keep with modifications)
@@ -47,7 +56,17 @@ Analyze the test suite and provide a comprehensive review. For each test file an
 Provide your findings in this structure:
 
 ```
-## Summary
+## Coverage Summary
+
+| Package  | Statements | Branches | Functions | Lines |
+|----------|------------|----------|-----------|-------|
+| Frontend | X%         | X%       | X%        | X%    |
+| Backend  | X%         | X%       | X%        | X%    |
+
+### Low Coverage Files
+[List files with <80% coverage that need attention]
+
+## Test Summary
 - Total test files reviewed: X
 - Total test cases reviewed: X
 - Tests to remove: X
@@ -62,8 +81,8 @@ Provide your findings in this structure:
 ### Tests to Refactor
 [List tests that need improvement with specific suggestions]
 
-### Tests Missing Coverage
-[Note any important code paths that lack test coverage]
+### Coverage Gaps
+[Note any important code paths that lack test coverage based on coverage report]
 
 ## Recommendations
 [Overall suggestions for improving the test suite]
