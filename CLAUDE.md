@@ -102,7 +102,12 @@ Backend-based demo allows testing without Hue Bridge:
 
 **Main Flow:** App.jsx (auth) → LightControl/index.jsx → TopToolbar + BottomNav + MainPanel
 
-**Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences), `useHive` (Hive heating), `useHome` (unified Home model)
+**Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences), `useHive` (Hive heating)
+
+**Key Services:**
+- `homeAdapter.js` - Transforms V2 Home format to V1 Dashboard format
+- `homeApi.js` - V2 Home API client
+- `servicesApi.js` - V2 Services API client (Hue/Hive connection)
 
 **UI Text:** All user-facing text in `constants/uiText.js` - tests use these constants.
 
@@ -129,13 +134,15 @@ Backend-based demo allows testing without Hue Bridge:
 
 ### V2 API (Unified Home)
 
-| Method | Endpoint                           | Purpose             |
-| ------ | ---------------------------------- | ------------------- |
-| GET    | `/api/v2/home`                     | Full home structure |
-| GET    | `/api/v2/home/rooms/:id`           | Single room         |
-| GET    | `/api/v2/home/devices`             | Home-level devices  |
-| PUT    | `/api/v2/home/devices/:id`         | Update device       |
-| POST   | `/api/v2/home/scenes/:id/activate` | Activate scene      |
+| Method | Endpoint                           | Purpose                  |
+| ------ | ---------------------------------- | ------------------------ |
+| GET    | `/api/v2/home`                     | Full home structure      |
+| GET    | `/api/v2/home/rooms/:id`           | Single room              |
+| GET    | `/api/v2/home/devices`             | Home-level devices       |
+| PUT    | `/api/v2/home/devices/:id`         | Update device            |
+| PUT    | `/api/v2/home/rooms/:id/devices`   | Update all room devices  |
+| PUT    | `/api/v2/home/zones/:id/devices`   | Update all zone devices  |
+| POST   | `/api/v2/home/scenes/:id/activate` | Activate scene           |
 
 **Device ID Format:** `serviceId:deviceId` (e.g., `hue:light-1`, `hive:heating`)
 
