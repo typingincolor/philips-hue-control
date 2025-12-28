@@ -6,7 +6,7 @@ import { useSettings } from '../../hooks/useSettings';
 import { useLocation } from '../../hooks/useLocation';
 import { useWeather } from '../../hooks/useWeather';
 import { useHive } from '../../hooks/useHive';
-import { hueApi } from '../../services/hueApi';
+import { disconnectService } from '../../services/servicesApi';
 import {
   getDashboardFromHome,
   updateLight,
@@ -483,7 +483,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
             onDisableHue={async () => {
               // Clear Hue credentials on backend and return to settings step
               try {
-                await hueApi.disconnect();
+                await disconnectService('hue', isDemoMode);
               } catch {
                 // Ignore errors - we're disconnecting anyway
               }
