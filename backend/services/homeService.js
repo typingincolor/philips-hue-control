@@ -146,6 +146,64 @@ class HomeServiceClass {
 
     return plugin.activateScene(originalId);
   }
+
+  /**
+   * Update all devices in a room
+   * @param {string} roomId - Room ID (can be plain ID or prefixed with serviceId:)
+   * @param {Object} state - New state to apply
+   * @param {boolean} demoMode - Whether to use demo mode
+   * @returns {Promise<Object>} Result object
+   */
+  async updateRoomDevices(roomId, state, demoMode = false) {
+    // Room IDs may or may not be prefixed - try to find the service
+    let serviceId = 'hue';
+    let originalId = roomId;
+
+    if (roomId.includes(':')) {
+      [serviceId, originalId] = roomId.split(':');
+    }
+
+    const plugin = ServiceRegistry.get(serviceId, demoMode);
+
+    if (!plugin) {
+      throw new Error(`Unknown service: ${serviceId}`);
+    }
+
+    if (typeof plugin.updateRoomDevices !== 'function') {
+      throw new Error(`Service ${serviceId} does not support room updates`);
+    }
+
+    return plugin.updateRoomDevices(originalId, state);
+  }
+
+  /**
+   * Update all devices in a zone
+   * @param {string} zoneId - Zone ID (can be plain ID or prefixed with serviceId:)
+   * @param {Object} state - New state to apply
+   * @param {boolean} demoMode - Whether to use demo mode
+   * @returns {Promise<Object>} Result object
+   */
+  async updateZoneDevices(zoneId, state, demoMode = false) {
+    // Zone IDs may or may not be prefixed - try to find the service
+    let serviceId = 'hue';
+    let originalId = zoneId;
+
+    if (zoneId.includes(':')) {
+      [serviceId, originalId] = zoneId.split(':');
+    }
+
+    const plugin = ServiceRegistry.get(serviceId, demoMode);
+
+    if (!plugin) {
+      throw new Error(`Unknown service: ${serviceId}`);
+    }
+
+    if (typeof plugin.updateZoneDevices !== 'function') {
+      throw new Error(`Service ${serviceId} does not support zone updates`);
+    }
+
+    return plugin.updateZoneDevices(originalId, state);
+  }
 }
 
 const homeService = new HomeServiceClass();

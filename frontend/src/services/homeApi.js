@@ -88,3 +88,35 @@ export async function activateScene(sceneId, demoMode = false) {
   });
   return handleResponse(response);
 }
+
+/**
+ * Update all devices in a room
+ * @param {string} roomId - Room ID
+ * @param {Object} state - New state to apply
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object with updatedLights
+ */
+export async function updateRoomDevices(roomId, state, demoMode = false) {
+  const response = await fetch(`${API_BASE}/rooms/${roomId}/devices`, {
+    method: 'PUT',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify(state),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Update all devices in a zone
+ * @param {string} zoneId - Zone ID
+ * @param {Object} state - New state to apply
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object with updatedLights
+ */
+export async function updateZoneDevices(zoneId, state, demoMode = false) {
+  const response = await fetch(`${API_BASE}/zones/${zoneId}/devices`, {
+    method: 'PUT',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify(state),
+  });
+  return handleResponse(response);
+}

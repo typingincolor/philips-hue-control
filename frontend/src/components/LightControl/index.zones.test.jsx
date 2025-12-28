@@ -2,15 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LightControl } from './index';
+import {
+  getDashboardFromHome,
+  updateLight,
+  updateRoomLights,
+  updateZoneLights,
+  activateSceneV1,
+} from '../../services/homeAdapter';
 
-// Create mutable reference for mock API (initialized with defaults for hoisted vi.mock)
-let mockApi = {
-  getDashboard: vi.fn(),
-  updateLight: vi.fn(),
-  updateRoomLights: vi.fn(),
-  updateZoneLights: vi.fn(),
-  activateSceneV1: vi.fn(),
-};
 let mockDashboardData;
 
 const baseDashboard = {
@@ -60,14 +59,18 @@ const baseDashboard = {
 
 // Mock the homeAdapter
 vi.mock('../../services/homeAdapter', () => ({
-  getDashboardFromHome: vi.fn().mockImplementation(() => Promise.resolve(mockDashboardData)),
+  getDashboardFromHome: vi.fn(),
+  updateLight: vi.fn(),
+  updateRoomLights: vi.fn(),
+  updateZoneLights: vi.fn(),
+  activateSceneV1: vi.fn(),
 }));
 
 // Mock the DemoModeContext
 vi.mock('../../context/DemoModeContext', () => ({
   useDemoMode: () => ({
     isDemoMode: true,
-    api: mockApi,
+    api: {},
   }),
 }));
 
@@ -83,13 +86,12 @@ describe('LightControl - Zones (Navigation)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDashboardData = { ...baseDashboard };
-    mockApi = {
-      getDashboard: vi.fn().mockImplementation(() => Promise.resolve(mockDashboardData)),
-      updateLight: vi.fn().mockResolvedValue({ light: {} }),
-      updateRoomLights: vi.fn().mockResolvedValue({ updatedLights: [] }),
-      updateZoneLights: vi.fn().mockResolvedValue({ updatedLights: [] }),
-      activateSceneV1: vi.fn().mockResolvedValue({ affectedLights: [] }),
-    };
+    // Reset homeAdapter mocks
+    getDashboardFromHome.mockImplementation(() => Promise.resolve(mockDashboardData));
+    updateLight.mockResolvedValue({ light: {} });
+    updateRoomLights.mockResolvedValue({ updatedLights: [] });
+    updateZoneLights.mockResolvedValue({ updatedLights: [] });
+    activateSceneV1.mockResolvedValue({ affectedLights: [] });
   });
 
   it('should render Zones tab in bottom nav when zones are present', async () => {
@@ -222,7 +224,7 @@ describe('LightControl - Zones (Navigation)', () => {
 
     await user.click(offButton);
 
-    expect(mockApi.updateZoneLights).toHaveBeenCalledWith('zone-1', { on: false });
+    expect(updateZoneLights).toHaveBeenCalledWith('zone-1', { on: false }, true);
   });
 
   it('should show zone count badge on Zones tab', async () => {

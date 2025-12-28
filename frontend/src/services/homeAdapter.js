@@ -109,3 +109,82 @@ export async function getDashboardFromHome(demoMode = false) {
   const home = await homeApi.getHome(demoMode);
   return transformHomeToDashboard(home);
 }
+
+// Default service ID for legacy operations (when no service prefix is present)
+const DEFAULT_SERVICE_ID = 'hue';
+
+/**
+ * Add service prefix to ID if not already present
+ * @param {string} id - Device/scene/room/zone ID
+ * @returns {string} ID with service prefix
+ */
+function ensureServicePrefix(id) {
+  if (!id) return id;
+  return id.includes(':') ? id : `${DEFAULT_SERVICE_ID}:${id}`;
+}
+
+/**
+ * Update a single light/device
+ * Adapter for hueApi.updateLight()
+ * @param {string} lightId - Light ID (V1 format, without service prefix)
+ * @param {Object} state - New state to apply
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object with light property
+ */
+export async function updateLight(lightId, state, demoMode = false) {
+  const fullId = ensureServicePrefix(lightId);
+  const result = await homeApi.updateDevice(fullId, state, demoMode);
+
+  // Transform response to V1 format
+  return {
+    light: {
+      id: lightId,
+      ...state,
+    },
+    ...result,
+  };
+}
+
+/**
+ * Update all lights in a room
+ * Adapter for hueApi.updateRoomLights()
+ * @param {string} roomId - Room ID (V1 format)
+ * @param {Object} state - New state to apply
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object with updatedLights property
+ */
+export async function updateRoomLights(roomId, state, demoMode = false) {
+  const result = await homeApi.updateRoomDevices(roomId, state, demoMode);
+  return result;
+}
+
+/**
+ * Update all lights in a zone
+ * Adapter for hueApi.updateZoneLights()
+ * @param {string} zoneId - Zone ID (V1 format)
+ * @param {Object} state - New state to apply
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object with updatedLights property
+ */
+export async function updateZoneLights(zoneId, state, demoMode = false) {
+  const result = await homeApi.updateZoneDevices(zoneId, state, demoMode);
+  return result;
+}
+
+/**
+ * Activate a scene
+ * Adapter for hueApi.activateSceneV1()
+ * @param {string} sceneId - Scene ID (V1 format, without service prefix)
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object with affectedLights property
+ */
+export async function activateSceneV1(sceneId, demoMode = false) {
+  const fullId = ensureServicePrefix(sceneId);
+  const result = await homeApi.activateScene(fullId, demoMode);
+
+  // Transform response to V1 format
+  return {
+    affectedLights: result.affectedLights || [],
+    ...result,
+  };
+}

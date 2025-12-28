@@ -96,4 +96,36 @@ router.post('/scenes/:id/activate', async (req, res, next) => {
   }
 });
 
+/**
+ * PUT /api/v2/home/rooms/:id/devices
+ * Update all devices in a room
+ */
+router.put('/rooms/:id/devices', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const demoMode = req.demoMode || false;
+    const result = await homeService.updateRoomDevices(id, req.body, demoMode);
+    res.json(result);
+  } catch (error) {
+    logger.error('Failed to update room devices', { id: req.params.id, error: error.message });
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/v2/home/zones/:id/devices
+ * Update all devices in a zone
+ */
+router.put('/zones/:id/devices', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const demoMode = req.demoMode || false;
+    const result = await homeService.updateZoneDevices(id, req.body, demoMode);
+    res.json(result);
+  } catch (error) {
+    logger.error('Failed to update zone devices', { id: req.params.id, error: error.message });
+    next(error);
+  }
+});
+
 export default router;

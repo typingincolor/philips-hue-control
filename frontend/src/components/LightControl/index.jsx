@@ -7,7 +7,13 @@ import { useLocation } from '../../hooks/useLocation';
 import { useWeather } from '../../hooks/useWeather';
 import { useHive } from '../../hooks/useHive';
 import { hueApi } from '../../services/hueApi';
-import { getDashboardFromHome } from '../../services/homeAdapter';
+import {
+  getDashboardFromHome,
+  updateLight,
+  updateRoomLights,
+  updateZoneLights,
+  activateSceneV1,
+} from '../../services/homeAdapter';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { createLogger } from '../../utils/logger';
 import { TopToolbar } from './TopToolbar';
@@ -210,7 +216,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       const currentState = light.on ?? false;
       const newState = { on: !currentState };
 
-      const response = await api.updateLight(lightUuid, newState);
+      const response = await updateLight(lightUuid, newState, isDemoMode);
 
       // Optimistic update - apply immediately for responsive UI
       setLocalDashboard((prev) => ({
@@ -252,7 +258,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
 
     try {
       const newState = { on: turnOn };
-      const response = await api.updateRoomLights(roomId, newState);
+      const response = await updateRoomLights(roomId, newState, isDemoMode);
 
       // Optimistic update - apply immediately for responsive UI
       setLocalDashboard((prev) => ({
@@ -295,7 +301,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
 
     try {
       const newState = { on: turnOn };
-      const response = await api.updateZoneLights(zoneId, newState);
+      const response = await updateZoneLights(zoneId, newState, isDemoMode);
 
       // Optimistic update - apply immediately for responsive UI
       setLocalDashboard((prev) => ({
@@ -333,7 +339,7 @@ export const LightControl = ({ sessionToken, onLogout }) => {
 
     setActivatingScene(zoneId || sceneUuid);
     try {
-      const response = await api.activateSceneV1(sceneUuid);
+      const response = await activateSceneV1(sceneUuid, isDemoMode);
       logger.info(
         `Activated scene ${sceneUuid}`,
         response.affectedLights?.length,

@@ -284,6 +284,64 @@ class HuePluginClass extends ServicePlugin {
   }
 
   /**
+   * Update all devices in a room
+   * @param {string} roomId - Room ID (without service prefix)
+   * @param {Object} state - New state to apply
+   * @returns {Promise<Object>} Result object with updatedLights
+   */
+  async updateRoomDevices(roomId, state) {
+    const bridgeIp = this._bridgeIp;
+    const username = sessionManager.getBridgeCredentials(bridgeIp);
+    const client = getHueClientForBridge(bridgeIp);
+
+    // Get room hierarchy to find lights
+    const status = await this.getStatus(false);
+    const room = status.rooms?.find((r) => r.id === roomId);
+
+    if (!room) {
+      throw new Error(`Room not found: ${roomId}`);
+    }
+
+    const lightUpdates = room.lights.map((light) => ({
+      lightId: light.id,
+      state,
+    }));
+
+    await client.updateLights(bridgeIp, username, lightUpdates);
+
+    return { success: true, updatedLights: room.lights };
+  }
+
+  /**
+   * Update all devices in a zone
+   * @param {string} zoneId - Zone ID (without service prefix)
+   * @param {Object} state - New state to apply
+   * @returns {Promise<Object>} Result object with updatedLights
+   */
+  async updateZoneDevices(zoneId, state) {
+    const bridgeIp = this._bridgeIp;
+    const username = sessionManager.getBridgeCredentials(bridgeIp);
+    const client = getHueClientForBridge(bridgeIp);
+
+    // Get zones from dashboard
+    const status = await this.getStatus(false);
+    const zone = status.zones?.find((z) => z.id === zoneId);
+
+    if (!zone) {
+      throw new Error(`Zone not found: ${zoneId}`);
+    }
+
+    const lightUpdates = zone.lights.map((light) => ({
+      lightId: light.id,
+      state,
+    }));
+
+    await client.updateLights(bridgeIp, username, lightUpdates);
+
+    return { success: true, updatedLights: zone.lights };
+  }
+
+  /**
    * Detect changes between previous and current status
    * Returns array of change objects or null if no changes
    */

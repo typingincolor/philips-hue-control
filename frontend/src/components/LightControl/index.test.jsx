@@ -2,16 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LightControl } from './index';
-import { getDashboardFromHome } from '../../services/homeAdapter';
+import {
+  getDashboardFromHome,
+  updateLight,
+  updateRoomLights,
+  updateZoneLights,
+  activateSceneV1,
+} from '../../services/homeAdapter';
 
-// Create mutable references for mocks (initialized with defaults for hoisted vi.mock)
-let mockApi = {
-  getDashboard: vi.fn(),
-  updateLight: vi.fn(),
-  updateRoomLights: vi.fn(),
-  updateZoneLights: vi.fn(),
-  activateSceneV1: vi.fn(),
-};
 let mockDashboardData;
 let mockWebSocketState;
 let mockIsDemoMode = true;
@@ -75,14 +73,18 @@ const baseDashboard = {
 
 // Mock the homeAdapter
 vi.mock('../../services/homeAdapter', () => ({
-  getDashboardFromHome: vi.fn().mockImplementation(() => Promise.resolve(mockDashboardData)),
+  getDashboardFromHome: vi.fn(),
+  updateLight: vi.fn(),
+  updateRoomLights: vi.fn(),
+  updateZoneLights: vi.fn(),
+  activateSceneV1: vi.fn(),
 }));
 
 // Mock the DemoModeContext
 vi.mock('../../context/DemoModeContext', () => ({
   useDemoMode: () => ({
     isDemoMode: mockIsDemoMode,
-    api: mockApi,
+    api: {}, // No longer used for control operations
   }),
 }));
 
@@ -104,33 +106,30 @@ describe('LightControl', () => {
       dashboard: null,
       error: null,
     };
-    // Reset getDashboardFromHome mock to return mockDashboardData
+    // Reset homeAdapter mocks
     getDashboardFromHome.mockImplementation(() => Promise.resolve(mockDashboardData));
-    mockApi = {
-      getDashboard: vi.fn().mockImplementation(() => Promise.resolve(mockDashboardData)),
-      updateLight: vi.fn().mockImplementation((lightId, state) =>
-        Promise.resolve({
-          light: { id: lightId, on: state.on, brightness: state.on ? 100 : 0 },
-        })
-      ),
-      updateRoomLights: vi.fn().mockImplementation((roomId, state) =>
-        Promise.resolve({
-          updatedLights:
-            mockDashboardData.rooms
-              .find((r) => r.id === roomId)
-              ?.lights.map((l) => ({ ...l, on: state.on })) || [],
-        })
-      ),
-      updateZoneLights: vi.fn().mockResolvedValue({ updatedLights: [] }),
-      activateSceneV1: vi.fn().mockImplementation(() =>
-        Promise.resolve({
-          affectedLights: [
-            { id: 'light-1', on: true, brightness: 100, color: '#ffffff' },
-            { id: 'light-2', on: true, brightness: 100, color: '#ffffff' },
-          ],
-        })
-      ),
-    };
+    updateLight.mockImplementation((lightId, state) =>
+      Promise.resolve({
+        light: { id: lightId, on: state.on, brightness: state.on ? 100 : 0 },
+      })
+    );
+    updateRoomLights.mockImplementation((roomId, state) =>
+      Promise.resolve({
+        updatedLights:
+          mockDashboardData.rooms
+            .find((r) => r.id === roomId)
+            ?.lights.map((l) => ({ ...l, on: state.on })) || [],
+      })
+    );
+    updateZoneLights.mockResolvedValue({ updatedLights: [] });
+    activateSceneV1.mockImplementation(() =>
+      Promise.resolve({
+        affectedLights: [
+          { id: 'light-1', on: true, brightness: 100, color: '#ffffff' },
+          { id: 'light-2', on: true, brightness: 100, color: '#ffffff' },
+        ],
+      })
+    );
   });
 
   afterEach(() => {
@@ -297,15 +296,16 @@ describe('LightControl', () => {
 
       await user.click(lampTile);
 
-      expect(mockApi.updateLight).toHaveBeenCalledWith(
+      expect(updateLight).toHaveBeenCalledWith(
         'light-1',
-        { on: false } // Light was on, so turning off
+        { on: false }, // Light was on, so turning off
+        true // isDemoMode
       );
     });
 
     it('should show error alert when toggle fails', async () => {
       const user = userEvent.setup();
-      mockApi.updateLight.mockRejectedValue(new Error('Bridge unreachable'));
+      updateLight.mockRejectedValue(new Error('Bridge unreachable'));
 
       render(<LightControl sessionToken="test-token" />);
 
@@ -343,15 +343,16 @@ describe('LightControl', () => {
 
       await user.click(toggleButton);
 
-      expect(mockApi.updateRoomLights).toHaveBeenCalledWith(
+      expect(updateRoomLights).toHaveBeenCalledWith(
         'room-1',
-        { on: false } // Room has lights on, so turning off
+        { on: false }, // Room has lights on, so turning off
+        true // isDemoMode
       );
     });
 
     it('should show error alert when room toggle fails', async () => {
       const user = userEvent.setup();
-      mockApi.updateRoomLights.mockRejectedValue(new Error('Room toggle failed'));
+      updateRoomLights.mockRejectedValue(new Error('Room toggle failed'));
 
       render(<LightControl sessionToken="test-token" />);
 
@@ -392,7 +393,7 @@ describe('LightControl', () => {
       // Click first scene
       await user.click(sceneItems[0]);
 
-      expect(mockApi.activateSceneV1).toHaveBeenCalledWith('scene-1');
+      expect(activateSceneV1).toHaveBeenCalledWith('scene-1', true);
     });
 
     it('should update lights after scene activation', async () => {
@@ -411,13 +412,13 @@ describe('LightControl', () => {
       await user.click(sceneItems[0]);
 
       await waitFor(() => {
-        expect(mockApi.activateSceneV1).toHaveBeenCalled();
+        expect(activateSceneV1).toHaveBeenCalled();
       });
     });
 
     it('should show error alert when scene activation fails', async () => {
       const user = userEvent.setup();
-      mockApi.activateSceneV1.mockRejectedValue(new Error('Scene not found'));
+      activateSceneV1.mockRejectedValue(new Error('Scene not found'));
 
       render(<LightControl sessionToken="test-token" />);
 
@@ -500,14 +501,14 @@ describe('LightControl', () => {
       await user.click(lampTile);
 
       // If getLightByUuid works, updateLight should be called
-      expect(mockApi.updateLight).toHaveBeenCalled();
+      expect(updateLight).toHaveBeenCalled();
     });
 
     it('should handle light not found', async () => {
       const user = userEvent.setup();
 
       // Make updateLight return a non-existent light ID
-      mockApi.updateLight.mockImplementation(() => {
+      updateLight.mockImplementation(() => {
         throw new Error('Light not found');
       });
 
