@@ -262,17 +262,17 @@ test.describe('Hive 2FA Authentication', () => {
 
     test('should not show Hive login section in settings', async ({ page }) => {
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
+      await page.waitForSelector('.settings-page');
 
-      // Hive login inputs should not be in settings drawer
+      // Hive login inputs should not be in settings page
       await expect(
-        page.locator('.settings-drawer input[placeholder*="Username" i]')
+        page.locator('.settings-page input[placeholder*="Username" i]')
       ).not.toBeVisible();
     });
 
     test('should show link to Hive tab in settings', async ({ page }) => {
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
+      await page.waitForSelector('.settings-page');
 
       await expect(page.locator('text=Hive tab')).toBeVisible();
     });

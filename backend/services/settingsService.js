@@ -17,20 +17,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const VALID_UNITS = ['celsius', 'fahrenheit'];
+const VALID_SERVICES = ['hue', 'hive'];
 
 // In-memory storage: sessionId -> settings
 const sessionSettings = new Map();
+
+// Default services configuration
+const getDefaultServices = () => ({
+  hue: { enabled: true },
+  hive: { enabled: false },
+});
 
 // Global settings (persisted to file)
 let globalSettings = {
   location: null,
   units: 'celsius',
+  services: getDefaultServices(),
 };
 
 // Default settings for new sessions
 const getDefaultSettings = () => ({
   location: globalSettings.location,
   units: globalSettings.units,
+  services: { ...globalSettings.services },
 });
 
 /**
@@ -39,6 +48,29 @@ const getDefaultSettings = () => ({
 const validateUnits = (units) => {
   if (!VALID_UNITS.includes(units)) {
     throw new Error(`Invalid units value: ${units}. Must be one of: ${VALID_UNITS.join(', ')}`);
+  }
+};
+
+/**
+ * Validate services object
+ */
+const validateServices = (services) => {
+  if (typeof services !== 'object' || services === null) {
+    throw new Error('Invalid services: must be an object');
+  }
+
+  for (const [serviceName, config] of Object.entries(services)) {
+    if (!VALID_SERVICES.includes(serviceName)) {
+      throw new Error(`Invalid services structure: unknown service '${serviceName}'`);
+    }
+
+    if (typeof config !== 'object' || config === null) {
+      throw new Error(`Invalid services structure: ${serviceName} must be an object`);
+    }
+
+    if (config.enabled !== undefined && typeof config.enabled !== 'boolean') {
+      throw new Error(`Invalid enabled value: must be boolean for ${serviceName}`);
+    }
   }
 };
 
@@ -86,8 +118,8 @@ class SettingsService {
       return { ...sessionSettings.get(sessionId) };
     }
 
-    // Demo mode returns mock settings as defaults (if no global settings)
-    if (demoMode && !globalSettings.location) {
+    // Demo mode always returns mock settings (with all services enabled)
+    if (demoMode) {
       return getMockSettings();
     }
 
@@ -110,16 +142,35 @@ class SettingsService {
       validateLocation(updates.location);
     }
 
+    if (updates.services !== undefined) {
+      validateServices(updates.services);
+    }
+
     // Get existing settings or defaults
     const existing = sessionSettings.has(sessionId)
       ? sessionSettings.get(sessionId)
       : getDefaultSettings();
+
+    // Deep merge services if provided
+    let mergedServices = existing.services || getDefaultServices();
+    if (updates.services) {
+      mergedServices = {
+        ...mergedServices,
+        ...Object.fromEntries(
+          Object.entries(updates.services).map(([key, value]) => [
+            key,
+            { ...mergedServices[key], ...value },
+          ])
+        ),
+      };
+    }
 
     // Merge updates
     const newSettings = {
       ...existing,
       ...(updates.units !== undefined && { units: updates.units }),
       ...(updates.location !== undefined && { location: updates.location }),
+      services: mergedServices,
     };
 
     sessionSettings.set(sessionId, newSettings);
@@ -130,6 +181,9 @@ class SettingsService {
     }
     if (updates.units !== undefined) {
       globalSettings.units = updates.units;
+    }
+    if (updates.services !== undefined) {
+      globalSettings.services = mergedServices;
     }
     this._saveSettings();
 
@@ -162,7 +216,7 @@ class SettingsService {
    */
   clearAll() {
     sessionSettings.clear();
-    globalSettings = { location: null, units: 'celsius' };
+    globalSettings = { location: null, units: 'celsius', services: getDefaultServices() };
     logger.debug('Cleared all session settings');
   }
 
@@ -181,6 +235,7 @@ class SettingsService {
       const data = {
         location: globalSettings.location,
         units: globalSettings.units,
+        services: globalSettings.services,
       };
 
       fs.writeFileSync(this.settingsFilePath, JSON.stringify(data, null, 2));
@@ -219,13 +274,21 @@ class SettingsService {
         globalSettings.units = data.units;
       }
 
+      // Load services if present
+      if (data.services !== undefined) {
+        globalSettings.services = {
+          ...getDefaultServices(),
+          ...data.services,
+        };
+      }
+
       if (globalSettings.location) {
         logger.info('Loaded settings from file', { location: globalSettings.location.name });
       }
     } catch (error) {
       logger.warn('Failed to load settings', { error: error.message });
       // Start with default settings on error
-      globalSettings = { location: null, units: 'celsius' };
+      globalSettings = { location: null, units: 'celsius', services: getDefaultServices() };
     }
   }
 }

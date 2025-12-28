@@ -2,11 +2,20 @@ import { useState, useCallback, useEffect } from 'react';
 import { hueApi } from '../services/hueApi';
 
 /**
+ * Default services configuration
+ */
+const DEFAULT_SERVICES = {
+  hue: { enabled: true },
+  hive: { enabled: false },
+};
+
+/**
  * Default settings (used while loading or on error)
  */
 const DEFAULT_SETTINGS = {
   units: 'celsius',
   location: null,
+  services: DEFAULT_SERVICES,
 };
 
 /**
@@ -34,6 +43,7 @@ export const useSettings = (enabled = true) => {
         setSettings({
           units: data.units || 'celsius',
           location: data.location || null,
+          services: data.services || DEFAULT_SERVICES,
         });
         setError(null);
       } catch (err) {
@@ -55,7 +65,26 @@ export const useSettings = (enabled = true) => {
     async (newSettings) => {
       // Optimistic update
       const previousSettings = settings;
-      const updated = { ...settings, ...newSettings };
+
+      // Deep merge services if provided
+      let mergedServices = settings.services || DEFAULT_SERVICES;
+      if (newSettings.services) {
+        mergedServices = {
+          ...mergedServices,
+          ...Object.fromEntries(
+            Object.entries(newSettings.services).map(([key, value]) => [
+              key,
+              { ...mergedServices[key], ...value },
+            ])
+          ),
+        };
+      }
+
+      const updated = {
+        ...settings,
+        ...newSettings,
+        services: mergedServices,
+      };
       setSettings(updated);
 
       try {

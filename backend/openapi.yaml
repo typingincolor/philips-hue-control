@@ -229,6 +229,22 @@ components:
             - fahrenheit
           example: celsius
           description: Temperature unit preference
+        services:
+          type: object
+          description: Service enable/disable settings
+          properties:
+            hue:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  description: Whether Hue service is enabled
+            hive:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  description: Whether Hive service is enabled
     WeatherCurrent:
       type: object
       description: Current weather conditions
@@ -972,6 +988,19 @@ paths:
                   enum:
                     - celsius
                     - fahrenheit
+                services:
+                  type: object
+                  properties:
+                    hue:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                    hive:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
       responses:
         '200':
           description: Settings updated

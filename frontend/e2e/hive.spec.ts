@@ -13,10 +13,10 @@ async function resetHiveDemoState(page: Page) {
   });
 }
 
-// Helper to close settings drawer
-async function closeSettingsDrawer(page: Page) {
+// Helper to close settings page
+async function closeSettingsPage(page: Page) {
   await page.keyboard.press('Escape');
-  await page.waitForSelector('.settings-drawer', { state: 'hidden', timeout: 5000 });
+  await page.waitForSelector('.settings-page', { state: 'hidden', timeout: 5000 });
 }
 
 // Helper to ensure Hive is disconnected (uses API reset + fresh navigation to sync frontend)
@@ -89,32 +89,32 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
       await page.waitForSelector('.main-panel');
     });
 
-    test('should display Hive section in settings drawer', async ({ page }) => {
+    test('should display Hive section in settings page', async ({ page }) => {
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
-      await expect(page.locator('.settings-section-label:has-text("Hive")')).toBeVisible();
+      await page.waitForSelector('.settings-page');
+      await expect(page.locator('.settings-hive-section')).toBeVisible();
     });
 
     test('should show link to Hive tab when disconnected', async ({ page }) => {
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
+      await page.waitForSelector('.settings-page');
       // Login form is now in HiveView, settings shows a link to Hive tab
       await expect(page.locator('.settings-hive-link')).toBeVisible();
     });
 
     test('should not show login form in settings (moved to Hive tab)', async ({ page }) => {
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
-      // Login inputs should not be in settings drawer anymore
+      await page.waitForSelector('.settings-page');
+      // Login inputs should not be in settings page anymore
       await expect(
-        page.locator('.settings-drawer input[placeholder*="username" i]')
+        page.locator('.settings-page input[placeholder*="username" i]')
       ).not.toBeVisible();
     });
 
     test('should show Disconnect button when connected', async ({ page }) => {
       await connectToHive(page);
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
+      await page.waitForSelector('.settings-page');
 
       await expect(page.locator('button:has-text("Disconnect")')).toBeVisible({ timeout: 5000 });
     });
@@ -122,7 +122,7 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
     test('should show link to Hive tab after disconnect', async ({ page }) => {
       await connectToHive(page);
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
+      await page.waitForSelector('.settings-page');
 
       await page.waitForSelector('button:has-text("Disconnect")', { timeout: 5000 });
       await page.click('button:has-text("Disconnect")');
@@ -183,11 +183,11 @@ test.describe('Hive Integration - Phase 1: Status Display', () => {
 
       // Open settings and disconnect
       await page.click('[aria-label="settings"]');
-      await page.waitForSelector('.settings-drawer');
+      await page.waitForSelector('.settings-page');
       await page.click('button:has-text("Disconnect")');
 
-      // Close drawer
-      await closeSettingsDrawer(page);
+      // Close settings page
+      await closeSettingsPage(page);
 
       // Hive tab should still be visible (login form shown when clicked)
       await expect(page.locator('.nav-tab:has-text("Hive")')).toBeVisible({ timeout: 5000 });

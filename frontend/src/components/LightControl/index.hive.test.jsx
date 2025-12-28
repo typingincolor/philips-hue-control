@@ -319,7 +319,7 @@ describe('LightControl - Hive Integration', () => {
   });
 
   describe('Settings Integration', () => {
-    it('should pass Hive state to SettingsDrawer', async () => {
+    it('should pass Hive state to SettingsPage', async () => {
       const user = userEvent.setup();
       render(<LightControl sessionToken="test-token" />);
 
@@ -330,8 +330,10 @@ describe('LightControl - Hive Integration', () => {
       // Open settings
       await user.click(screen.getByLabelText('settings'));
 
+      // Use querySelector for the hive section since text appears multiple times
       await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.SETTINGS_HIVE)).toBeInTheDocument();
+        const hiveSection = document.querySelector('.settings-hive-section');
+        expect(hiveSection).toBeInTheDocument();
       });
     });
 

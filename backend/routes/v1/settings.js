@@ -32,18 +32,24 @@ router.get('/', requireSession, async (req, res, next) => {
  * Update all settings
  *
  * Auth: Session token required
- * Body: { location?: { lat, lon, name? }, units?: 'celsius' | 'fahrenheit' }
+ * Body: { location?: { lat, lon, name? }, units?: 'celsius' | 'fahrenheit', services?: { hue?: { enabled: boolean }, hive?: { enabled: boolean } } }
  */
 router.put('/', requireSession, async (req, res, next) => {
   try {
     const { sessionToken } = req.hue;
-    const { location, units } = req.body;
+    const { location, units, services } = req.body;
 
-    logger.debug('Updating settings', { sessionToken, hasLocation: !!location, units });
+    logger.debug('Updating settings', {
+      sessionToken,
+      hasLocation: !!location,
+      units,
+      hasServices: !!services,
+    });
 
     const updates = {};
     if (location !== undefined) updates.location = location;
     if (units !== undefined) updates.units = units;
+    if (services !== undefined) updates.services = services;
 
     const settings = settingsService.updateSettings(sessionToken, updates);
 

@@ -6,9 +6,10 @@ import { test, expect } from '@playwright/test';
  * Tests for:
  * - Weather display in toolbar (right side)
  * - Weather tooltip on hover
- * - Settings drawer (slides from left)
- * - Settings functionality (location detection, temperature units)
+ * - Settings button behavior (navigates to settings page)
  * - Cross-platform compatibility (iPad, iPhone 14, Raspberry Pi 7")
+ *
+ * NOTE: Settings page tests are in settings-page.spec.ts
  */
 
 // Viewport definitions (same as responsive-layout.spec.ts)
@@ -267,276 +268,27 @@ test.describe('Settings Button', () => {
     }
   });
 
-  test('settings button should be clickable and open drawer', async ({ page }) => {
+  test('settings button should be clickable and open settings page', async ({ page }) => {
     const settingsButton = page.locator('.toolbar-settings');
     await expect(settingsButton).toBeVisible();
 
-    // Click and verify drawer opens
+    // Click and verify settings page opens
     await settingsButton.click();
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
+    const settingsPage = page.locator('.settings-page');
+    await expect(settingsPage).toBeVisible();
   });
 
-  test('should open settings drawer when clicked', async ({ page }) => {
+  test('should open settings page when clicked', async ({ page }) => {
     const settingsButton = page.locator('.toolbar-settings');
     await settingsButton.click();
 
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
+    const settingsPage = page.locator('.settings-page');
+    await expect(settingsPage).toBeVisible();
   });
 });
 
-test.describe('Settings Drawer', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/?demo=true');
-    await page.waitForSelector('.toolbar-settings');
-  });
-
-  test('should open drawer from left side', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    // Wait for slide-in animation to complete (250ms)
-    await page.waitForTimeout(300);
-
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-
-    if (drawerBox) {
-      // Drawer should be positioned at left edge (x = 0)
-      expect(drawerBox.x).toBe(0);
-    }
-  });
-
-  test('should display settings title', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const title = page.locator('.settings-drawer-title');
-    await expect(title).toBeVisible();
-    await expect(title).toHaveText('Settings');
-  });
-
-  test('should display close button', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const closeButton = page.locator('.settings-drawer-close');
-    await expect(closeButton).toBeVisible();
-  });
-
-  test('should close drawer when close button clicked', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    const closeButton = page.locator('.settings-drawer-close');
-    await closeButton.click();
-
-    await expect(drawer).not.toBeVisible();
-  });
-
-  test('should close drawer when overlay clicked', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    // Click on overlay (right side of screen, outside drawer)
-    const overlay = page.locator('.settings-drawer-overlay');
-    await overlay.click({ position: { x: 400, y: 300 } });
-
-    await expect(drawer).not.toBeVisible();
-  });
-
-  test('should close drawer when Escape key pressed', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    await page.keyboard.press('Escape');
-
-    await expect(drawer).not.toBeVisible();
-  });
-
-  test('should display location section', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const locationSection = page.locator('.settings-section').first();
-    await expect(locationSection).toBeVisible();
-
-    // Should show current location
-    const locationCurrent = page.locator('.settings-location-current');
-    await expect(locationCurrent).toBeVisible();
-  });
-
-  test('should display detect location button', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const detectButton = page.locator('.settings-detect-btn');
-    await expect(detectButton).toBeVisible();
-    await expect(detectButton).toContainText('Detect Location');
-  });
-
-  test('should display temperature units section', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const unitButtons = page.locator('.settings-unit-btn');
-    await expect(unitButtons).toHaveCount(2);
-
-    // Check for Celsius and Fahrenheit buttons
-    await expect(unitButtons.first()).toContainText('Celsius');
-    await expect(unitButtons.last()).toContainText('Fahrenheit');
-  });
-
-  test('should have one unit selected by default', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const selectedButton = page.locator('.settings-unit-btn.selected');
-    await expect(selectedButton).toHaveCount(1);
-  });
-
-  test('should toggle temperature units when clicked', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    // Get the currently non-selected button
-    const celsiusButton = page.locator('.settings-unit-btn').first();
-    const fahrenheitButton = page.locator('.settings-unit-btn').last();
-
-    // Check initial state
-    const initiallySelected = await celsiusButton.evaluate((el) =>
-      el.classList.contains('selected')
-    );
-
-    if (initiallySelected) {
-      // Click Fahrenheit
-      await fahrenheitButton.click();
-      await expect(fahrenheitButton).toHaveClass(/selected/);
-      await expect(celsiusButton).not.toHaveClass(/selected/);
-    } else {
-      // Click Celsius
-      await celsiusButton.click();
-      await expect(celsiusButton).toHaveClass(/selected/);
-      await expect(fahrenheitButton).not.toHaveClass(/selected/);
-    }
-  });
-
-  test('should display auto-save message', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const footer = page.locator('.settings-drawer-footer');
-    await expect(footer).toBeVisible();
-
-    const autoSaveMessage = page.locator('.settings-auto-saved');
-    await expect(autoSaveMessage).toBeVisible();
-    await expect(autoSaveMessage).toContainText('Changes saved automatically');
-  });
-
-  test('should persist unit selection after closing and reopening', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    // Switch to Fahrenheit
-    const fahrenheitButton = page.locator('.settings-unit-btn').last();
-    await fahrenheitButton.click();
-    await expect(fahrenheitButton).toHaveClass(/selected/);
-
-    // Close drawer
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.settings-drawer')).not.toBeVisible();
-
-    // Reopen drawer
-    await settingsButton.click();
-
-    // Fahrenheit should still be selected
-    await expect(fahrenheitButton).toHaveClass(/selected/);
-  });
-});
-
-test.describe('Settings Drawer Animation', () => {
-  test('drawer should slide in from left (animation check)', async ({ page }) => {
-    await page.goto('/?demo=true');
-    await page.waitForSelector('.toolbar-settings');
-
-    const settingsButton = page.locator('.toolbar-settings');
-
-    // Click settings button
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-
-    // Wait for animation to complete
-    await page.waitForTimeout(300);
-
-    // Drawer should be visible and at x=0
-    await expect(drawer).toBeVisible();
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-    if (drawerBox) {
-      expect(drawerBox.x).toBe(0);
-    }
-  });
-
-  test('drawer should have proper width (280px or 85vw max)', async ({ page }) => {
-    await page.goto('/?demo=true');
-    await page.waitForSelector('.toolbar-settings');
-
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-
-    if (drawerBox) {
-      // Width should be 280px or less (could be 85vw on small screens)
-      expect(drawerBox.width).toBeLessThanOrEqual(280);
-      expect(drawerBox.width).toBeGreaterThan(0);
-    }
-  });
-
-  test('overlay should appear with drawer', async ({ page }) => {
-    await page.goto('/?demo=true');
-    await page.waitForSelector('.toolbar-settings');
-
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const overlay = page.locator('.settings-drawer-overlay');
-    await expect(overlay).toBeVisible();
-
-    // Overlay should cover the full viewport
-    const overlayBox = await overlay.boundingBox();
-    const viewportSize = page.viewportSize();
-
-    expect(overlayBox).not.toBeNull();
-    expect(viewportSize).not.toBeNull();
-
-    if (overlayBox && viewportSize) {
-      expect(overlayBox.width).toBe(viewportSize.width);
-      expect(overlayBox.height).toBe(viewportSize.height);
-    }
-  });
-});
-
-// Cross-platform tests
-test.describe('Weather & Settings - iPad (1024x768)', () => {
+// Cross-platform tests - Weather only (settings page tests in settings-page.spec.ts)
+test.describe('Weather Display - iPad (1024x768)', () => {
   test.use({ viewport: VIEWPORTS.ipad });
 
   test.beforeEach(async ({ page }) => {
@@ -559,24 +311,8 @@ test.describe('Weather & Settings - iPad (1024x768)', () => {
     await expect(settingsButton).toBeVisible();
 
     await settingsButton.click();
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-  });
-
-  test('settings drawer should not overlap main content when open', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-
-    if (drawerBox) {
-      // Drawer width should be less than half the viewport
-      expect(drawerBox.width).toBeLessThan(VIEWPORTS.ipad.width / 2);
-    }
+    const settingsPage = page.locator('.settings-page');
+    await expect(settingsPage).toBeVisible();
   });
 
   test('weather tooltip should be fully visible on screen', async ({ page }) => {
@@ -599,7 +335,7 @@ test.describe('Weather & Settings - iPad (1024x768)', () => {
   });
 });
 
-test.describe('Weather & Settings - iPhone 14 (390x844)', () => {
+test.describe('Weather Display - iPhone 14 (390x844)', () => {
   test.use({ viewport: VIEWPORTS.iphone14 });
 
   test.beforeEach(async ({ page }) => {
@@ -614,10 +350,6 @@ test.describe('Weather & Settings - iPhone 14 (390x844)', () => {
 
   test('weather location may be hidden on small screen', async ({ page }) => {
     // On mobile, location text might be hidden via CSS media query
-    const locationElement = page.locator('.weather-display__location');
-    const isVisible = await locationElement.isVisible();
-
-    // Either visible or hidden is acceptable on mobile
     // Just verify weather display still works
     const weatherDisplay = page.locator('.weather-display');
     await expect(weatherDisplay).toBeVisible();
@@ -636,44 +368,9 @@ test.describe('Weather & Settings - iPhone 14 (390x844)', () => {
       expect(settingsBox.height).toBeGreaterThanOrEqual(36);
     }
   });
-
-  test('settings drawer should work on mobile', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    // Drawer should be properly sized for mobile (85vw max)
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-
-    if (drawerBox) {
-      expect(drawerBox.width).toBeLessThanOrEqual(VIEWPORTS.iphone14.width * 0.85);
-    }
-  });
-
-  test('all settings controls should be accessible', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    // Check all interactive elements are visible and touchable
-    const detectButton = page.locator('.settings-detect-btn');
-    await expect(detectButton).toBeVisible();
-
-    const unitButtons = page.locator('.settings-unit-btn');
-    await expect(unitButtons).toHaveCount(2);
-
-    // Buttons should be large enough for touch (at least 36px is acceptable)
-    const detectBox = await detectButton.boundingBox();
-    expect(detectBox).not.toBeNull();
-    if (detectBox) {
-      expect(detectBox.height).toBeGreaterThanOrEqual(36);
-    }
-  });
 });
 
-test.describe('Weather & Settings - Raspberry Pi 7" (800x480)', () => {
+test.describe('Weather Display - Raspberry Pi 7" (800x480)', () => {
   test.use({ viewport: VIEWPORTS.raspberryPi });
 
   test.beforeEach(async ({ page }) => {
@@ -689,36 +386,6 @@ test.describe('Weather & Settings - Raspberry Pi 7" (800x480)', () => {
   test('settings button should be visible', async ({ page }) => {
     const settingsButton = page.locator('.toolbar-settings');
     await expect(settingsButton).toBeVisible();
-  });
-
-  test('settings drawer should work on compact screen', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    // Should still show all content
-    const locationSection = page.locator('.settings-location');
-    await expect(locationSection).toBeVisible();
-
-    const unitsSection = page.locator('.settings-units');
-    await expect(unitsSection).toBeVisible();
-  });
-
-  test('drawer should not exceed viewport height', async ({ page }) => {
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const drawer = page.locator('.settings-drawer');
-    await expect(drawer).toBeVisible();
-
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-
-    if (drawerBox) {
-      expect(drawerBox.height).toBeLessThanOrEqual(VIEWPORTS.raspberryPi.height);
-    }
   });
 
   test('weather tooltip should fit on compact screen', async ({ page }) => {
@@ -739,49 +406,21 @@ test.describe('Weather & Settings - Raspberry Pi 7" (800x480)', () => {
   });
 });
 
-// Test settings persistence across page reloads
-test.describe('Settings Persistence', () => {
-  test('should persist temperature unit preference after page reload', async ({ page }) => {
-    await page.goto('/?demo=true');
-    await page.waitForSelector('.toolbar-settings');
-
-    // Open settings and switch to Fahrenheit
-    const settingsButton = page.locator('.toolbar-settings');
-    await settingsButton.click();
-
-    const fahrenheitButton = page.locator('.settings-unit-btn').last();
-    await fahrenheitButton.click();
-    await expect(fahrenheitButton).toHaveClass(/selected/);
-
-    // Close drawer
-    await page.keyboard.press('Escape');
-
-    // Reload page
-    await page.reload();
-    await page.waitForSelector('.toolbar-settings');
-
-    // Reopen settings
-    await settingsButton.click();
-
-    // Fahrenheit should still be selected
-    const fahrenheitButtonAfterReload = page.locator('.settings-unit-btn').last();
-    await expect(fahrenheitButtonAfterReload).toHaveClass(/selected/);
-  });
-});
-
 // Integration test - weather updates with unit change
 test.describe('Weather Unit Integration', () => {
-  test('weather display should reflect unit changes', async ({ page }) => {
+  test('weather display should reflect unit changes from settings', async ({ page }) => {
     await page.goto('/?demo=true');
     await page.waitForSelector('.weather-display');
 
     // Get initial temperature
     const tempElement = page.locator('.weather-display__temp');
+    await expect(tempElement).toBeVisible();
     const initialTemp = await tempElement.textContent();
 
     // Open settings and switch units
     const settingsButton = page.locator('.toolbar-settings');
     await settingsButton.click();
+    await page.waitForSelector('.settings-page');
 
     // Find the non-selected unit button and click it
     const celsiusButton = page.locator('.settings-unit-btn').first();
@@ -797,16 +436,14 @@ test.describe('Weather Unit Integration', () => {
       await celsiusButton.click();
     }
 
-    // Close drawer
-    await page.keyboard.press('Escape');
+    // Return to previous view
+    await page.click('.settings-back-btn');
 
     // Wait for weather to update
     await page.waitForTimeout(500);
 
-    // Temperature should have changed (different unit)
+    // Temperature should still be valid format
     const newTemp = await tempElement.textContent();
-    // Note: In demo mode, the temperature value might be the same
-    // This test verifies the UI doesn't break during unit changes
     expect(newTemp).toMatch(/\d+°/);
   });
 });

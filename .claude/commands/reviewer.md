@@ -58,13 +58,20 @@ Track what works and what doesn't:
    git diff --stat
    ```
 
-2. **Run unit tests and E2E tests in parallel:**
+2. **Run unit tests first, then E2E tests:**
 
    ```bash
-   npm run test:all && npm run test:e2e
+   npm run test:all
    ```
 
-   **Note:** Skipped E2E tests (`test.skip`) are acceptable - only failing tests block approval.
+   If unit tests pass, run E2E tests:
+
+   ```bash
+   npm run test:e2e
+   ```
+
+   **Note:** This is the ONLY phase where E2E tests run. They are expensive (~2 min).
+   Skipped E2E tests (`test.skip`) are acceptable - only failing tests block approval.
 
 3. **Run lint and format:**
 

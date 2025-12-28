@@ -59,7 +59,8 @@ describe('SettingsService', () => {
 
       const result = SettingsService.getSettings('session-1');
 
-      expect(result).toEqual(settings);
+      expect(result.location).toEqual(settings.location);
+      expect(result.units).toBe(settings.units);
     });
 
     it('should return separate settings per session', () => {
@@ -212,6 +213,149 @@ describe('SettingsService', () => {
           name: 'NYC',
         });
       }).not.toThrow();
+    });
+  });
+
+  describe('Service Activation', () => {
+    it('should return default services with hue enabled and hive disabled', () => {
+      const result = SettingsService.getSettings('session-1');
+
+      expect(result).toHaveProperty('services');
+      expect(result.services).toHaveProperty('hue');
+      expect(result.services).toHaveProperty('hive');
+      expect(result.services.hue.enabled).toBe(true);
+      expect(result.services.hive.enabled).toBe(false);
+    });
+
+    it('should update hive service enabled state', () => {
+      SettingsService.updateSettings('session-1', {
+        services: { hive: { enabled: true } },
+      });
+
+      const result = SettingsService.getSettings('session-1');
+      expect(result.services.hive.enabled).toBe(true);
+    });
+
+    it('should update hue service enabled state', () => {
+      SettingsService.updateSettings('session-1', {
+        services: { hue: { enabled: false } },
+      });
+
+      const result = SettingsService.getSettings('session-1');
+      expect(result.services.hue.enabled).toBe(false);
+    });
+
+    it('should preserve other service states when updating one', () => {
+      SettingsService.updateSettings('session-1', {
+        services: { hive: { enabled: true } },
+      });
+      SettingsService.updateSettings('session-1', {
+        services: { hue: { enabled: false } },
+      });
+
+      const result = SettingsService.getSettings('session-1');
+      expect(result.services.hue.enabled).toBe(false);
+      expect(result.services.hive.enabled).toBe(true);
+    });
+
+    it('should preserve other settings when updating services', () => {
+      SettingsService.updateSettings('session-1', { units: 'fahrenheit' });
+      SettingsService.updateSettings('session-1', {
+        services: { hive: { enabled: true } },
+      });
+
+      const result = SettingsService.getSettings('session-1');
+      expect(result.units).toBe('fahrenheit');
+      expect(result.services.hive.enabled).toBe(true);
+    });
+
+    it('should validate services enabled must be boolean', () => {
+      expect(() => {
+        SettingsService.updateSettings('session-1', {
+          services: { hue: { enabled: 'yes' } },
+        });
+      }).toThrow();
+    });
+
+    it('should validate services structure', () => {
+      expect(() => {
+        SettingsService.updateSettings('session-1', {
+          services: { invalidService: { enabled: true } },
+        });
+      }).toThrow();
+    });
+
+    it('should return services in demo mode', () => {
+      const result = SettingsService.getSettings('demo-session', true);
+
+      expect(result).toHaveProperty('services');
+      expect(result.services).toHaveProperty('hue');
+      expect(result.services).toHaveProperty('hive');
+    });
+  });
+
+  describe('Service Activation Persistence', () => {
+    beforeEach(async () => {
+      vi.resetModules();
+    });
+
+    it('should persist services to file when updated', async () => {
+      const module = await import('../../services/settingsService.js');
+      const service = module.default;
+      service.settingsFilePath = testSettingsPath;
+
+      service.updateSettings('session-1', {
+        services: { hive: { enabled: true } },
+      });
+
+      const fileContents = fs.readFileSync(testSettingsPath, 'utf8');
+      const saved = JSON.parse(fileContents);
+
+      expect(saved.services).toBeDefined();
+      expect(saved.services.hive.enabled).toBe(true);
+    });
+
+    it('should load services from file on startup', async () => {
+      // Write settings file directly
+      const savedSettings = {
+        location: null,
+        units: 'celsius',
+        services: {
+          hue: { enabled: true },
+          hive: { enabled: true },
+        },
+      };
+      fs.writeFileSync(testSettingsPath, JSON.stringify(savedSettings));
+
+      // Reset modules and import fresh
+      vi.resetModules();
+      const module = await import('../../services/settingsService.js');
+      const service = module.default;
+      service.settingsFilePath = testSettingsPath;
+      service._loadSettings();
+
+      const settings = service.getSettings('any-session');
+      expect(settings.services.hive.enabled).toBe(true);
+    });
+
+    it('should persist services across service instances', async () => {
+      // First instance: enable hive
+      const module1 = await import('../../services/settingsService.js');
+      const service1 = module1.default;
+      service1.settingsFilePath = testSettingsPath;
+      service1.updateSettings('session-1', {
+        services: { hive: { enabled: true } },
+      });
+
+      // Reset and create new instance
+      vi.resetModules();
+      const module2 = await import('../../services/settingsService.js');
+      const service2 = module2.default;
+      service2.settingsFilePath = testSettingsPath;
+      service2._loadSettings();
+
+      const settings = service2.getSettings('any-session');
+      expect(settings.services.hive.enabled).toBe(true);
     });
   });
 

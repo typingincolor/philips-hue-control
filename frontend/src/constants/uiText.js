@@ -99,6 +99,9 @@ export const UI_TEXT = {
   SETTINGS_DETECTING: 'Detecting...',
   SETTINGS_WEATHER_ENABLED: 'Show Weather',
   SETTINGS_AUTO_SAVED: 'Changes saved automatically',
+  SETTINGS_SERVICES: 'Services',
+  SETTINGS_HUE_SERVICE: 'Philips Hue',
+  SETTINGS_HIVE_SERVICE: 'Hive Heating',
 
   // Hive Heating
   HIVE_HEATING_STATUS: 'Heating status',

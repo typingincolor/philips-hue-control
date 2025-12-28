@@ -112,20 +112,19 @@ After finalizing the UX specification, write Playwright E2E tests that verify th
   ```
 - Test edge cases (empty, error, loading states)
 - Use descriptive test names: `should [action] when [condition]`
+- **Update or remove obsolete tests** from existing E2E files if the design changes existing behavior
 
-### Run E2E Tests
+### DO NOT Run E2E Tests
 
-```bash
-npm run test:e2e
-```
-
-Tests should FAIL initially (feature not yet implemented). This is expected.
+**Skip E2E test execution** - E2E tests are expensive and will be run once during `/reviewer` phase. Just write the tests; they will fail initially since the feature isn't implemented yet.
 
 ## Constraints
 
 - DO NOT write component implementation code
 - DO NOT write CSS or styling code
+- DO NOT run E2E tests (they run in `/reviewer` phase only)
 - DO write E2E tests (Playwright) for user flows
+- DO update/remove obsolete E2E tests when design changes existing behavior
 - Follow existing E2E test patterns in `frontend/e2e/`
 - Follow existing design patterns in the codebase
 - Keep designs consistent with current UI

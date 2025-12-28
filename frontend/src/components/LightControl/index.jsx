@@ -15,7 +15,7 @@ import { ZonesView } from './ZonesView';
 import { AutomationsView } from './AutomationsView';
 import { HiveView } from './HiveView';
 import { MotionZones } from '../MotionZones';
-import { SettingsDrawer } from './SettingsDrawer';
+import { SettingsPage } from './SettingsPage';
 
 const logger = createLogger('Dashboard');
 
@@ -454,7 +454,19 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       />
 
       <div className="main-panel">
-        {selectedId === 'hive' ? (
+        {settingsOpen ? (
+          <SettingsPage
+            onBack={() => setSettingsOpen(false)}
+            location={settings.location}
+            settings={settings}
+            onUpdateSettings={updateSettings}
+            onDetectLocation={detectLocation}
+            isDetecting={isDetecting}
+            locationError={locationError}
+            hiveConnected={hiveConnected}
+            onHiveDisconnect={hiveDisconnect}
+          />
+        ) : selectedId === 'hive' ? (
           <HiveView
             isConnected={hiveConnected}
             status={hiveStatus}
@@ -508,19 +520,8 @@ export const LightControl = ({ sessionToken, onLogout }) => {
         hasAutomations={true}
         selectedId={selectedId}
         onSelect={setSelectedId}
-      />
-
-      <SettingsDrawer
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        location={settings.location}
-        settings={settings}
-        onUpdateSettings={updateSettings}
-        onDetectLocation={detectLocation}
-        isDetecting={isDetecting}
-        locationError={locationError}
+        services={settings.services}
         hiveConnected={hiveConnected}
-        onHiveDisconnect={hiveDisconnect}
       />
     </div>
   );

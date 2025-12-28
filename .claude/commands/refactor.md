@@ -55,13 +55,15 @@ Track what works and what doesn't:
 
 3. Make refactoring changes (backend first, then frontend)
 
-4. **Run all tests once at the end:**
+4. **Run all unit tests once at the end:**
 
    ```bash
    npm run test:all
    ```
 
 5. If tests fail, revert the change that broke them
+
+**Skip E2E tests** - They will be run in `/reviewer` as final verification.
 
 ## Rules
 
@@ -86,5 +88,6 @@ After refactoring, provide notes for the reviewer:
 
 ## Constraints
 
-- All tests MUST pass when done
+- All unit tests MUST pass when done
 - No functional changes - only structural improvements
+- DO NOT run E2E tests (save time for reviewer phase)

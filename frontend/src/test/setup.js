@@ -6,7 +6,14 @@ import '@testing-library/jest-dom/vitest';
 // Individual test files can override these mocks as needed
 vi.mock('../hooks/useSettings', () => ({
   useSettings: () => ({
-    settings: { units: 'celsius', location: null },
+    settings: {
+      units: 'celsius',
+      location: null,
+      services: {
+        hue: { enabled: true },
+        hive: { enabled: true },
+      },
+    },
     isLoading: false,
     error: null,
     updateSettings: vi.fn(),

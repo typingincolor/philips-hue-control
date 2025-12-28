@@ -356,6 +356,111 @@ describe('WebSocketService', () => {
     });
   });
 
+  describe('Hive Integration', () => {
+    it('should emit hive_status event when Hive data changes', async () => {
+      const mockSocket = { data: {}, join: vi.fn(), emit: vi.fn() };
+      const rooms = new Map();
+      rooms.set('bridge:192.168.1.100', { size: 1 });
+
+      websocketService.io = {
+        sockets: { adapter: { rooms }, sockets: new Map([[1, mockSocket]]) },
+        to: vi.fn().mockReturnThis(),
+        emit: vi.fn(),
+      };
+
+      const hiveStatus = {
+        connected: true,
+        temperature: { current: 20.5, target: 21 },
+        heating: { isOn: true },
+      };
+
+      websocketService.broadcastHiveStatus('192.168.1.100', hiveStatus);
+
+      expect(websocketService.io.to).toHaveBeenCalledWith('bridge:192.168.1.100');
+      expect(websocketService.io.emit).toHaveBeenCalledWith('hive_status', hiveStatus);
+    });
+
+    it('should detect Hive status changes in detectChanges', () => {
+      const previous = {
+        summary: {},
+        rooms: [],
+        hive: { temperature: { current: 20.0 } },
+      };
+      const current = {
+        summary: {},
+        rooms: [],
+        hive: { temperature: { current: 21.0 } },
+      };
+
+      const changes = websocketService.detectChanges(previous, current);
+
+      expect(changes).toContainEqual({ type: 'hive', data: current.hive });
+    });
+
+    it('should not detect Hive changes when identical', () => {
+      const state = {
+        summary: {},
+        rooms: [],
+        hive: { temperature: { current: 20.0 } },
+      };
+
+      const changes = websocketService.detectChanges(state, JSON.parse(JSON.stringify(state)));
+
+      expect(changes.filter((c) => c.type === 'hive')).toHaveLength(0);
+    });
+
+    it('should handle Hive polling when enabled in settings', async () => {
+      const mockSocket = { data: {}, join: vi.fn(), emit: vi.fn() };
+      websocketService.io = {
+        sockets: { adapter: { rooms: new Map() } },
+      };
+      sessionManager.getSession.mockReturnValue({
+        bridgeIp: '192.168.1.100',
+        username: 'test-user',
+      });
+
+      // Mock settings with Hive enabled
+      const mockDashboard = {
+        summary: {},
+        rooms: [],
+        hive: { connected: true, temperature: { current: 20 } },
+      };
+      dashboardService.getDashboard.mockResolvedValue(mockDashboard);
+
+      await websocketService.handleAuth(mockSocket, { sessionToken: 'token' });
+
+      expect(mockSocket.emit).toHaveBeenCalledWith('initial_state', mockDashboard);
+    });
+
+    it('should include Hive status in initial state when connected', async () => {
+      const mockSocket = { data: {}, join: vi.fn(), emit: vi.fn() };
+      websocketService.io = {
+        sockets: { adapter: { rooms: new Map() } },
+      };
+      sessionManager.getSession.mockReturnValue({
+        bridgeIp: '192.168.1.100',
+        username: 'test-user',
+      });
+
+      const mockDashboard = {
+        summary: {},
+        rooms: [],
+        hive: {
+          connected: true,
+          temperature: { current: 20.5, target: 21.0 },
+          heating: { isOn: true },
+        },
+      };
+      dashboardService.getDashboard.mockResolvedValue(mockDashboard);
+
+      await websocketService.handleAuth(mockSocket, { sessionToken: 'token' });
+
+      const emittedState = mockSocket.emit.mock.calls.find((c) => c[0] === 'initial_state');
+      expect(emittedState[1]).toHaveProperty('hive');
+      expect(emittedState[1].hive.connected).toBe(true);
+    });
+  });
+
   describe('startPolling', () => {
     beforeEach(() => {
       vi.useFakeTimers();

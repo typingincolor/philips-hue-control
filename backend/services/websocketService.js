@@ -207,7 +207,26 @@ class WebSocketService {
       }
     }
 
+    // Detect Hive changes
+    if (current.hive !== undefined) {
+      const prevHive = previous.hive;
+      if (!prevHive || JSON.stringify(prevHive) !== JSON.stringify(current.hive)) {
+        changes.push({ type: 'hive', data: current.hive });
+      }
+    }
+
     return changes;
+  }
+
+  /**
+   * Broadcast Hive status update to all clients connected to a bridge
+   * @param {string} bridgeIp - The bridge IP
+   * @param {object} hiveStatus - The Hive status data
+   */
+  broadcastHiveStatus(bridgeIp, hiveStatus) {
+    if (this.io) {
+      this.io.to(`bridge:${bridgeIp}`).emit('hive_status', hiveStatus);
+    }
   }
 
   shutdown() {

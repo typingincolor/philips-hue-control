@@ -20,6 +20,7 @@ import {
   DoorOpen,
   Menu as LucideMenu,
   X as LucideX,
+  ArrowLeft as LucideArrowLeft,
   // Scene icons
   Sunrise,
   Sunset,
@@ -102,6 +103,9 @@ export const Menu = (props) => <LucideMenu {...defaultProps} {...props} />;
 
 // X/Close icon
 export const X = (props) => <LucideX {...defaultProps} {...props} />;
+
+// Arrow left (back button)
+export const ArrowLeft = (props) => <LucideArrowLeft {...defaultProps} {...props} />;
 
 // Sofa icon (living room)
 export const Sofa = (props) => <LucideSofa {...defaultProps} {...props} />;

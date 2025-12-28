@@ -370,6 +370,7 @@ const weatherData = {
 };
 
 // Settings (default for demo mode)
+// Both services enabled so users can explore all features in demo mode
 const defaultSettings = {
   location: {
     lat: 51.5074,
@@ -377,6 +378,10 @@ const defaultSettings = {
     name: 'London',
   },
   units: 'celsius',
+  services: {
+    hue: { enabled: true },
+    hive: { enabled: true },
+  },
 };
 
 // Mutable state (persisted in memory)
