@@ -1,29 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { MotionZones } from './MotionZones';
 
-// Mock the context
-const mockGetMotionZones = vi.fn();
-let mockDemoModeValue = {
-  isDemoMode: false,
-  api: {
-    getMotionZones: mockGetMotionZones,
-  },
-};
-
+// Mock the context - MotionZones feature is currently disabled
+// These tests are kept for when the feature is re-enabled
 vi.mock('../context/DemoModeContext', () => ({
-  useDemoMode: () => mockDemoModeValue,
+  useDemoMode: () => ({
+    isDemoMode: false,
+  }),
 }));
 
 describe('MotionZones', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockDemoModeValue = {
-      isDemoMode: false,
-      api: {
-        getMotionZones: mockGetMotionZones,
-      },
-    };
   });
 
   afterEach(() => {
@@ -92,21 +81,8 @@ describe('MotionZones', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('should fetch from API when no motionZones prop provided', async () => {
-    mockGetMotionZones.mockResolvedValue({
-      zones: [{ id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true }],
-    });
-
-    render(<MotionZones />);
-
-    await waitFor(() => {
-      expect(mockGetMotionZones).toHaveBeenCalledWith();
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText(/Motion: Kitchen/)).toBeInTheDocument();
-    });
-  });
+  // Note: API fetch test removed - MotionZones feature is disabled
+  // When re-enabled, the component will need to be updated to use the new V2 API
 
   it('should have correct alert structure', () => {
     const zones = [{ id: 'zone-1', name: 'Kitchen', motionDetected: true, reachable: true }];

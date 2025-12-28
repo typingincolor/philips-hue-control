@@ -49,20 +49,20 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (411 frontend + 660 backend = 1071 tests)
+### Unit Test Results (493 frontend + 891 backend = 1384 tests)
 
-#### Frontend (411 tests)
+#### Frontend (493 tests)
 
-- **Hooks**: useSession (23), useSettings (18), useWeather (10), useWebSocket (19), useLocation (14), useHive (19)
-- **Services**: hueApi (41)
-- **Components**: App (7), MotionZones (8), DashboardSummary (5), SceneSelector (8), SettingsPage (38), BottomNav (5), WeatherDisplay (11), WeatherTooltip (11), HiveView (18), LightControl/index (29), index.zones (9), index.hive (17)
-- **Context**: DemoModeContext (8)
+- **Hooks**: useSession (23), useSettings (19), useWeather (11), useWebSocket (19), useLocation (17), useHive (19), useHome (13)
+- **Services**: hueApi (5), authApi (12), settingsApi (10), weatherApi (6), automationsApi (5), homeApi (5), homeAdapter (9), servicesApi (13)
+- **Components**: App (7), MotionZones (7), DashboardSummary (5), SceneSelector (8), SettingsPage (40), BottomNav (5), WeatherDisplay (11), WeatherTooltip (11), HiveView (18), DeviceTile (11), AutomationsView (8), Dashboard/index (29), index.zones (9), index.hive (17)
+- **Context**: DemoModeContext (6)
 - **Utils**: validation (8)
 - **Integration**: integration.test.jsx (12)
 
-#### Backend (660 tests)
+#### Backend (891 tests)
 
-Business logic tests including colorConversion (49), roomService, zoneService, automationService (16), sessionManager (53), websocketService (31), settingsService (43), and more.
+Business logic tests including colorConversion (52), roomService, zoneService, automationService (16), sessionManager (53), websocketService (31), settingsService (43), homeService (13), deviceNormalizer (15), ServicePlugin (20), plugins (40+), and more.
 
 ## Mutation Testing Results
 
@@ -129,7 +129,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 1071 tests run in <5 seconds
+   - 1384 tests run in <5 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 
@@ -310,20 +310,23 @@ npm run test:e2e:ui
 npm run test:e2e:headed
 ```
 
-### Test Files (217 tests)
+### Test Files (170 tests)
 
 ```
 e2e/
-├── auth.spec.ts            # Authentication flow
-├── automations.spec.ts     # Automation triggering
-├── demo-mode.spec.ts       # Dashboard tests in demo mode
-├── discovery.spec.ts       # Bridge discovery flow
-├── hive.spec.ts            # Hive heating integration
+├── auth.spec.ts              # Authentication flow
+├── automations.spec.ts       # Automation triggering
+├── demo-mode.spec.ts         # Dashboard tests in demo mode
+├── discovery.spec.ts         # Bridge discovery flow
 ├── responsive-layout.spec.ts # Responsive design tests
-├── session.spec.ts         # Session persistence
-├── spacing-layout.spec.ts  # Layout spacing tests
-└── weather-settings.spec.ts # Weather settings
+├── session.spec.ts           # Session persistence
+├── settings-page.spec.ts     # Settings page tests
+├── spacing-layout.spec.ts    # Layout spacing tests
+├── timeout-config.spec.ts    # Timeout configuration
+└── weather-settings.spec.ts  # Weather settings
 ```
+
+Note: Hive integration tests were converted to manual tests (see `docs/MANUAL_TESTS.md`).
 
 ### Demo Mode Testing
 

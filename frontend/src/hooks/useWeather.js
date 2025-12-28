@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { hueApi } from '../services/hueApi';
+import * as weatherApi from '../services/weatherApi';
 
 /**
  * Weather polling interval (15 minutes)
@@ -10,9 +10,10 @@ const WEATHER_POLLING_INTERVAL = 15 * 60 * 1000;
  * Hook for fetching weather data from backend
  * Backend uses session's stored location and units
  * @param {boolean} enabled - Whether to fetch weather (controlled by parent)
+ * @param {boolean} demoMode - Whether demo mode is enabled
  * @returns {object} { weather, isLoading, error, refetch }
  */
-export const useWeather = (enabled = true) => {
+export const useWeather = (enabled = true, demoMode = false) => {
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -28,7 +29,7 @@ export const useWeather = (enabled = true) => {
     setError(null);
 
     try {
-      const data = await hueApi.getWeather();
+      const data = await weatherApi.getWeather(demoMode);
       setWeather(data);
     } catch (err) {
       // 404 means no location set - not an error, just no weather
@@ -41,7 +42,7 @@ export const useWeather = (enabled = true) => {
     } finally {
       setIsLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, demoMode]);
 
   // Fetch on mount and when enabled changes
   useEffect(() => {

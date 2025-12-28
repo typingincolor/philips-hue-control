@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { hueApi } from '../services/hueApi';
+import * as settingsApi from '../services/settingsApi';
 
 /**
  * Default services configuration
@@ -22,9 +22,10 @@ const DEFAULT_SETTINGS = {
  * Hook for managing settings via backend API
  * Settings are stored per-session on the backend
  * @param {boolean} enabled - Whether to fetch settings (controlled by parent)
+ * @param {boolean} demoMode - Whether demo mode is enabled
  * @returns {object} { settings, isLoading, error, updateSettings }
  */
-export const useSettings = (enabled = true) => {
+export const useSettings = (enabled = true, demoMode = false) => {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,7 +40,7 @@ export const useSettings = (enabled = true) => {
     const fetchSettings = async () => {
       try {
         setIsLoading(true);
-        const data = await hueApi.getSettings();
+        const data = await settingsApi.getSettings(demoMode);
         setSettings({
           units: data.units || 'celsius',
           location: data.location || null,
@@ -55,7 +56,7 @@ export const useSettings = (enabled = true) => {
     };
 
     fetchSettings();
-  }, [enabled]);
+  }, [enabled, demoMode]);
 
   /**
    * Update settings (partial update supported)
@@ -88,14 +89,14 @@ export const useSettings = (enabled = true) => {
       setSettings(updated);
 
       try {
-        await hueApi.updateSettings(updated);
+        await settingsApi.updateSettings(updated, demoMode);
       } catch (err) {
         // Rollback on error
         setSettings(previousSettings);
         setError(err.message);
       }
     },
-    [settings]
+    [settings, demoMode]
   );
 
   return {

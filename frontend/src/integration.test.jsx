@@ -136,13 +136,18 @@ const mockDashboard = {
 
 // Setup MSW server
 const server = setupServer(
+  // Health check endpoint
+  http.get('/api/health', () => {
+    return HttpResponse.json({ status: 'ok', version: '2.0.0' });
+  }),
+
   // Discovery endpoint
   http.get('/api/discovery', () => {
     return HttpResponse.json([{ id: 'bridge-1', internalipaddress: mockBridgeIp }]);
   }),
 
-  // Pairing endpoint
-  http.post('/api/v1/auth/pair', async ({ request }) => {
+  // Pairing endpoint (V2 API - via Hue service)
+  http.post('/api/v2/services/hue/pair', async ({ request }) => {
     const body = await request.json();
 
     // Verify Content-Type header (regression test for bug)
@@ -155,11 +160,23 @@ const server = setupServer(
       return new HttpResponse(null, { status: 400 });
     }
 
-    return HttpResponse.json({ username: mockUsername });
+    return HttpResponse.json({ success: true, username: mockUsername });
   }),
 
-  // Session creation endpoint
-  http.post('/api/v1/auth/session', async ({ request }) => {
+  // Connect with stored credentials (V2 API - via Hue service)
+  http.post('/api/v2/services/hue/connect', async ({ request }) => {
+    const body = await request.json();
+
+    if (!body.bridgeIp) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    // Simulate no stored credentials - requires pairing
+    return HttpResponse.json({ requiresPairing: true });
+  }),
+
+  // Session creation endpoint (V2 API)
+  http.post('/api/v2/auth/session', async ({ request }) => {
     const body = await request.json();
 
     if (!body.bridgeIp || !body.username) {
@@ -173,62 +190,66 @@ const server = setupServer(
     });
   }),
 
-  // Dashboard endpoint
-  http.get('/api/v1/dashboard', ({ request }) => {
+  // Home endpoint (V2 API - replaces dashboard)
+  http.get('/api/v2/home', ({ request }) => {
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new HttpResponse(null, { status: 401 });
     }
 
-    return HttpResponse.json(mockDashboard);
-  }),
-
-  // Motion zones endpoint
-  http.get('/api/v1/motion-zones', ({ request }) => {
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader) {
-      return new HttpResponse(null, { status: 401 });
-    }
-
-    return HttpResponse.json({ zones: [] });
-  }),
-
-  // Scene activation endpoint
-  http.post('/api/v1/scenes/:id/activate', ({ request }) => {
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader) {
-      return new HttpResponse(null, { status: 401 });
-    }
-
-    // Return affected lights with updated state
+    // Return V2 Home format
     return HttpResponse.json({
-      success: true,
-      affectedLights: [
+      rooms: [
         {
-          id: 'light-1',
-          name: 'Light 1',
-          on: true,
-          brightness: 100,
-          color: 'rgb(255, 245, 235)',
-          shadow: '0 0 25px rgba(255, 245, 235, 0.5)',
-        },
-        {
-          id: 'light-2',
-          name: 'Light 2',
-          on: true,
-          brightness: 100,
-          color: 'rgb(255, 245, 235)',
-          shadow: '0 0 25px rgba(255, 245, 235, 0.5)',
+          id: 'room-1',
+          name: 'Living Room',
+          devices: [
+            {
+              id: 'hue:light-1',
+              name: 'Light 1',
+              type: 'light',
+              state: {
+                on: true,
+                brightness: 80,
+                color: 'rgb(255, 180, 120)',
+                shadow: '0 0 20px rgba(255, 180, 120, 0.4)',
+              },
+            },
+            {
+              id: 'hue:light-2',
+              name: 'Light 2',
+              type: 'light',
+              state: {
+                on: true,
+                brightness: 70,
+                color: 'rgb(100, 150, 255)',
+                shadow: '0 0 18px rgba(100, 150, 255, 0.38)',
+              },
+            },
+            {
+              id: 'hue:light-3',
+              name: 'Light 3',
+              type: 'light',
+              state: {
+                on: false,
+                brightness: 0,
+                color: null,
+                shadow: null,
+              },
+            },
+          ],
+          scenes: [
+            { id: 'hue:scene-1', name: 'Bright' },
+            { id: 'hue:scene-2', name: 'Relax' },
+          ],
         },
       ],
     });
   }),
 
-  // Light update endpoint
-  http.put('/api/v1/lights/:id', async ({ request, params }) => {
+  // Device update endpoint (V2 API)
+  http.put('/api/v2/home/devices/:id', async ({ request, params }) => {
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
 
@@ -238,18 +259,36 @@ const server = setupServer(
 
     // Return updated light
     return HttpResponse.json({
-      light: {
+      success: true,
+      device: {
         id: params.id,
-        on: body.on,
-        brightness: body.brightness ?? 100,
-        color: body.on ? 'rgb(255, 200, 150)' : null,
-        shadow: body.on ? '0 0 20px rgba(255, 200, 150, 0.4)' : null,
+        state: {
+          on: body.on,
+          brightness: body.brightness ?? 100,
+          color: body.on ? 'rgb(255, 200, 150)' : null,
+          shadow: body.on ? '0 0 20px rgba(255, 200, 150, 0.4)' : null,
+        },
       },
     });
   }),
 
-  // Session refresh endpoint
-  http.post('/api/v1/auth/refresh', ({ request }) => {
+  // Scene activation endpoint (V2 API)
+  http.post('/api/v2/home/scenes/:id/activate', ({ request }) => {
+    const authHeader = request.headers.get('authorization');
+
+    if (!authHeader) {
+      return new HttpResponse(null, { status: 401 });
+    }
+
+    // Return affected lights with updated state
+    return HttpResponse.json({
+      success: true,
+      affectedLights: ['hue:light-1', 'hue:light-2'],
+    });
+  }),
+
+  // Session refresh endpoint (V2 API)
+  http.post('/api/v2/auth/refresh', ({ request }) => {
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader) {
@@ -359,9 +398,9 @@ describe('Integration Tests', () => {
 
       // Intercept pairing request to check headers
       server.use(
-        http.post('/api/v1/auth/pair', async ({ request }) => {
+        http.post('/api/v2/services/hue/pair', async ({ request }) => {
           pairRequestHeaders = Object.fromEntries(request.headers.entries());
-          return HttpResponse.json({ username: mockUsername });
+          return HttpResponse.json({ success: true, username: mockUsername });
         })
       );
 
@@ -557,9 +596,9 @@ describe('Integration Tests', () => {
       localStorage.setItem('hue_username', mockUsername);
       localStorage.setItem('hue_session_expires_at', expiresAt.toString());
 
-      // Make dashboard endpoint return 401
+      // Make home endpoint return 401
       server.use(
-        http.get('/api/v1/dashboard', () => {
+        http.get('/api/v2/home', () => {
           return new HttpResponse(null, { status: 401 });
         })
       );
@@ -613,9 +652,9 @@ describe('Integration Tests', () => {
 
       // Count pairing requests
       server.use(
-        http.post('/api/v1/auth/pair', async () => {
+        http.post('/api/v2/services/hue/pair', async () => {
           pairCallCount++;
-          return HttpResponse.json({ username: mockUsername });
+          return HttpResponse.json({ success: true, username: mockUsername });
         })
       );
 

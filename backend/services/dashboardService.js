@@ -4,7 +4,10 @@ import roomService from './roomService.js';
 import statsService from './statsService.js';
 import motionService from './motionService.js';
 import zoneService from './zoneService.js';
+import ServiceRegistry from './ServiceRegistry.js';
 import { createLogger } from '../utils/logger.js';
+import { normalizeDashboardLight } from './deviceNormalizer.js';
+import slugMappingService from './slugMappingService.js';
 
 const logger = createLogger('DASHBOARD');
 
@@ -71,12 +74,22 @@ class DashboardService {
         ? roomService.getScenesForRoom(scenesData, roomData.roomUuid)
         : [];
 
+      // Create stable slug for room
+      const roomSlug = roomData.roomUuid
+        ? slugMappingService.getSlug('hue:room', roomData.roomUuid, roomName)
+        : null;
+
       return {
-        id: roomData.roomUuid,
+        id: roomSlug,
+        _uuid: roomData.roomUuid,
         name: roomName,
         stats,
         lights: enrichedLights,
-        scenes,
+        scenes: scenes.map((scene) => ({
+          ...scene,
+          id: slugMappingService.getSlug('hue:scene', scene.id, scene.name),
+          _uuid: scene.id,
+        })),
       };
     });
 
@@ -95,12 +108,22 @@ class DashboardService {
         ? zoneService.getScenesForZone(scenesData, zoneData.zoneUuid)
         : [];
 
+      // Create stable slug for zone
+      const zoneSlug = zoneData.zoneUuid
+        ? slugMappingService.getSlug('hue:zone', zoneData.zoneUuid, zoneName)
+        : null;
+
       return {
-        id: zoneData.zoneUuid,
+        id: zoneSlug,
+        _uuid: zoneData.zoneUuid,
         name: zoneName,
         stats,
         lights: enrichedLights,
-        scenes,
+        scenes: scenes.map((scene) => ({
+          ...scene,
+          id: slugMappingService.getSlug('hue:scene', scene.id, scene.name),
+          _uuid: scene.id,
+        })),
       };
     });
 
@@ -114,12 +137,48 @@ class DashboardService {
       zoneCount: zones.length,
     });
 
-    // Step 6: Return unified response with zones and motion zones
+    // Step 6: Fetch status from all connected service plugins
+    const services = {};
+    for (const plugin of ServiceRegistry.getAll()) {
+      const pluginId = plugin.constructor.id;
+      if (pluginId === 'hue') continue; // Hue is core, handled separately
+
+      try {
+        if (plugin.isConnected()) {
+          services[pluginId] = await plugin.getStatus();
+        }
+      } catch {
+        // Plugin not connected or error - skip
+      }
+    }
+
+    // Step 7: Return unified response with zones, motion zones, and services
     return {
       summary,
       rooms,
       zones,
       motionZones: motionZonesResult.zones || [],
+      services,
+    };
+  }
+
+  /**
+   * Transform a dashboard room to Home format
+   * @param {Object} room - Dashboard room object
+   * @returns {Object} Home-formatted room with normalized devices
+   */
+  transformRoomToHomeFormat(room) {
+    return {
+      id: room.id, // Already a slug from getDashboard
+      _uuid: room._uuid,
+      name: room.name,
+      devices: (room.lights || []).map(normalizeDashboardLight),
+      scenes: (room.scenes || []).map((scene) => ({
+        id: scene.id, // Already a slug from getDashboard
+        _uuid: scene._uuid,
+        name: scene.name,
+        serviceId: 'hue',
+      })),
     };
   }
 }

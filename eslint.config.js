@@ -39,6 +39,7 @@ export default [
         URLSearchParams: 'readonly',
         alert: 'readonly',
         navigator: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     settings: {

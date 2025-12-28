@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { STORAGE_KEYS } from '../constants/storage';
 import {
-  hueApi,
+  refreshSession as apiRefreshSession,
   setSessionToken as setApiSessionToken,
   clearSessionToken as clearApiSessionToken,
-} from '../services/hueApi';
+} from '../services/authApi';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Session');
@@ -109,7 +109,7 @@ export const useSession = () => {
         logger.info('Auto-refreshing token...');
 
         try {
-          const newSession = await hueApi.refreshSession();
+          const newSession = await apiRefreshSession();
           createSession(newSession.sessionToken, bridgeIp, newSession.expiresIn);
           logger.info('Auto-refresh successful');
         } catch (error) {

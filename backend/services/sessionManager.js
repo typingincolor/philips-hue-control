@@ -68,6 +68,15 @@ class SessionManager {
   }
 
   /**
+   * Get the first known bridge IP (for single-bridge setups)
+   * @returns {string|null} Bridge IP or null if no bridges configured
+   */
+  getDefaultBridgeIp() {
+    const bridges = Array.from(this.bridgeCredentials.keys());
+    return bridges.length > 0 ? bridges[0] : null;
+  }
+
+  /**
    * Clear stored credentials for a bridge
    * @param {string} bridgeIp - Bridge IP address
    * @returns {boolean} True if credentials were found and cleared

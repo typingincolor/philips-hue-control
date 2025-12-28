@@ -52,6 +52,6 @@ export function notFoundHandler(req, res) {
   res.status(404).json({
     error: 'route_not_found',
     message: `Route ${req.method} ${req.path} not found`,
-    suggestion: 'Check the API documentation at /api/v1/docs',
+    suggestion: 'Check the API documentation at /api/v2/docs',
   });
 }

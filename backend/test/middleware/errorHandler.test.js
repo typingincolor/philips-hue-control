@@ -19,7 +19,7 @@ describe('errorHandler middleware', () => {
   beforeEach(() => {
     req = {
       method: 'GET',
-      path: '/api/v1/test',
+      path: '/api/v2/test',
     };
     res = {
       status: vi.fn().mockReturnThis(),
@@ -165,7 +165,7 @@ describe('errorHandler middleware', () => {
       expect(loggerSpy).toHaveBeenCalled();
       const logCall = loggerSpy.mock.calls[0];
       expect(logCall[0]).toContain('GET');
-      expect(logCall[0]).toContain('/api/v1/test');
+      expect(logCall[0]).toContain('/api/v2/test');
       expect(logCall[1]).toHaveProperty('component', 'ERROR');
       expect(logCall[1]).toHaveProperty('code', 'test_error');
     });
@@ -187,21 +187,21 @@ describe('errorHandler middleware', () => {
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
         error: 'route_not_found',
-        message: 'Route GET /api/v1/test not found',
-        suggestion: 'Check the API documentation at /api/v1/docs',
+        message: 'Route GET /api/v2/test not found',
+        suggestion: 'Check the API documentation at /api/v2/docs',
       });
     });
 
     it('should include correct method in message', () => {
       req.method = 'POST';
-      req.path = '/api/v1/nonexistent';
+      req.path = '/api/v2/nonexistent';
 
       notFoundHandler(req, res);
 
       expect(res.json).toHaveBeenCalledWith({
         error: 'route_not_found',
-        message: 'Route POST /api/v1/nonexistent not found',
-        suggestion: 'Check the API documentation at /api/v1/docs',
+        message: 'Route POST /api/v2/nonexistent not found',
+        suggestion: 'Check the API documentation at /api/v2/docs',
       });
     });
   });

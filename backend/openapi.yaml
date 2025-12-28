@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
-  title: Philips Hue Control API
+  title: Home Control API
   version: 2.0.0
   description: |2-
 
-          A simplified, client-friendly API for controlling Philips Hue lights.
+          A unified API for smart home control (Philips Hue, UK Hive).
 
           **Features:**
           - Pre-computed RGB colors and CSS shadows
@@ -16,7 +16,7 @@ info:
           - Real-time updates via WebSocket
 
           **Authentication Methods:**
-          1. **Session Token**: Get a session token from `POST /api/v1/auth/session`, then use `Authorization: Bearer <token>` header
+          1. **Session Token**: Get a session token from `POST /api/v2/auth/session`, then use `Authorization: Bearer <token>` header
           2. **Demo Mode**: Add `X-Demo-Mode: true` header to use mock data (no bridge required)
 
           **Demo Mode:**
@@ -27,12 +27,12 @@ info:
 
           **Multi-Client Support:**
           When one client pairs with a bridge, credentials are stored server-side. Other clients can then connect without re-pairing:
-          1. First client: `POST /api/v1/auth/pair` → `POST /api/v1/auth/session`
-          2. Subsequent clients: `POST /api/v1/auth/connect` (no pairing needed!)
-          3. Check availability: `GET /api/v1/auth/bridge-status?bridgeIp=...`
+          1. First client: `POST /api/v2/services/hue/pair` → `POST /api/v2/auth/session`
+          2. Subsequent clients: `POST /api/v2/services/hue/connect` (no pairing needed!)
+          3. Check availability: `GET /api/v2/auth/bridge-status?bridgeIp=...`
 
           **WebSocket API:**
-          Connect to `/api/v1/ws` for real-time updates. Authenticate with:
+          Connect to `/api/v2/ws` for real-time updates. Authenticate with:
           - Session: `{ type: 'auth', sessionToken: '<token>' }`
           - Demo: `{ type: 'auth', demoMode: true }`
 
@@ -41,7 +41,7 @@ info:
   license:
     name: MIT
 servers:
-  - url: http://localhost:3001/api/v1
+  - url: http://localhost:3001/api/v2
     description: Development server
 components:
   securitySchemes:
@@ -49,7 +49,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: Session Token
-      description: Session token from POST /api/v1/auth/session
+      description: Session token from POST /api/v2/auth/session
     DemoMode:
       type: apiKey
       in: header

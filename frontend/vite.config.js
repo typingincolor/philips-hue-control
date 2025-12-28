@@ -23,7 +23,7 @@ export default defineConfig({
     // Proxy API requests to backend during development
     proxy: {
       // Socket.IO needs its own proxy config
-      '/api/v1/ws': {
+      '/api/v2/ws': {
         target: `http://localhost:${backendPort}`,
         changeOrigin: true,
         ws: true,

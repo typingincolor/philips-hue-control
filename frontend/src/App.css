@@ -59,7 +59,7 @@ body {
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #000;
   min-height: 100vh;
 }
 
@@ -72,6 +72,13 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.app-fullscreen {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  background: var(--bg-primary);
 }
 
 @media (max-width: 768px) {
@@ -591,6 +598,45 @@ button.secondary:hover:not(:disabled) {
 .restoring-session p {
   color: var(--text-secondary, #a0a0a0);
   font-size: 16px;
+}
+
+/* Backend Unavailable */
+.backend-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 40px;
+  text-align: center;
+  color: var(--text-primary, #ffffff);
+}
+
+.backend-unavailable .error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.backend-unavailable h2 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  color: var(--accent-primary, #f59e0b);
+}
+
+.backend-unavailable p {
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.backend-unavailable .hint {
+  font-size: 14px;
+  color: var(--text-muted, #6b6b6b);
+  margin-bottom: 24px;
+}
+
+.backend-unavailable button {
+  margin-top: 16px;
 }
 
 @keyframes spin {
@@ -1236,13 +1282,13 @@ button.secondary:hover:not(:disabled) {
   border-radius: 8px;
   padding: 10px 14px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e9d5ff;
+  border: 1px solid #333;
   transition: all 0.2s ease;
 }
 
 .zone-bar:hover {
-  border-color: #d8b4fe;
-  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.1);
+  border-color: #000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .zone-bar-info {
@@ -1753,24 +1799,6 @@ body.dark-theme {
   50% {
     opacity: 0.4;
   }
-}
-
-.toolbar-logout {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toolbar-logout:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
 }
 
 /* Main Panel */
@@ -2830,6 +2858,8 @@ body.dark-theme {
 /* Settings section */
 .settings-section {
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 500px;
 }
 
 .settings-section-label {
@@ -2927,81 +2957,6 @@ body.dark-theme {
   text-align: center;
   font-size: 0.8rem;
   color: var(--text-muted);
-}
-
-/* Hive Settings Styles */
-.settings-hive-connected {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.settings-hive-status {
-  color: var(--success-color, #22c55e);
-  font-weight: 500;
-}
-
-.settings-hive-login {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.settings-hive-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-family: inherit;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.settings-hive-input::placeholder {
-  color: var(--text-muted);
-}
-
-.settings-hive-input:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-.settings-hive-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.settings-hive-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.settings-hive-btn:hover:not(:disabled) {
-  background: var(--border-color);
-  border-color: var(--accent-primary);
-}
-
-.settings-hive-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* Responsive adjustments */
@@ -3191,6 +3146,43 @@ body.dark-theme {
    HIVE VIEW STYLES
    ============================================== */
 
+/* Home View (for home-level devices) */
+.home-view {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px var(--min-edge-spacing);
+  box-sizing: border-box;
+  width: 100%;
+  height: fit-content;
+}
+
+.home-view-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.home-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.home-empty-message {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.home-devices {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .hive-view {
   max-width: 800px;
   margin: 0 auto;
@@ -3353,17 +3345,10 @@ body.dark-theme {
   color: var(--text-primary);
 }
 
-/* Settings Hive Link */
-.settings-hive-link {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
 /* Settings Page (full-page settings view) */
 .settings-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: var(--bg-primary);
   padding: 16px;
 }
@@ -3406,11 +3391,10 @@ body.dark-theme {
 }
 
 .settings-content {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  align-items: center;
 }
 
 .settings-footer {
@@ -3428,8 +3412,8 @@ body.dark-theme {
 
 .service-toggle {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 16px;
   padding: 8px 0;
   cursor: pointer;
 }
@@ -3437,6 +3421,7 @@ body.dark-theme {
 .service-toggle-label {
   color: var(--text-primary);
   font-size: 0.95rem;
+  min-width: 120px;
 }
 
 /* Hide the actual checkbox */
@@ -3478,10 +3463,10 @@ body.dark-theme {
 }
 
 .service-status {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  margin-left: 12px;
+  margin-left: 4px;
   flex-shrink: 0;
 }
 
@@ -3493,20 +3478,7 @@ body.dark-theme {
   background: var(--bg-tertiary);
 }
 
-/* Hive Section in Settings */
-.settings-hive-section {
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 16px;
-}
-
 /* Responsive adjustments for Settings Page */
-@media (min-width: 768px) {
-  .settings-page {
-    max-width: 600px;
-    margin: 0 auto;
-  }
-}
 
 @media (max-width: 480px) {
   .settings-page {
@@ -3677,4 +3649,38 @@ body.dark-theme {
   .hive-status-indicator {
     justify-content: center;
   }
+}
+
+/* Notification Banner */
+.notification-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 8px var(--min-edge-spacing);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.notification-warning {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.notification-action {
+  padding: 6px 12px;
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.notification-action:hover {
+  background: var(--accent-primary-hover);
 }

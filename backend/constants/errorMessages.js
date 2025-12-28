@@ -70,5 +70,5 @@ export const ERROR_SUGGESTIONS = {
   MISSING_PARAM: (param) => `Provide ${param} in the request headers or query parameters`,
 
   // API
-  CHECK_API_DOCS: 'Check the API documentation at /api/v1/docs',
+  CHECK_API_DOCS: 'Check the API documentation at /api/v2/docs',
 };

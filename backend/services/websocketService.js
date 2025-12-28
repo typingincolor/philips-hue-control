@@ -41,7 +41,7 @@ class WebSocketService {
 
   initialize(server) {
     this.io = new Server(server, {
-      path: '/api/v1/ws',
+      path: '/api/v2/ws',
       pingInterval: 25000,
       pingTimeout: 60000,
     });
@@ -55,7 +55,7 @@ class WebSocketService {
       socket.on('error', (err) => logger.error('Connection error', { error: err.message }));
     });
 
-    logger.info('Server initialized', { path: '/api/v1/ws' });
+    logger.info('Server initialized', { path: '/api/v2/ws' });
   }
 
   async handleAuth(socket, data) {
@@ -207,11 +207,14 @@ class WebSocketService {
       }
     }
 
-    // Detect Hive changes
-    if (current.hive !== undefined) {
-      const prevHive = previous.hive;
-      if (!prevHive || JSON.stringify(prevHive) !== JSON.stringify(current.hive)) {
-        changes.push({ type: 'hive', data: current.hive });
+    // Detect changes in any service under 'services' key (generic)
+    const prevServices = previous.services || {};
+    const currServices = current.services || {};
+
+    for (const [serviceId, serviceData] of Object.entries(currServices)) {
+      const prevData = prevServices[serviceId];
+      if (!prevData || JSON.stringify(prevData) !== JSON.stringify(serviceData)) {
+        changes.push({ type: 'service', serviceId, data: serviceData });
       }
     }
 

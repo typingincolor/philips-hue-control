@@ -1,4 +1,5 @@
 import ColorConverter from 'cie-rgb-color-converter';
+import slugMappingService from '../services/slugMappingService.js';
 
 const COLOR_CONFIG = {
   WARM_DIM: { r: 255, g: 200, b: 130 },
@@ -193,9 +194,13 @@ export const enrichLight = (light) => {
   const rawBrightness = light.dimming?.brightness ?? 0;
   const brightness = isOn ? Math.max(5, rawBrightness) : 0;
 
+  const name = light.metadata?.name || 'Unknown';
+  const slug = slugMappingService.getSlug('hue', light.id, name);
+
   return {
-    id: light.id,
-    name: light.metadata?.name || 'Unknown',
+    id: slug,
+    _uuid: light.id,
+    name,
     on: isOn,
     brightness,
     color,

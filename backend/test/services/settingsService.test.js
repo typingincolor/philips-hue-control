@@ -531,4 +531,46 @@ describe('SettingsService', () => {
       expect(service.settingsFilePath).toContain('settings.json');
     });
   });
+
+  describe('ServiceRegistry Integration', () => {
+    it('should validate services against ServiceRegistry', async () => {
+      // When a new service is registered in ServiceRegistry,
+      // settingsService should accept it as valid
+      expect(() => {
+        SettingsService.updateSettings('session-1', {
+          services: { hue: { enabled: true } },
+        });
+      }).not.toThrow();
+
+      expect(() => {
+        SettingsService.updateSettings('session-1', {
+          services: { hive: { enabled: true } },
+        });
+      }).not.toThrow();
+    });
+
+    it('should reject services not in ServiceRegistry', () => {
+      expect(() => {
+        SettingsService.updateSettings('session-1', {
+          services: { unknownService: { enabled: true } },
+        });
+      }).toThrow(/unknown service|invalid/i);
+    });
+
+    it('should get valid service IDs from ServiceRegistry', async () => {
+      // This test verifies the integration - settingsService should
+      // get valid service IDs dynamically from ServiceRegistry
+      const { default: ServiceRegistry } = await import('../../services/ServiceRegistry.js');
+      const validIds = ServiceRegistry.getIds();
+
+      // All registry services should be valid in settings
+      for (const id of validIds) {
+        expect(() => {
+          SettingsService.updateSettings(`session-${id}`, {
+            services: { [id]: { enabled: true } },
+          });
+        }).not.toThrow();
+      }
+    });
+  });
 });

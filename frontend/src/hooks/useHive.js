@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import {
-  connectHive,
-  disconnectHive,
-  getHiveStatus,
-  getHiveSchedules,
-  getHiveConnectionStatus,
+  connectService,
+  disconnectService,
+  getServiceStatus,
+  getService,
   verifyHive2fa,
-} from '../services/hueApi';
+  getHiveSchedules,
+} from '../services/servicesApi';
 
 /**
  * Hook for managing Hive heating system integration
@@ -33,7 +33,10 @@ export const useHive = (demoMode = false) => {
     setError(null);
 
     try {
-      const [statusData, schedulesData] = await Promise.all([getHiveStatus(), getHiveSchedules()]);
+      const [statusData, schedulesData] = await Promise.all([
+        getServiceStatus('hive', demoMode),
+        getHiveSchedules(demoMode),
+      ]);
       setStatus(statusData);
       setSchedules(schedulesData);
     } catch (err) {
@@ -41,7 +44,7 @@ export const useHive = (demoMode = false) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [demoMode]);
 
   const connect = useCallback(
     async (username, password) => {
@@ -50,7 +53,7 @@ export const useHive = (demoMode = false) => {
       setPendingUsername(username);
 
       try {
-        const result = await connectHive(username, password);
+        const result = await connectService('hive', { username, password }, demoMode);
 
         // Handle 2FA requirement
         if (result.requires2fa) {
@@ -76,7 +79,7 @@ export const useHive = (demoMode = false) => {
         setIsConnecting(false);
       }
     },
-    [fetchData]
+    [fetchData, demoMode]
   );
 
   const submit2faCode = useCallback(
@@ -85,7 +88,7 @@ export const useHive = (demoMode = false) => {
       setError(null);
 
       try {
-        const result = await verifyHive2fa(code, twoFaSession, pendingUsername);
+        const result = await verifyHive2fa(code, twoFaSession, pendingUsername, demoMode);
 
         if (!result.success) {
           setError(result.error || 'Invalid verification code');
@@ -103,7 +106,7 @@ export const useHive = (demoMode = false) => {
         setIsVerifying(false);
       }
     },
-    [twoFaSession, pendingUsername, fetchData]
+    [twoFaSession, pendingUsername, fetchData, demoMode]
   );
 
   const cancel2fa = useCallback(() => {
@@ -119,7 +122,7 @@ export const useHive = (demoMode = false) => {
 
   const disconnect = useCallback(async () => {
     try {
-      await disconnectHive();
+      await disconnectService('hive', demoMode);
     } catch {
       // Ignore disconnect errors
     }
@@ -130,7 +133,7 @@ export const useHive = (demoMode = false) => {
     setRequires2fa(false);
     setTwoFaSession(null);
     setPendingUsername(null);
-  }, []);
+  }, [demoMode]);
 
   const refresh = useCallback(async () => {
     if (!isConnected && !demoMode) {
@@ -141,7 +144,7 @@ export const useHive = (demoMode = false) => {
     setError(null);
 
     try {
-      const statusData = await getHiveStatus();
+      const statusData = await getServiceStatus('hive', demoMode);
       setStatus(statusData);
     } catch (err) {
       setError(err.message || 'Failed to refresh Hive data');
@@ -152,16 +155,23 @@ export const useHive = (demoMode = false) => {
 
   const checkConnection = useCallback(async () => {
     try {
-      const connectionStatus = await getHiveConnectionStatus();
+      const connectionStatus = await getService('hive', demoMode);
       setIsConnected(connectionStatus.connected);
 
       if (connectionStatus.connected) {
-        await fetchData();
+        try {
+          await fetchData();
+        } catch (err) {
+          // If fetching data fails after connection check, session is invalid
+          // This happens when refresh token is expired/invalid
+          setIsConnected(false);
+          setError('Hive session expired. Please reconnect in Settings.');
+        }
       }
     } catch {
       setIsConnected(false);
     }
-  }, [fetchData]);
+  }, [fetchData, demoMode]);
 
   return {
     // Connection state

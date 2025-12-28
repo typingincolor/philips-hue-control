@@ -384,29 +384,33 @@ describe('WebSocketService', () => {
       const previous = {
         summary: {},
         rooms: [],
-        hive: { temperature: { current: 20.0 } },
+        services: { hive: { temperature: { current: 20.0 } } },
       };
       const current = {
         summary: {},
         rooms: [],
-        hive: { temperature: { current: 21.0 } },
+        services: { hive: { temperature: { current: 21.0 } } },
       };
 
       const changes = websocketService.detectChanges(previous, current);
 
-      expect(changes).toContainEqual({ type: 'hive', data: current.hive });
+      expect(changes).toContainEqual({
+        type: 'service',
+        serviceId: 'hive',
+        data: current.services.hive,
+      });
     });
 
     it('should not detect Hive changes when identical', () => {
       const state = {
         summary: {},
         rooms: [],
-        hive: { temperature: { current: 20.0 } },
+        services: { hive: { temperature: { current: 20.0 } } },
       };
 
       const changes = websocketService.detectChanges(state, JSON.parse(JSON.stringify(state)));
 
-      expect(changes.filter((c) => c.type === 'hive')).toHaveLength(0);
+      expect(changes.filter((c) => c.type === 'service' && c.serviceId === 'hive')).toHaveLength(0);
     });
 
     it('should handle Hive polling when enabled in settings', async () => {
@@ -423,7 +427,7 @@ describe('WebSocketService', () => {
       const mockDashboard = {
         summary: {},
         rooms: [],
-        hive: { connected: true, temperature: { current: 20 } },
+        services: { hive: { connected: true, temperature: { current: 20 } } },
       };
       dashboardService.getDashboard.mockResolvedValue(mockDashboard);
 
@@ -445,10 +449,12 @@ describe('WebSocketService', () => {
       const mockDashboard = {
         summary: {},
         rooms: [],
-        hive: {
-          connected: true,
-          temperature: { current: 20.5, target: 21.0 },
-          heating: { isOn: true },
+        services: {
+          hive: {
+            connected: true,
+            temperature: { current: 20.5, target: 21.0 },
+            heating: { isOn: true },
+          },
         },
       };
       dashboardService.getDashboard.mockResolvedValue(mockDashboard);
@@ -456,8 +462,8 @@ describe('WebSocketService', () => {
       await websocketService.handleAuth(mockSocket, { sessionToken: 'token' });
 
       const emittedState = mockSocket.emit.mock.calls.find((c) => c[0] === 'initial_state');
-      expect(emittedState[1]).toHaveProperty('hive');
-      expect(emittedState[1].hive.connected).toBe(true);
+      expect(emittedState[1]).toHaveProperty('services.hive');
+      expect(emittedState[1].services.hive.connected).toBe(true);
     });
   });
 

@@ -8,6 +8,7 @@ import hiveCredentialsManager, { HIVE_DEMO_CREDENTIALS } from './hiveCredentials
 import hiveAuthService from './hiveAuthService.js';
 import { getMockHiveStatus, getMockHiveSchedules } from './mockData.js';
 import { createLogger } from '../utils/logger.js';
+import { normalizeHiveThermostat, normalizeHiveHotWater } from './deviceNormalizer.js';
 
 const logger = createLogger('HIVE');
 
@@ -21,11 +22,27 @@ class HiveService {
   }
 
   /**
-   * Check if connected to Hive (has valid session token)
+   * Check if connected to Hive (has valid session token or can refresh)
    * @returns {boolean}
    */
   isConnected() {
-    return hiveCredentialsManager.getSessionToken() !== null;
+    // Connected if we have a valid session OR a refresh token that can get one
+    // Note: If refresh token is invalid, getStatus() will fail and clear it
+    return (
+      hiveCredentialsManager.getSessionToken() !== null ||
+      hiveCredentialsManager.getRefreshToken() !== null
+    );
+  }
+
+  /**
+   * Check if session needs refresh (has refresh token but no valid session)
+   * @returns {boolean}
+   */
+  needsRefresh() {
+    return (
+      hiveCredentialsManager.getSessionToken() === null &&
+      hiveCredentialsManager.getRefreshToken() !== null
+    );
   }
 
   /**
@@ -59,12 +76,16 @@ class HiveService {
         const result = await hiveAuthService.refreshTokens(refreshToken);
         if (result.error) {
           logger.warn('Token refresh failed', { error: result.error });
+          // Clear invalid refresh token so user knows to reconnect
+          hiveCredentialsManager.clearSessionToken();
           return false;
         }
         logger.info('Session refreshed successfully');
         return true;
       } catch (error) {
         logger.error('Token refresh error', { error: error.message });
+        // Clear invalid refresh token so user knows to reconnect
+        hiveCredentialsManager.clearSessionToken();
         return false;
       } finally {
         this._refreshing = null;
@@ -85,13 +106,26 @@ class HiveService {
   /**
    * Get connection status
    * @param {boolean} demoMode - Whether in demo mode
-   * @returns {{connected: boolean}}
+   * @returns {{connected: boolean, needsReconnect?: boolean, message?: string}}
    */
   getConnectionStatus(demoMode = false) {
     if (demoMode) {
       return { connected: this._demoConnected };
     }
-    return { connected: this.isConnected() };
+
+    const connected = this.isConnected();
+    const needsRefresh = this.needsRefresh();
+
+    // If we have a refresh token but no session, we might need to reconnect
+    if (needsRefresh) {
+      return {
+        connected: true, // Optimistically report connected (will try refresh)
+        needsRefresh: true,
+        message: 'Session expired, attempting to refresh...',
+      };
+    }
+
+    return { connected };
   }
 
   /**
@@ -368,6 +402,25 @@ class HiveService {
     logger.debug('Transformed Hive schedules', { count: schedules.length });
 
     return schedules;
+  }
+
+  /**
+   * Transform Hive status to normalized Home devices
+   * @param {Object} status - Hive status object with heating and hotWater
+   * @returns {Array} Array of normalized devices
+   */
+  transformStatusToDevices(status) {
+    const devices = [];
+
+    if (status.heating) {
+      devices.push(normalizeHiveThermostat(status.heating));
+    }
+
+    if (status.hotWater) {
+      devices.push(normalizeHiveHotWater(status.hotWater));
+    }
+
+    return devices;
   }
 }
 

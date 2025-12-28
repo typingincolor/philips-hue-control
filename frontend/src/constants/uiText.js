@@ -32,8 +32,8 @@ export const UI_TEXT = {
   BUTTON_I_PRESSED_BUTTON: 'I Pressed the Button',
   BUTTON_TRY_AGAIN: 'Try Again',
 
-  // LightControl
-  LIGHT_CONTROL_TITLE: 'Light Control',
+  // Dashboard
+  DASHBOARD_TITLE: 'Dashboard',
   BUTTON_LOGOUT: 'Logout',
   STATUS_CONNECTED: 'Connected',
   STATUS_DISCONNECTED: 'Disconnected - attempting to reconnect...',
@@ -102,6 +102,11 @@ export const UI_TEXT = {
   SETTINGS_SERVICES: 'Services',
   SETTINGS_HUE_SERVICE: 'Philips Hue',
   SETTINGS_HIVE_SERVICE: 'Hive Heating',
+
+  // Home Tab
+  NAV_HOME: 'Home',
+  HOME_NO_DEVICES: 'No devices to display',
+  HOME_TITLE: 'Home',
 
   // Hive Heating
   HIVE_HEATING_STATUS: 'Heating status',

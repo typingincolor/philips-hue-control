@@ -1,9 +1,8 @@
 import { createContext, useContext, useMemo } from 'react';
-import { hueApi } from '../services/hueApi';
 
 /**
- * Context for demo mode state and services
- * Demo mode is now handled by backend via X-Demo-Mode header
+ * Context for demo mode state
+ * Demo mode is handled by backend via X-Demo-Mode header
  */
 const DemoModeContext = createContext(null);
 
@@ -18,7 +17,7 @@ const detectDemoMode = () => {
 /**
  * Provider component for demo mode context
  * Demo mode is handled by the backend - frontend just detects mode for UI badge
- * and passes X-Demo-Mode header (handled automatically by hueApi)
+ * API modules pass X-Demo-Mode header when needed
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - Child components
@@ -30,8 +29,6 @@ export const DemoModeProvider = ({ children }) => {
     return {
       // Whether demo mode is active (for UI badge display)
       isDemoMode,
-      // Always use hueApi - it sends X-Demo-Mode header when in demo mode
-      api: hueApi,
     };
   }, []);
 
@@ -44,7 +41,6 @@ export const DemoModeProvider = ({ children }) => {
  *
  * @returns {object} Demo mode context value
  * @property {boolean} isDemoMode - Whether demo mode is active (for UI display)
- * @property {object} api - The API to use (always hueApi, which handles demo mode via header)
  */
 export const useDemoMode = () => {
   const context = useContext(DemoModeContext);

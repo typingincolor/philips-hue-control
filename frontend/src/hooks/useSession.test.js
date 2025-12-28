@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSession } from './useSession';
 import { STORAGE_KEYS } from '../constants/storage';
-import { hueApi, setSessionToken, clearSessionToken } from '../services/hueApi';
+import {
+  refreshSession as authRefreshSession,
+  setSessionToken,
+  clearSessionToken,
+} from '../services/authApi';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -26,11 +30,9 @@ Object.defineProperty(global, 'localStorage', {
   writable: true,
 });
 
-// Mock hueApi
-vi.mock('../services/hueApi', () => ({
-  hueApi: {
-    refreshSession: vi.fn(),
-  },
+// Mock authApi
+vi.mock('../services/authApi', () => ({
+  refreshSession: vi.fn(),
   setSessionToken: vi.fn(),
   clearSessionToken: vi.fn(),
 }));
@@ -41,7 +43,7 @@ describe('useSession', () => {
     localStorage.clear();
     vi.clearAllMocks();
     // Set up default mock for refreshSession to avoid errors when auto-refresh triggers
-    hueApi.refreshSession.mockResolvedValue({
+    authRefreshSession.mockResolvedValue({
       sessionToken: 'refreshed-token',
       expiresIn: 86400,
     });
@@ -213,7 +215,7 @@ describe('useSession', () => {
 
     it('should return false when session expires', async () => {
       // Prevent auto-refresh from replacing the session
-      hueApi.refreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
+      authRefreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
 
       const { result, rerender } = renderHook(() => useSession());
 
@@ -259,7 +261,7 @@ describe('useSession', () => {
 
     it('should decrease over time', async () => {
       // Prevent auto-refresh from replacing the session
-      hueApi.refreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
+      authRefreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
 
       const { result, rerender } = renderHook(() => useSession());
 
@@ -283,7 +285,7 @@ describe('useSession', () => {
 
     it('should not return negative values', async () => {
       // Prevent auto-refresh from replacing the session
-      hueApi.refreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
+      authRefreshSession.mockRejectedValue(new Error('Test: refresh disabled'));
 
       const { result, rerender } = renderHook(() => useSession());
 
@@ -321,7 +323,7 @@ describe('useSession', () => {
 
   describe('Auto-refresh', () => {
     it('should schedule auto-refresh 5 minutes before expiration', async () => {
-      hueApi.refreshSession.mockResolvedValue({
+      authRefreshSession.mockResolvedValue({
         sessionToken: 'refreshed-token',
         expiresIn: 86400,
       });
@@ -338,12 +340,12 @@ describe('useSession', () => {
         await Promise.resolve(); // Flush microtasks
       });
 
-      expect(hueApi.refreshSession).toHaveBeenCalledWith();
+      expect(authRefreshSession).toHaveBeenCalledWith();
       expect(result.current.sessionToken).toBe('refreshed-token');
     });
 
     it('should not refresh if already refreshing', async () => {
-      hueApi.refreshSession.mockImplementation(
+      authRefreshSession.mockImplementation(
         () =>
           new Promise((resolve) =>
             setTimeout(
@@ -368,12 +370,12 @@ describe('useSession', () => {
       });
 
       // Should only be called once
-      expect(hueApi.refreshSession).toHaveBeenCalledTimes(1);
+      expect(authRefreshSession).toHaveBeenCalledTimes(1);
     });
 
     it('should handle refresh failure gracefully', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      hueApi.refreshSession.mockRejectedValue(new Error('Network error'));
+      authRefreshSession.mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() => useSession());
 
@@ -398,7 +400,7 @@ describe('useSession', () => {
     });
 
     it('should schedule refresh immediately if already past refresh time', async () => {
-      hueApi.refreshSession.mockResolvedValue({
+      authRefreshSession.mockResolvedValue({
         sessionToken: 'refreshed-token',
         expiresIn: 86400,
       });
@@ -418,7 +420,7 @@ describe('useSession', () => {
         await Promise.resolve(); // Flush microtasks
       });
 
-      expect(hueApi.refreshSession).toHaveBeenCalled();
+      expect(authRefreshSession).toHaveBeenCalled();
     });
 
     it('should not schedule refresh if session is expired', () => {
@@ -431,7 +433,7 @@ describe('useSession', () => {
 
       renderHook(() => useSession());
 
-      expect(hueApi.refreshSession).not.toHaveBeenCalled();
+      expect(authRefreshSession).not.toHaveBeenCalled();
     });
   });
 

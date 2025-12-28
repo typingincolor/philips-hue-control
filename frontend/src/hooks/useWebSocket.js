@@ -65,6 +65,13 @@ export const useWebSocket = (sessionToken, enabled = true) => {
               );
             }
             break;
+          case 'service':
+            // Generic service update - store under services.{serviceId}
+            updated.services = {
+              ...updated.services,
+              [change.serviceId]: change.data,
+            };
+            break;
           default:
             logger.warn('Unknown change type:', change.type);
         }
@@ -79,7 +86,7 @@ export const useWebSocket = (sessionToken, enabled = true) => {
     if (!enabled) return;
     if (!demoMode && !sessionToken) return;
 
-    const wsPath = '/api/v1/ws';
+    const wsPath = '/api/v2/ws';
     logger.info('Connecting to', wsPath, demoMode ? '(demo mode)' : '(session mode)');
 
     const socket = io({

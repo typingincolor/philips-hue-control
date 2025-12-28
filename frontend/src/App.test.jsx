@@ -7,18 +7,35 @@ import { STORAGE_KEYS } from './constants/storage';
 // Mock DemoModeContext
 vi.mock('./context/DemoModeContext', () => ({
   DemoModeProvider: ({ children }) => children,
-  useDemoMode: vi.fn(() => ({ isDemoMode: false, api: null })),
+  useDemoMode: vi.fn(() => ({ isDemoMode: false })),
 }));
 
-// Mock hueApi for session validation
+// Mock hueApi
 vi.mock('./services/hueApi', () => ({
   hueApi: {
-    getDashboard: vi.fn(() => Promise.resolve({ summary: {}, rooms: [] })),
-    connect: vi.fn(() => Promise.reject(new Error('PAIRING_REQUIRED'))),
-    createSession: vi.fn(() => Promise.resolve({ sessionToken: 'test', expiresIn: 86400 })),
+    discoverBridge: vi.fn(() => Promise.resolve([])),
   },
+}));
+
+// Mock authApi for session and auth operations
+vi.mock('./services/authApi', () => ({
+  connect: vi.fn(() => Promise.reject(new Error('PAIRING_REQUIRED'))),
+  createSession: vi.fn(() => Promise.resolve({ sessionToken: 'test', expiresIn: 86400 })),
+  pair: vi.fn(() => Promise.resolve('test-username')),
   setSessionToken: vi.fn(),
   clearSessionToken: vi.fn(),
+  getSessionToken: vi.fn(() => 'test-token'),
+  refreshSession: vi.fn(() => Promise.resolve({ sessionToken: 'refreshed', expiresIn: 86400 })),
+  checkHealth: vi.fn(() => Promise.resolve(true)),
+}));
+
+// Mock homeAdapter for session validation
+vi.mock('./services/homeAdapter', () => ({
+  getDashboardFromHome: vi.fn(() => Promise.resolve({ summary: {}, rooms: [], zones: [] })),
+  updateLight: vi.fn(),
+  updateRoomLights: vi.fn(),
+  updateZoneLights: vi.fn(),
+  activateSceneV1: vi.fn(),
 }));
 
 // Mock components to simplify testing
@@ -30,8 +47,8 @@ vi.mock('./components/Authentication', () => ({
   Authentication: () => <div data-testid="authentication">Authentication</div>,
 }));
 
-vi.mock('./components/LightControl', () => ({
-  LightControl: () => <div data-testid="light-control">Light Control</div>,
+vi.mock('./components/Dashboard', () => ({
+  Dashboard: () => <div data-testid="dashboard">Dashboard</div>,
 }));
 
 // Mock localStorage
@@ -57,7 +74,7 @@ Object.defineProperty(global, 'localStorage', {
 });
 
 // Mock SettingsPage component for settings step testing
-vi.mock('./components/LightControl/SettingsPage', () => ({
+vi.mock('./components/Dashboard/SettingsPage', () => ({
   SettingsPage: ({ onEnableHue }) => (
     <div data-testid="settings-page">
       Settings Page
@@ -136,10 +153,10 @@ describe('App - Login Page Flicker Fix', () => {
     expect(screen.queryByTestId('bridge-discovery')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authentication')).not.toBeInTheDocument();
 
-    // Initially shows restoring state, then transitions to light-control
+    // Initially shows restoring state, then transitions to dashboard
     // The key is that login pages (discovery/auth) NEVER appear
     await waitFor(() => {
-      expect(screen.getByTestId('light-control')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard')).toBeInTheDocument();
     });
 
     // Verify login pages still didn't appear
@@ -153,11 +170,11 @@ describe('App - Login Page Flicker Fix', () => {
 
     // Should show settings page (deferred service activation)
     expect(screen.getByTestId('settings-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
   });
 
-  it('should show settings page when session is EXPIRED', () => {
-    // Setup: Store an expired session
+  it('should try to reconnect when session is EXPIRED', async () => {
+    // Setup: Store an expired session with bridge IP
     const now = Date.now();
     const expiresAt = now - 1000; // Expired 1 second ago
 
@@ -167,21 +184,27 @@ describe('App - Login Page Flicker Fix', () => {
 
     render(<App />);
 
-    // Should show settings page (deferred service activation)
-    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
+    // With a stored bridge IP, the app tries to reconnect using server credentials
+    // When that fails with PAIRING_REQUIRED, it shows authentication screen
+    await waitFor(() => {
+      expect(screen.getByTestId('authentication')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('settings-page')).not.toBeInTheDocument();
   });
 
-  it('should handle missing session fields gracefully', () => {
-    // Setup: Partial session data (missing token)
+  it('should try to reconnect when session token is missing', async () => {
+    // Setup: Partial session data (missing token but has bridge IP)
     localStorage.setItem(STORAGE_KEYS.BRIDGE_IP, '192.168.1.100');
     localStorage.setItem(STORAGE_KEYS.SESSION_EXPIRES_AT, (Date.now() + 86400000).toString());
     // Missing SESSION_TOKEN
 
     render(<App />);
 
-    // Should show settings page (deferred service activation)
-    expect(screen.getByTestId('settings-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('light-control')).not.toBeInTheDocument();
+    // With a stored bridge IP, the app tries to reconnect using server credentials
+    // When that fails with PAIRING_REQUIRED, it shows authentication screen
+    await waitFor(() => {
+      expect(screen.getByTestId('authentication')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('settings-page')).not.toBeInTheDocument();
   });
 });

@@ -63,7 +63,7 @@ describe('useWebSocket', () => {
       renderHook(() => useWebSocket('test-token', true));
 
       expect(io).toHaveBeenCalledWith({
-        path: '/api/v1/ws',
+        path: '/api/v2/ws',
         transports: ['websocket'],
         reconnection: true,
         reconnectionAttempts: 5,

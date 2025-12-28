@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useHive } from './useHive';
-import * as hueApi from '../services/hueApi';
+import * as servicesApi from '../services/servicesApi';
 
-// Mock the hueApi
-vi.mock('../services/hueApi', () => ({
-  connectHive: vi.fn(),
-  disconnectHive: vi.fn(),
-  getHiveStatus: vi.fn(),
-  getHiveSchedules: vi.fn(),
-  getHiveConnectionStatus: vi.fn(),
+// Mock the servicesApi
+vi.mock('../services/servicesApi', () => ({
+  connectService: vi.fn(),
+  disconnectService: vi.fn(),
+  getServiceStatus: vi.fn(),
+  getService: vi.fn(),
   verifyHive2fa: vi.fn(),
+  getHiveSchedules: vi.fn(),
 }));
 
 describe('useHive', () => {
@@ -46,7 +46,7 @@ describe('useHive', () => {
 
   describe('connect', () => {
     it('should set loading state while connecting', async () => {
-      hueApi.connectHive.mockImplementation(() => new Promise(() => {})); // Never resolves
+      servicesApi.connectService.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       const { result } = renderHook(() => useHive());
 
@@ -58,12 +58,12 @@ describe('useHive', () => {
     });
 
     it('should call connectHive API with credentials only', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -71,16 +71,20 @@ describe('useHive', () => {
         await result.current.connect('test@hive.com', 'password');
       });
 
-      expect(hueApi.connectHive).toHaveBeenCalledWith('test@hive.com', 'password');
+      expect(servicesApi.connectService).toHaveBeenCalledWith(
+        'hive',
+        { username: 'test@hive.com', password: 'password' },
+        false
+      );
     });
 
     it('should set connected state on successful connection', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -92,7 +96,10 @@ describe('useHive', () => {
     });
 
     it('should set error on failed connection', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: false, error: 'Invalid credentials' });
+      servicesApi.connectService.mockResolvedValue({
+        success: false,
+        error: 'Invalid credentials',
+      });
 
       const { result } = renderHook(() => useHive());
 
@@ -105,12 +112,12 @@ describe('useHive', () => {
     });
 
     it('should fetch status after successful connection', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 19.5, isHeating: true },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -123,12 +130,12 @@ describe('useHive', () => {
     });
 
     it('should call getHiveStatus API without token', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -136,16 +143,16 @@ describe('useHive', () => {
         await result.current.connect('test@hive.com', 'password');
       });
 
-      expect(hueApi.getHiveStatus).toHaveBeenCalledWith();
+      expect(servicesApi.getServiceStatus).toHaveBeenCalledWith('hive', false);
     });
 
     it('should call getHiveSchedules API without token', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -153,19 +160,19 @@ describe('useHive', () => {
         await result.current.connect('test@hive.com', 'password');
       });
 
-      expect(hueApi.getHiveSchedules).toHaveBeenCalledWith();
+      expect(servicesApi.getHiveSchedules).toHaveBeenCalledWith(false);
     });
   });
 
   describe('disconnect', () => {
     it('should clear connection state on disconnect', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
-      hueApi.disconnectHive.mockResolvedValue({ success: true });
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.disconnectService.mockResolvedValue({ success: true });
 
       const { result } = renderHook(() => useHive());
 
@@ -186,13 +193,13 @@ describe('useHive', () => {
     });
 
     it('should call disconnectHive API without token', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
-      hueApi.disconnectHive.mockResolvedValue({ success: true });
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.disconnectService.mockResolvedValue({ success: true });
 
       const { result } = renderHook(() => useHive());
 
@@ -204,17 +211,17 @@ describe('useHive', () => {
         await result.current.disconnect();
       });
 
-      expect(hueApi.disconnectHive).toHaveBeenCalledWith();
+      expect(servicesApi.disconnectService).toHaveBeenCalledWith('hive', false);
     });
 
     it('should clear schedules on disconnect', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([{ id: '1', name: 'Schedule 1' }]);
-      hueApi.disconnectHive.mockResolvedValue({ success: true });
+      servicesApi.getHiveSchedules.mockResolvedValue([{ id: '1', name: 'Schedule 1' }]);
+      servicesApi.disconnectService.mockResolvedValue({ success: true });
 
       const { result } = renderHook(() => useHive());
 
@@ -234,8 +241,8 @@ describe('useHive', () => {
 
   describe('refresh', () => {
     it('should refresh status when connected', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus
         .mockResolvedValueOnce({
           heating: { currentTemperature: 20, isHeating: false },
           hotWater: { isOn: false },
@@ -244,7 +251,7 @@ describe('useHive', () => {
           heating: { currentTemperature: 21, isHeating: true },
           hotWater: { isOn: true },
         });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -262,8 +269,8 @@ describe('useHive', () => {
     });
 
     it('should call getHiveStatus API without token on refresh', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus
         .mockResolvedValueOnce({
           heating: { currentTemperature: 20, isHeating: false },
           hotWater: { isOn: false },
@@ -272,7 +279,7 @@ describe('useHive', () => {
           heating: { currentTemperature: 21, isHeating: true },
           hotWater: { isOn: true },
         });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -281,7 +288,7 @@ describe('useHive', () => {
       });
 
       vi.clearAllMocks();
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 21, isHeating: true },
         hotWater: { isOn: true },
       });
@@ -290,18 +297,18 @@ describe('useHive', () => {
         await result.current.refresh();
       });
 
-      expect(hueApi.getHiveStatus).toHaveBeenCalledWith();
+      expect(servicesApi.getServiceStatus).toHaveBeenCalledWith('hive', false);
     });
 
     it('should set error if refresh fails', async () => {
-      hueApi.connectHive.mockResolvedValue({ success: true });
-      hueApi.getHiveStatus
+      servicesApi.connectService.mockResolvedValue({ success: true });
+      servicesApi.getServiceStatus
         .mockResolvedValueOnce({
           heating: { currentTemperature: 20, isHeating: false },
           hotWater: { isOn: false },
         })
         .mockRejectedValueOnce(new Error('Connection lost'));
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -332,7 +339,7 @@ describe('useHive', () => {
 
   describe('2FA authentication flow', () => {
     it('should set requires2fa when connect returns SMS_MFA challenge', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
@@ -348,7 +355,7 @@ describe('useHive', () => {
     });
 
     it('should not set connected when 2FA is required', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
@@ -363,7 +370,7 @@ describe('useHive', () => {
     });
 
     it('should store username for 2FA verification', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
@@ -378,19 +385,19 @@ describe('useHive', () => {
     });
 
     it('should verify 2FA code and complete connection', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
-      hueApi.verifyHive2fa.mockResolvedValue({
+      servicesApi.verifyHive2fa.mockResolvedValue({
         success: true,
         accessToken: 'access-token',
       });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -409,19 +416,19 @@ describe('useHive', () => {
     });
 
     it('should call verifyHive2fa with code and session', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
-      hueApi.verifyHive2fa.mockResolvedValue({
+      servicesApi.verifyHive2fa.mockResolvedValue({
         success: true,
         accessToken: 'access-token',
       });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -433,19 +440,20 @@ describe('useHive', () => {
         await result.current.submit2faCode('123456');
       });
 
-      expect(hueApi.verifyHive2fa).toHaveBeenCalledWith(
+      expect(servicesApi.verifyHive2fa).toHaveBeenCalledWith(
         '123456',
         'cognito-session-token',
-        'user@hive.com'
+        'user@hive.com',
+        false
       );
     });
 
     it('should set error for invalid 2FA code', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
-      hueApi.verifyHive2fa.mockResolvedValue({
+      servicesApi.verifyHive2fa.mockResolvedValue({
         success: false,
         error: 'Invalid code',
       });
@@ -466,11 +474,11 @@ describe('useHive', () => {
     });
 
     it('should set isVerifying while verifying 2FA code', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
-      hueApi.verifyHive2fa.mockImplementation(() => new Promise(() => {})); // Never resolves
+      servicesApi.verifyHive2fa.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       const { result } = renderHook(() => useHive());
 
@@ -486,7 +494,7 @@ describe('useHive', () => {
     });
 
     it('should cancel 2FA and return to login', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
@@ -508,7 +516,7 @@ describe('useHive', () => {
     });
 
     it('should preserve username when canceling 2FA', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
@@ -527,18 +535,18 @@ describe('useHive', () => {
     });
 
     it('should clear error when starting new 2FA verification', async () => {
-      hueApi.connectHive.mockResolvedValue({
+      servicesApi.connectService.mockResolvedValue({
         requires2fa: true,
         session: 'cognito-session-token',
       });
-      hueApi.verifyHive2fa
+      servicesApi.verifyHive2fa
         .mockResolvedValueOnce({ success: false, error: 'Invalid code' })
         .mockResolvedValueOnce({ success: true, accessToken: 'token' });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -562,12 +570,12 @@ describe('useHive', () => {
 
   describe('checkConnection', () => {
     it('should check connection status and update state', async () => {
-      hueApi.getHiveConnectionStatus.mockResolvedValue({ connected: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.getService.mockResolvedValue({ connected: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 20, isHeating: false },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([]);
+      servicesApi.getHiveSchedules.mockResolvedValue([]);
 
       const { result } = renderHook(() => useHive());
 
@@ -575,12 +583,12 @@ describe('useHive', () => {
         await result.current.checkConnection();
       });
 
-      expect(hueApi.getHiveConnectionStatus).toHaveBeenCalledWith();
+      expect(servicesApi.getService).toHaveBeenCalledWith('hive', false);
       expect(result.current.isConnected).toBe(true);
     });
 
     it('should not fetch data if not connected', async () => {
-      hueApi.getHiveConnectionStatus.mockResolvedValue({ connected: false });
+      servicesApi.getService.mockResolvedValue({ connected: false });
 
       const { result } = renderHook(() => useHive());
 
@@ -589,16 +597,18 @@ describe('useHive', () => {
       });
 
       expect(result.current.isConnected).toBe(false);
-      expect(hueApi.getHiveStatus).not.toHaveBeenCalled();
+      expect(servicesApi.getServiceStatus).not.toHaveBeenCalled();
     });
 
     it('should fetch status and schedules if connected', async () => {
-      hueApi.getHiveConnectionStatus.mockResolvedValue({ connected: true });
-      hueApi.getHiveStatus.mockResolvedValue({
+      servicesApi.getService.mockResolvedValue({ connected: true });
+      servicesApi.getServiceStatus.mockResolvedValue({
         heating: { currentTemperature: 19.5, isHeating: true },
         hotWater: { isOn: false },
       });
-      hueApi.getHiveSchedules.mockResolvedValue([{ id: '1', name: 'Morning', type: 'heating' }]);
+      servicesApi.getHiveSchedules.mockResolvedValue([
+        { id: '1', name: 'Morning', type: 'heating' },
+      ]);
 
       const { result } = renderHook(() => useHive());
 

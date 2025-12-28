@@ -47,7 +47,7 @@ Track what works and what doesn't:
 
 2. **Review notes from reviewer phase** - Focus on highlighted areas
 
-3. **Update CLAUDE.md** if architecture changed (keep under 200 lines)
+3. **Update CLAUDE.md** if architecture changed (keep under 500 lines)
 
 4. **Update TESTING.md** if test counts changed
 

@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-**Philips Hue Light Control** - React/Express monorepo for controlling Hue lights locally via the Hue Bridge API. Features true color display, responsive design, room/zone organization, scene management, MotionAware zones, and Socket.IO real-time updates.
+**Home Control** - React/Express monorepo for smart home control. Integrates Philips Hue (lights, scenes, rooms, zones) and UK Hive (heating, hot water). Features true color display, responsive design, and Socket.IO real-time updates.
 
-**Architecture:** Backend handles all business logic, exposing a v1 REST API with WebSocket. Frontend is a thin presentation layer consuming pre-computed data.
+**Architecture:** Backend handles all business logic, exposing a V2 REST API with WebSocket. Frontend is a thin presentation layer consuming pre-computed data.
 
 ## Quick Start
 
@@ -91,6 +91,12 @@ Backend-based demo allows testing without Hue Bridge:
 | `hiveService.js`                    | UK Hive heating integration |
 | `hiveAuthService.js`                | Hive AWS Cognito auth + 2FA |
 | `hiveCredentialsManager.js`         | Encrypted Hive credentials  |
+| `homeService.js`                    | Unified Home aggregation    |
+| `roomMappingService.js`             | Service room → Home room    |
+| `deviceNormalizer.js`               | Device format normalization |
+| `ServiceRegistry.js`                | Plugin registration         |
+| `plugins/HuePlugin.js`              | Hue service plugin          |
+| `plugins/HivePlugin.js`             | Hive service plugin         |
 
 ## Frontend Structure
 
@@ -98,32 +104,64 @@ Backend-based demo allows testing without Hue Bridge:
 
 **Key Hooks:** `useHueBridge` (connection), `useWebSocket` (real-time), `useSettings` (preferences), `useHive` (Hive heating)
 
+**Key Services:**
+
+- `apiUtils.js` - Shared `getHeaders()`, `handleResponse()` for V2 clients
+- `authApi.js` - V2 Auth API client with session token management
+- `settingsApi.js` - V2 Settings API client
+- `weatherApi.js` - V2 Weather API client
+- `automationsApi.js` - V2 Automations API client
+- `homeApi.js` - V2 Home API client
+- `homeAdapter.js` - Transforms V2 Home format to V1 Dashboard format
+- `servicesApi.js` - V2 Services API client (Hue/Hive connection)
+
 **UI Text:** All user-facing text in `constants/uiText.js` - tests use these constants.
 
-## API Endpoints
+## API Endpoints (V2)
 
-| Method  | Endpoint                          | Purpose                |
-| ------- | --------------------------------- | ---------------------- |
-| POST    | `/api/v1/auth/connect`            | Connect to bridge      |
-| GET     | `/api/v1/dashboard`               | Full dashboard data    |
-| PUT     | `/api/v1/lights/:id`              | Update light state     |
-| PUT     | `/api/v1/rooms/:id/lights`        | Update all room lights |
-| PUT     | `/api/v1/zones/:id/lights`        | Update all zone lights |
-| POST    | `/api/v1/scenes/:id/activate`     | Activate scene         |
-| GET     | `/api/v1/automations`             | List automations       |
-| POST    | `/api/v1/automations/:id/trigger` | Trigger automation     |
-| GET/PUT | `/api/v1/settings`                | User settings          |
-| GET     | `/api/v1/weather`                 | Weather data           |
-| POST    | `/api/v1/hive/connect`            | Connect to Hive (→2FA) |
-| POST    | `/api/v1/hive/verify-2fa`         | Verify SMS 2FA code    |
-| POST    | `/api/v1/hive/disconnect`         | Disconnect from Hive   |
-| GET     | `/api/v1/hive/connection`         | Hive connection status |
-| GET     | `/api/v1/hive/status`             | Hive thermostat status |
-| GET     | `/api/v1/hive/schedules`          | Hive heating schedules |
+### Authentication
 
-**WebSocket:** Connect to `/api/v1/ws`, auth with `{ sessionToken }` or `{ demoMode: true }`
+| Method | Endpoint                       | Purpose                  |
+| ------ | ------------------------------ | ------------------------ |
+| POST   | `/api/v2/services/hue/pair`    | Pair with Hue bridge     |
+| POST   | `/api/v2/services/hue/connect` | Connect with credentials |
+| POST   | `/api/v2/auth/session`         | Create session           |
+| POST   | `/api/v2/auth/refresh`         | Refresh session          |
+| DELETE | `/api/v2/auth/session`         | Revoke session           |
+| POST   | `/api/v2/auth/disconnect`      | Disconnect from bridge   |
+| GET    | `/api/v2/auth/bridge-status`   | Check stored credentials |
 
-**API Docs:** `http://localhost:3001/api/v1/docs/` (Swagger UI, requires trailing slash)
+### Dashboard & Controls
+
+| Method | Endpoint                          | Purpose                |
+| ------ | --------------------------------- | ---------------------- |
+| GET    | `/api/v2/dashboard`               | Full dashboard data    |
+| PUT    | `/api/v2/lights/:id`              | Update light state     |
+| PUT    | `/api/v2/rooms/:id/lights`        | Update all room lights |
+| PUT    | `/api/v2/zones/:id/lights`        | Update all zone lights |
+| POST   | `/api/v2/scenes/:id/activate`     | Activate scene         |
+| GET    | `/api/v2/automations`             | List automations       |
+| POST   | `/api/v2/automations/:id/trigger` | Trigger automation     |
+| GET    | `/api/v2/settings`                | Get settings           |
+| PUT    | `/api/v2/settings`                | Update settings        |
+| PUT    | `/api/v2/settings/location`       | Update location        |
+| DELETE | `/api/v2/settings/location`       | Clear location         |
+| GET    | `/api/v2/weather`                 | Weather data           |
+
+### Services (Hive)
+
+| Method | Endpoint                           | Purpose                |
+| ------ | ---------------------------------- | ---------------------- |
+| POST   | `/api/v2/services/hive/connect`    | Connect to Hive (→2FA) |
+| POST   | `/api/v2/services/hive/verify-2fa` | Verify SMS 2FA code    |
+| POST   | `/api/v2/services/hive/disconnect` | Disconnect from Hive   |
+| GET    | `/api/v2/services/hive/connection` | Hive connection status |
+| GET    | `/api/v2/services/hive/status`     | Hive thermostat status |
+| GET    | `/api/v2/services/hive/schedules`  | Hive heating schedules |
+
+**WebSocket:** Connect to `/api/v2/ws`, auth with `{ sessionToken }` or `{ demoMode: true }`
+
+**API Docs:** `http://localhost:3001/api/v2/docs/` (Swagger UI, requires trailing slash)
 
 ## Rate Limiting
 
@@ -131,7 +169,7 @@ API endpoints are rate limited per IP address. Demo mode bypasses limits.
 
 | Endpoint         | Limit               |
 | ---------------- | ------------------- |
-| `/api/v1/*`      | 100 requests/minute |
+| `/api/v2/*`      | 100 requests/minute |
 | `/api/discovery` | 10 requests/minute  |
 
 Headers returned: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After` (when limited)
@@ -150,9 +188,9 @@ npm run test:mutation:all # Mutation testing
 
 ### Adding a New API Endpoint
 
-1. Add route in `backend/routes/v1/`
-2. Add to `backend/routes/v1/index.js`
-3. Add frontend method in `frontend/src/services/hueApi.js`
+1. Add route in `backend/routes/v2/`
+2. Register in `backend/routes/v2/index.js`
+3. Create frontend client in `frontend/src/services/` using `apiUtils.js`
 
 ### Adding a New Component
 

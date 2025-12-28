@@ -2,11 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { DemoModeProvider, useDemoMode } from './DemoModeContext';
 
-// Mock the API module
-vi.mock('../services/hueApi', () => ({
-  hueApi: { name: 'hueApi' },
-}));
-
 describe('DemoModeContext', () => {
   const originalLocation = window.location;
 
@@ -52,22 +47,6 @@ describe('DemoModeContext', () => {
       window.location.search = '?foo=bar&demo=true&baz=qux';
       const { result } = renderHook(() => useDemoMode(), { wrapper });
       expect(result.current.isDemoMode).toBe(true);
-    });
-  });
-
-  describe('api', () => {
-    it('should always return hueApi (demo mode handled via header)', async () => {
-      window.location.search = '';
-      const { hueApi } = await import('../services/hueApi');
-      const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.api).toBe(hueApi);
-    });
-
-    it('should return hueApi in demo mode (backend handles demo via X-Demo-Mode header)', async () => {
-      window.location.search = '?demo=true';
-      const { hueApi } = await import('../services/hueApi');
-      const { result } = renderHook(() => useDemoMode(), { wrapper });
-      expect(result.current.api).toBe(hueApi);
     });
   });
 
