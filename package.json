@@ -1,5 +1,5 @@
 {
-  "name": "philips-hue-connector",
+  "name": "home-control",
   "private": true,
   "version": "1.0.0",
   "type": "module",

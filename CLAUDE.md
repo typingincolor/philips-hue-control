@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Philips Hue Light Control** - React/Express monorepo for controlling Hue lights locally via the Hue Bridge API. Features true color display, responsive design, room/zone organization, scene management, MotionAware zones, and Socket.IO real-time updates.
+**Home Control** - React/Express monorepo for smart home control. Integrates Philips Hue (lights, scenes, rooms, zones) and UK Hive (heating, hot water). Features true color display, responsive design, and Socket.IO real-time updates.
 
 **Architecture:** Backend handles all business logic, exposing a V2 REST API with WebSocket. Frontend is a thin presentation layer consuming pre-computed data.
 
