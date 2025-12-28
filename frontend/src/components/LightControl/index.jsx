@@ -7,6 +7,7 @@ import { useLocation } from '../../hooks/useLocation';
 import { useWeather } from '../../hooks/useWeather';
 import { useHive } from '../../hooks/useHive';
 import { hueApi } from '../../services/hueApi';
+import { getDashboardFromHome } from '../../services/homeAdapter';
 import { ERROR_MESSAGES } from '../../constants/messages';
 import { createLogger } from '../../utils/logger';
 import { TopToolbar } from './TopToolbar';
@@ -114,9 +115,10 @@ export const LightControl = ({ sessionToken, onLogout }) => {
     setError(null);
 
     try {
-      const dashboardData = await api.getDashboard();
+      // Use V2 Home API via adapter for dashboard data
+      const dashboardData = await getDashboardFromHome(isDemoMode);
       setLocalDashboard(dashboardData);
-      logger.info('Fetched dashboard successfully');
+      logger.info('Fetched dashboard from V2 Home API');
     } catch (err) {
       logger.error('Failed to fetch dashboard:', err);
       setError(err.message);
@@ -154,14 +156,15 @@ export const LightControl = ({ sessionToken, onLogout }) => {
       const timeoutId = setTimeout(async () => {
         // Only fetch if still loading and no dashboard
         if (loading && !localDashboard) {
-          logger.warn('WebSocket timeout, falling back to REST API');
+          logger.warn('WebSocket timeout, falling back to V2 Home API');
           try {
-            const dashboardData = await api.getDashboard();
+            // Use V2 Home API via adapter
+            const dashboardData = await getDashboardFromHome(isDemoMode);
             setLocalDashboard(dashboardData);
             setLoading(false);
-            logger.info('Fetched dashboard via REST fallback');
+            logger.info('Fetched dashboard via V2 Home API fallback');
           } catch (err) {
-            logger.error('REST fallback failed:', err);
+            logger.error('V2 Home API fallback failed:', err);
             setError(err.message);
             setLoading(false);
           }

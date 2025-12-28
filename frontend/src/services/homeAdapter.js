@@ -1,0 +1,111 @@
+/**
+ * Home Adapter - Transforms V2 Home format to V1 Dashboard format
+ * This provides backward compatibility during the V1→V2 migration
+ */
+
+import * as homeApi from './homeApi';
+
+/**
+ * Transform a V2 device to V1 light format
+ * @param {Object} device - V2 device object
+ * @returns {Object} V1-compatible light object
+ */
+function transformDeviceToLight(device) {
+  if (device.type !== 'light') return null;
+
+  // Extract original ID without service prefix
+  const originalId = device.id.includes(':') ? device.id.split(':')[1] : device.id;
+
+  return {
+    id: originalId,
+    name: device.name,
+    on: device.state?.on ?? false,
+    brightness: device.state?.brightness ?? 0,
+    color: device.state?.color ?? 'rgb(255, 255, 255)',
+    shadow: device.state?.shadow ?? 'none',
+    colorSource: device.state?.colorSource ?? null,
+  };
+}
+
+/**
+ * Transform a V2 scene to V1 scene format
+ * @param {Object} scene - V2 scene object
+ * @returns {Object} V1-compatible scene object
+ */
+function transformScene(scene) {
+  // Extract original ID without service prefix
+  const originalId = scene.id.includes(':') ? scene.id.split(':')[1] : scene.id;
+
+  return {
+    id: originalId,
+    name: scene.name,
+  };
+}
+
+/**
+ * Transform a V2 room to V1 room format
+ * @param {Object} room - V2 room object
+ * @returns {Object} V1-compatible room object
+ */
+function transformRoom(room) {
+  const lights = (room.devices || [])
+    .map(transformDeviceToLight)
+    .filter((light) => light !== null);
+
+  // Calculate room stats from lights
+  const lightsOnCount = lights.filter((l) => l.on).length;
+  const totalLights = lights.length;
+  const totalBrightness = lights.reduce((sum, l) => sum + (l.on ? l.brightness : 0), 0);
+  const averageBrightness = lightsOnCount > 0 ? Math.round(totalBrightness / lightsOnCount) : 0;
+
+  return {
+    id: room.id,
+    name: room.name,
+    lights,
+    scenes: (room.scenes || []).map(transformScene),
+    stats: {
+      lightsOnCount,
+      totalLights,
+      averageBrightness,
+    },
+  };
+}
+
+/**
+ * Transform V2 Home format to V1 Dashboard format
+ * @param {Object} home - V2 home object
+ * @returns {Object} V1-compatible dashboard object
+ */
+export function transformHomeToDashboard(home) {
+  const rooms = (home.rooms || []).map(transformRoom);
+
+  // Calculate summary
+  const totalLights = rooms.reduce((sum, r) => sum + r.lights.length, 0);
+  const lightsOn = rooms.reduce((sum, r) => sum + r.stats.lightsOnCount, 0);
+  const sceneCount = rooms.reduce((sum, r) => sum + r.scenes.length, 0);
+
+  return {
+    summary: {
+      totalLights,
+      lightsOn,
+      roomCount: rooms.length,
+      sceneCount,
+    },
+    rooms,
+    // V2 doesn't have zones yet in the home model, return empty
+    zones: [],
+    // Motion zones not in V2 Home model yet
+    motionZones: [],
+  };
+}
+
+/**
+ * Fetch V2 Home data and transform to V1 Dashboard format
+ * Drop-in replacement for hueApi.getDashboard()
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} V1-compatible dashboard object
+ */
+export async function getDashboardFromHome(demoMode = false) {
+  const home = await homeApi.getHome(demoMode);
+  return transformHomeToDashboard(home);
+}

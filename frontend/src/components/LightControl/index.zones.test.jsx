@@ -58,6 +58,11 @@ const baseDashboard = {
   motionZones: [],
 };
 
+// Mock the homeAdapter
+vi.mock('../../services/homeAdapter', () => ({
+  getDashboardFromHome: vi.fn().mockImplementation(() => Promise.resolve(mockDashboardData)),
+}));
+
 // Mock the DemoModeContext
 vi.mock('../../context/DemoModeContext', () => ({
   useDemoMode: () => ({
