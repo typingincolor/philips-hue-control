@@ -28,8 +28,8 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
 
-  /* Single worker to prevent race conditions with shared backend state (e.g., Hive demo mode) */
-  workers: 1,
+  /* Use 2 workers for faster execution. Hive tests are isolated to their own project. */
+  workers: 2,
 
   /* Reporter to use */
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
