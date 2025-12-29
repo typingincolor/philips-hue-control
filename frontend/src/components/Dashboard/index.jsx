@@ -485,6 +485,14 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
     }
   }, [homeDevices.length, selectedId]);
 
+  // Bug fix: If 'home' tab is selected but no home devices exist, fall back to first room
+  // This prevents showing "No devices to display" when restoring from localStorage
+  useEffect(() => {
+    if (selectedId === 'home' && homeDevices.length === 0 && dashboard?.rooms?.length > 0) {
+      setSelectedId(dashboard.rooms[0].id);
+    }
+  }, [selectedId, homeDevices.length, dashboard?.rooms]);
+
   // Loading state
   if (loading && !dashboard) {
     return (
