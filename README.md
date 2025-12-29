@@ -534,6 +534,65 @@ A **73.25% mutation score** means our tests successfully detect 73% of introduce
 
 For detailed testing documentation, see [frontend/TESTING.md](frontend/TESTING.md).
 
+## CI/CD
+
+GitHub Actions workflows automate testing, building, and releasing.
+
+### Continuous Integration
+
+On every push to `main` and pull request:
+
+| Job | Description |
+|-----|-------------|
+| **Lint & Format** | ESLint + Prettier checks |
+| **Frontend Tests** | Vitest unit tests with coverage |
+| **Backend Tests** | Vitest unit tests with coverage |
+| **E2E Tests** | Playwright browser tests |
+| **Build** | Production build verification |
+
+Tests run in parallel for speed. Build artifacts are uploaded for debugging.
+
+### Releases
+
+To create a release:
+
+```bash
+# Create and push a version tag
+npm version patch  # or minor, major
+git push --tags
+```
+
+This triggers:
+1. Full test suite runs
+2. Production build is created
+3. Release archive (`home-control-v*.tar.gz`) is published to GitHub Releases
+
+### Raspberry Pi Deployment
+
+For deploying to a Raspberry Pi on your local network:
+
+```bash
+# On your Pi - one-time setup
+curl -O https://raw.githubusercontent.com/YOUR_USER/home-control/main/scripts/deploy-pi.sh
+chmod +x deploy-pi.sh
+
+# Set your repo (required)
+export GITHUB_REPO="your-username/home-control"
+
+# Deploy latest release
+./deploy-pi.sh
+
+# Or deploy specific version
+./deploy-pi.sh v1.2.0
+```
+
+The script:
+- Downloads the release archive from GitHub
+- Backs up existing installation
+- Installs new version with dependencies
+- Preserves your `config.yaml`
+- Restarts the systemd service (if configured)
+
 ## UI Features
 
 ### Information Density

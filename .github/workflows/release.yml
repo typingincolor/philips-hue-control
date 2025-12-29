@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:all
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build backend (copy frontend)
+        run: npm run build:backend
+
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          cp -r backend/public release/
+          cp -r backend/routes release/
+          cp -r backend/services release/
+          cp -r backend/middleware release/
+          cp -r backend/constants release/
+          cp backend/*.js release/
+          cp backend/package.json release/
+          cp backend/package-lock.json release/ 2>/dev/null || true
+          cp config.yaml release/config.yaml.example
+          cd release && tar -czvf ../home-control-${{ github.ref_name }}.tar.gz .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: home-control-${{ github.ref_name }}.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
