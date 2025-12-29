@@ -37,21 +37,35 @@ Use `/pr` after:
    npm run format
    ```
 
-3. **Check what's changed:**
+3. **Check current branch:**
+
+   ```bash
+   git branch --show-current
+   ```
+
+   If on `main`, create a feature branch first:
+
+   ```bash
+   git checkout -b feature/descriptive-name
+   ```
+
+   **Important:** Main is protected. Always create a PR from a feature branch.
+
+4. **Check what's changed:**
 
    ```bash
    git status
    git diff --stat
    ```
 
-4. **Commit changes:**
+5. **Commit changes:**
 
    ```bash
    git add -A
    git commit -m "descriptive message"
    ```
 
-5. **Push and create PR:**
+6. **Push and create PR:**
 
    ```bash
    git push -u origin HEAD
@@ -64,7 +78,7 @@ Use `/pr` after:
    gh pr create --title "Feature: description" --body "## Summary\n..."
    ```
 
-6. **Report PR URL** - Share the PR link with the user
+7. **Report PR URL** - Share the PR link with the user
 
 ## CI Validates
 
