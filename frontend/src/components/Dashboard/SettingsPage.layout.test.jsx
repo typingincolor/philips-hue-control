@@ -101,7 +101,9 @@ describe('SettingsPage Layout', () => {
 
       // Back button should come before title
       // eslint-disable-next-line no-undef
-      expect(backButton.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        backButton.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
     });
   });
 

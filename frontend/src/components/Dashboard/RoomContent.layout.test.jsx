@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RoomContent } from './RoomContent';
-import { VIEWPORTS, EXPECTED_LAYOUTS, setupViewport, resetViewport } from '../../test/layoutTestUtils';
+import {
+  VIEWPORTS,
+  EXPECTED_LAYOUTS,
+  setupViewport,
+  resetViewport,
+} from '../../test/layoutTestUtils';
 
 /**
  * RoomContent Layout Tests
