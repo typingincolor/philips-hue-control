@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs (will be built in Docker)
+frontend/dist/
+backend/public/
+
+# Test files
+**/*.test.js
+**/*.test.jsx
+**/*.test.ts
+**/*.spec.ts
+**/test/
+**/tests/
+**/__tests__/
+coverage/
+*/coverage/
+playwright-report/
+test-results/
+
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+*.md
+!README.md
+
+# Config and misc
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+
+# Stryker mutation testing
+reports/
+stryker.conf.json
+*/stryker.conf.json
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Scripts (not needed in production)
+scripts/
+
+# Claude/AI files
+.claude/
+CLAUDE.md
+BUGS.md
+
+# E2E test files
+frontend/e2e/
+frontend/playwright.config.ts
+
+# Vitest config (not needed in production)
+vitest.config.js
+*/vitest.config.js
+
+# Data files (will be created at runtime)
+backend/data/*.json
+!backend/data/.gitkeep

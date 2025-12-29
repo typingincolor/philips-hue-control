@@ -210,8 +210,8 @@ class HiveAuthService {
               ...extractTokensFromSession(cognitoSession),
             };
 
-            // Store tokens
-            this.storeTokens(tokens);
+            // Store tokens and username
+            this.storeTokens(tokens, username);
 
             resolve(tokens);
           },
@@ -318,10 +318,11 @@ class HiveAuthService {
   }
 
   /**
-   * Store authentication tokens
+   * Store authentication tokens and optionally username
    * @param {object} tokens - Token object with accessToken, refreshToken, etc.
+   * @param {string} [username] - Optional username to store for connection status
    */
-  async storeTokens(tokens) {
+  async storeTokens(tokens, username = null) {
     // Hive beekeeper API uses idToken (not accessToken) for authorization
     if (!tokens.idToken) {
       return;
@@ -331,7 +332,16 @@ class HiveAuthService {
     const expiresAt = Date.now() + expiresIn * 1000;
 
     hiveCredentialsManager.setSessionToken(tokens.idToken, expiresAt, tokens.refreshToken);
-    logger.debug('Stored authentication tokens', { hasRefreshToken: !!tokens.refreshToken });
+
+    // Store username if provided (for tracking who is connected)
+    if (username) {
+      hiveCredentialsManager.setUsername(username);
+    }
+
+    logger.debug('Stored authentication tokens', {
+      hasRefreshToken: !!tokens.refreshToken,
+      username,
+    });
   }
 
   /**

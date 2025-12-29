@@ -106,26 +106,33 @@ class HiveService {
   /**
    * Get connection status
    * @param {boolean} demoMode - Whether in demo mode
-   * @returns {{connected: boolean, needsReconnect?: boolean, message?: string}}
+   * @returns {Promise<{connected: boolean, needsReconnect?: boolean, message?: string}>}
    */
-  getConnectionStatus(demoMode = false) {
+  async getConnectionStatus(demoMode = false) {
     if (demoMode) {
       return { connected: this._demoConnected };
     }
 
-    const connected = this.isConnected();
-    const needsRefresh = this.needsRefresh();
+    // If we have a valid session token, we're connected
+    if (hiveCredentialsManager.getSessionToken()) {
+      return { connected: true };
+    }
 
-    // If we have a refresh token but no session, we might need to reconnect
+    // If session expired but we have a refresh token, try to refresh
+    const needsRefresh = this.needsRefresh();
     if (needsRefresh) {
+      const refreshed = await this.ensureValidSession();
+      if (refreshed) {
+        return { connected: true };
+      }
+      // Refresh failed - not connected
       return {
-        connected: true, // Optimistically report connected (will try refresh)
-        needsRefresh: true,
-        message: 'Session expired, attempting to refresh...',
+        connected: false,
+        message: 'Session expired and refresh failed. Please reconnect.',
       };
     }
 
-    return { connected };
+    return { connected: false };
   }
 
   /**

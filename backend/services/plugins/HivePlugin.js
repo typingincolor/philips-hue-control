@@ -51,7 +51,7 @@ class HivePluginClass extends ServicePlugin {
   /**
    * Get connection status
    */
-  getConnectionStatus(demoMode = false) {
+  async getConnectionStatus(demoMode = false) {
     return hiveService.getConnectionStatus(demoMode);
   }
 

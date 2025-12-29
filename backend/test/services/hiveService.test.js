@@ -18,6 +18,7 @@ vi.mock('../../services/hiveCredentialsManager.js', () => ({
     getSessionToken: vi.fn(() => null),
     getRefreshToken: vi.fn(() => null),
     setSessionToken: vi.fn(),
+    setUsername: vi.fn(),
     clearSessionToken: vi.fn(),
     clearCredentials: vi.fn(),
     getDeviceCredentials: vi.fn(() => null),
@@ -505,8 +506,8 @@ describe('HiveService', () => {
   });
 
   describe('getConnectionStatus', () => {
-    it('should return connected: false when not connected in demo mode', () => {
-      const status = HiveService.getConnectionStatus(true);
+    it('should return connected: false when not connected in demo mode', async () => {
+      const status = await HiveService.getConnectionStatus(true);
 
       expect(status.connected).toBe(false);
     });
@@ -515,7 +516,7 @@ describe('HiveService', () => {
       await HiveService.connect('demo@hive.com', 'demo', true);
       await HiveService.verify2fa('123456', 'demo-session', 'demo@hive.com', true);
 
-      const status = HiveService.getConnectionStatus(true);
+      const status = await HiveService.getConnectionStatus(true);
 
       expect(status.connected).toBe(true);
     });
@@ -525,23 +526,23 @@ describe('HiveService', () => {
       await HiveService.verify2fa('123456', 'demo-session', 'demo@hive.com', true);
       await HiveService.disconnect();
 
-      const status = HiveService.getConnectionStatus(true);
+      const status = await HiveService.getConnectionStatus(true);
 
       expect(status.connected).toBe(false);
     });
 
-    it('should check real connection status when not in demo mode', () => {
+    it('should check real connection status when not in demo mode', async () => {
       hiveCredentialsManager.getSessionToken.mockReturnValue('valid_token');
 
-      const status = HiveService.getConnectionStatus(false);
+      const status = await HiveService.getConnectionStatus(false);
 
       expect(status.connected).toBe(true);
     });
 
-    it('should return connected: false when no session token', () => {
+    it('should return connected: false when no session token', async () => {
       hiveCredentialsManager.getSessionToken.mockReturnValue(null);
 
-      const status = HiveService.getConnectionStatus(false);
+      const status = await HiveService.getConnectionStatus(false);
 
       expect(status.connected).toBe(false);
     });

@@ -431,6 +431,20 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only check on mount and when settings change
   }, [settings.services?.hive?.enabled]);
 
+  // Sync Hive settings with connection state (Bug fix: toggle/indicator mismatch)
+  useEffect(() => {
+    const hiveEnabled = settings.services?.hive?.enabled ?? false;
+    // When Hive becomes connected, ensure settings reflect this
+    if (hiveConnected && !hiveEnabled) {
+      updateSettings({ services: { hive: { enabled: true } } });
+    }
+    // When Hive becomes disconnected, ensure settings reflect this
+    if (!hiveConnected && hiveEnabled && !hiveConnecting && !hiveRequires2fa) {
+      updateSettings({ services: { hive: { enabled: false } } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only sync when connection state changes
+  }, [hiveConnected]);
+
   const handleTriggerAutomation = async (automationId) => {
     setTriggeringId(automationId);
 

@@ -193,10 +193,10 @@ describe('HivePlugin', () => {
   });
 
   describe('getConnectionStatus', () => {
-    it('should delegate to hiveService', () => {
-      hiveService.getConnectionStatus.mockReturnValue({ connected: true });
+    it('should delegate to hiveService', async () => {
+      hiveService.getConnectionStatus.mockResolvedValue({ connected: true });
 
-      const status = HivePlugin.getConnectionStatus(false);
+      const status = await HivePlugin.getConnectionStatus(false);
 
       expect(status).toEqual({ connected: true });
       expect(hiveService.getConnectionStatus).toHaveBeenCalledWith(false);

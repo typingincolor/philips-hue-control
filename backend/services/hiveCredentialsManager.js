@@ -118,6 +118,23 @@ class HiveCredentialsManager {
   }
 
   /**
+   * Set username only (without password)
+   * Used when we have authenticated via 2FA but don't need to store password
+   * @param {string} username - Hive account email
+   */
+  setUsername(username) {
+    if (!username || typeof username !== 'string' || username.trim() === '') {
+      return;
+    }
+    this.username = username;
+
+    // Persist to file
+    this._saveCredentials();
+
+    logger.debug('Stored Hive username', { username });
+  }
+
+  /**
    * Set cached Hive API session token
    * @param {string} token - Hive session token
    * @param {number} expiresAt - Expiry timestamp in milliseconds

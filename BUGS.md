@@ -4,13 +4,15 @@ Known bugs to be fixed. Check off when resolved.
 
 ## Open
 
-- [ ] **Settings page Hive toggle state inconsistent** - Hive Heating toggle shows as OFF but displays a green connected indicator next to it. The toggle state and connection indicator are out of sync.
-
-- [ ] **Hive tokens not persisting/refreshing correctly** - After refreshing the Hive tab, shows "no devices found" message. Hive authentication tokens may not be persisting or refreshing correctly between page loads.
-
-- [ ] **Hive connection state incorrect after server restart** - After restarting the dev server, the Settings page shows Hive as connected (green indicator) even though it isn't. Related to bug #1 - state not being properly restored/validated on startup.
+_No open bugs_
 
 ## Resolved
+
+- [x] **Settings page Hive toggle state inconsistent** - Hive Heating toggle shows as OFF but displays a green connected indicator next to it. _(Fixed: Added useEffect in Dashboard to sync settings.services.hive.enabled with hiveConnected state)_
+
+- [x] **Hive tokens not persisting/refreshing correctly** - After refreshing the Hive tab, shows "no devices found" message. _(Fixed: Now stores username during 2FA verification via hiveCredentialsManager.setUsername())_
+
+- [x] **Hive connection state incorrect after server restart** - After restarting the dev server, the Settings page shows Hive as connected when it isn't. \_(Fixed: getConnectionStatus() now validates by attempting token refresh instead of optimistically reporting connected)
 
 - [x] **Weather location not persisted** - The location used for weather display resets when the backend server restarts. Location should be saved to file and restored on startup. _(Fixed: settings now persist to `backend/data/settings.json`)_
 - [x] **Hive username/password fields not styled** - Fields in settings page were missing CSS styles. _(Fixed: added `.settings-hive-input` and `.settings-hive-btn` styles to App.css)_

@@ -27,23 +27,27 @@ router.get('/', (req, res) => {
  * GET /api/v2/services/:id
  * Get service info and connection status
  */
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  const demoMode = req.demoMode || false;
-  const plugin = ServiceRegistry.get(id, demoMode);
+router.get('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const demoMode = req.demoMode || false;
+    const plugin = ServiceRegistry.get(id, demoMode);
 
-  if (!plugin) {
-    return res.status(404).json({ error: `Service '${id}' not found` });
+    if (!plugin) {
+      return res.status(404).json({ error: `Service '${id}' not found` });
+    }
+
+    const metadata = plugin.getMetadata();
+    const connectionStatus = await plugin.getConnectionStatus(demoMode);
+
+    res.json({
+      ...metadata,
+      connected: connectionStatus.connected,
+      ...connectionStatus,
+    });
+  } catch (error) {
+    next(error);
   }
-
-  const metadata = plugin.getMetadata();
-  const connectionStatus = plugin.getConnectionStatus();
-
-  res.json({
-    ...metadata,
-    connected: connectionStatus.connected,
-    ...connectionStatus,
-  });
 });
 
 /**
