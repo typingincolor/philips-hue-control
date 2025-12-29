@@ -33,6 +33,18 @@ vi.mock('../../../middleware/auth.js', () => ({
       res.status(401).json({ error: 'Unauthorized' });
     }
   },
+  optionalSession: (req, res, next) => {
+    if (req.headers.authorization) {
+      req.hue = {
+        bridgeIp: '192.168.1.100',
+        sessionToken: 'valid-token',
+        username: 'test-user',
+      };
+    } else {
+      req.hue = null;
+    }
+    next();
+  },
 }));
 
 describe('V2 Settings Routes', () => {
@@ -62,10 +74,18 @@ describe('V2 Settings Routes', () => {
       expect(response.body).toEqual(mockSettings);
     });
 
-    it('should return 401 without auth', async () => {
+    it('should return settings without auth (for initial setup)', async () => {
+      const mockSettings = {
+        location: null,
+        units: 'celsius',
+        services: { hue: { enabled: false }, hive: { enabled: false } },
+      };
+      settingsService.getSettings.mockReturnValue(mockSettings);
+
       const response = await request(app).get('/api/v2/settings');
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(200);
+      expect(settingsService.getSettings).toHaveBeenCalledWith(null, false);
     });
   });
 

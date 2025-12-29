@@ -5,7 +5,7 @@
 
 import express from 'express';
 import settingsService from '../../services/settingsService.js';
-import { requireSession } from '../../middleware/auth.js';
+import { requireSession, optionalSession } from '../../middleware/auth.js';
 import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger('V2_SETTINGS');
@@ -13,11 +13,11 @@ const router = express.Router();
 
 /**
  * GET /api/v2/settings
- * Get current settings
+ * Get current settings (works with or without session for initial setup)
  */
-router.get('/', requireSession, async (req, res, next) => {
+router.get('/', optionalSession, async (req, res, next) => {
   try {
-    const { sessionToken } = req.hue;
+    const sessionToken = req.hue?.sessionToken || null;
     const demoMode = req.demoMode || false;
 
     logger.debug('Getting settings', { sessionToken, demoMode });
@@ -32,11 +32,11 @@ router.get('/', requireSession, async (req, res, next) => {
 
 /**
  * PUT /api/v2/settings
- * Update settings
+ * Update settings (works with or without session for initial setup)
  */
-router.put('/', requireSession, async (req, res, next) => {
+router.put('/', optionalSession, async (req, res, next) => {
   try {
-    const { sessionToken } = req.hue;
+    const sessionToken = req.hue?.sessionToken || null;
     const { location, units, services } = req.body;
 
     logger.debug('Updating settings', { sessionToken, hasLocation: !!location, units });
@@ -59,11 +59,11 @@ router.put('/', requireSession, async (req, res, next) => {
 
 /**
  * PUT /api/v2/settings/location
- * Update location
+ * Update location (works with or without session for initial setup)
  */
-router.put('/location', requireSession, async (req, res, next) => {
+router.put('/location', optionalSession, async (req, res, next) => {
   try {
-    const { sessionToken } = req.hue;
+    const sessionToken = req.hue?.sessionToken || null;
     const { lat, lon, name } = req.body;
 
     // Validate required fields

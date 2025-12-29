@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useHueBridge } from './hooks/useHueBridge';
 import { DemoModeProvider, useDemoMode } from './context/DemoModeContext';
 import { BridgeDiscovery } from './components/BridgeDiscovery';
 import { Authentication } from './components/Authentication';
 import { Dashboard } from './components/Dashboard';
 import { SettingsPage } from './components/Dashboard/SettingsPage';
+import { useLocation } from './hooks/useLocation';
 import { UI_TEXT } from './constants/uiText';
 import './App.css';
 
@@ -12,6 +14,7 @@ import './App.css';
  */
 function AppContent() {
   const { isDemoMode } = useDemoMode();
+  const [initialLocation, setInitialLocation] = useState(null);
 
   const {
     step,
@@ -25,6 +28,13 @@ function AppContent() {
     enableHue,
     enableHiveOnly,
   } = useHueBridge();
+
+  // Location detection for initial settings page (no session required)
+  const {
+    isDetecting,
+    error: locationError,
+    detectLocation,
+  } = useLocation(initialLocation, setInitialLocation, false);
 
   // In demo mode, use dummy credentials and skip to connected step
   const effectiveStep = isDemoMode ? 'connected' : step;
@@ -42,9 +52,12 @@ function AppContent() {
           onEnableHive={enableHiveOnly}
           hueConnected={false}
           hiveConnected={false}
+          location={initialLocation}
           settings={{ services: { hue: { enabled: false }, hive: { enabled: false } } }}
           onUpdateSettings={() => {}}
-          onDetectLocation={() => {}}
+          onDetectLocation={detectLocation}
+          isDetecting={isDetecting}
+          locationError={locationError}
         />
       </div>
     );

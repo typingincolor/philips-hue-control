@@ -51,6 +51,55 @@ export function extractCredentials(req, res, next) {
 }
 
 /**
+ * Optional session - extracts session if present but doesn't require it
+ * Use this for endpoints that work with or without authentication
+ */
+export function optionalSession(req, res, next) {
+  try {
+    // Demo mode - use demo credentials
+    if (req.demoMode) {
+      req.hue = {
+        bridgeIp: DEMO_BRIDGE_IP,
+        username: DEMO_USERNAME,
+        authMethod: 'demo',
+        sessionToken: 'demo-session',
+      };
+      return next();
+    }
+
+    const authHeader = req.headers.authorization;
+
+    // No auth header - continue without session
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      req.hue = null;
+      return next();
+    }
+
+    const sessionToken = authHeader.substring(7);
+    const session = sessionManager.getSession(sessionToken);
+
+    // Invalid session - continue without it
+    if (!session) {
+      req.hue = null;
+      return next();
+    }
+
+    req.hue = {
+      bridgeIp: session.bridgeIp,
+      username: session.username,
+      authMethod: 'session',
+      sessionToken,
+    };
+
+    next();
+  } catch {
+    // On any error, continue without session
+    req.hue = null;
+    next();
+  }
+}
+
+/**
  * Require session-based authentication (stricter)
  * Use this for endpoints that should only work with sessions
  * Demo mode bypasses session validation
