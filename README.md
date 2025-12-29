@@ -1,6 +1,7 @@
 # Home Control
 
 [![CI](https://github.com/typingincolor/home-control/actions/workflows/ci.yml/badge.svg)](https://github.com/typingincolor/home-control/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/typingincolor/home-control)](https://github.com/typingincolor/home-control/releases/latest)
 
 A modern React web application for smart home control. Integrates **Philips Hue** (lights, scenes, rooms, zones via local Bridge API) and **UK Hive** (heating, hot water via cloud API). Features a responsive interface with visual controls, real-time updates, and a **backend-heavy architecture** where the backend handles business logic and exposes a REST API with WebSocket support.
 
