@@ -52,6 +52,12 @@ Track what works and what doesn't:
 1. **Backend** (`backend/`) - Services, routes, utilities, register routes
 2. **Frontend** (`frontend/`) - Components, hooks, API calls, wire into app
 
+**Tip:** Use watch mode for faster feedback during implementation:
+
+```bash
+npm run test -- --watch path/to/file.test.js
+```
+
 ## Complete Implementation Checklist
 
 ### Backend
@@ -115,7 +121,7 @@ After all tests pass, provide notes for the refactor phase:
 ## Constraints
 
 - DO NOT write new tests
-- DO NOT run E2E tests (save time for reviewer phase)
+- DO NOT run E2E tests (CI runs them on PR)
 - DO NOT optimize prematurely
 - DO NOT deviate from implementation notes without good reason
 - DO NOT retry approaches marked as "didn't work" in red phase notes

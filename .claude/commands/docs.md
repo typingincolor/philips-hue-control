@@ -68,14 +68,21 @@ Track what works and what doesn't:
 
 ## Output
 
-Summarize what was updated, then tell the user the TDD cycle is complete.
+Summarize what was updated, then tell the user to run `/pr` to create a pull request.
 
-## TDD Cycle Complete
+## Handoff
 
-After docs are updated, the cycle is:
+After docs are updated, tell the user to run `/pr` to:
+
+- Commit changes
+- Create a pull request
+- Let CI validate (E2E, lint, build)
+
+## TDD Workflow
 
 ```
-architect → uxdesigner → red → green → refactor → reviewer → docs ✓
+architect → uxdesigner → red → green → refactor → [reviewer] → docs → pr
+                                                      ↑
+                                              (optional for
+                                               complex changes)
 ```
-
-Congratulate the user and remind them to commit their changes.

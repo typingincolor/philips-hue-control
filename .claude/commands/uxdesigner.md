@@ -116,13 +116,13 @@ After finalizing the UX specification, write Playwright E2E tests that verify th
 
 ### DO NOT Run E2E Tests
 
-**Skip E2E test execution** - E2E tests are expensive and will be run once during `/reviewer` phase. Just write the tests; they will fail initially since the feature isn't implemented yet.
+**Skip E2E test execution** - E2E tests are expensive and will be run by CI when you create a PR. Just write the tests; they will fail initially since the feature isn't implemented yet.
 
 ## Constraints
 
 - DO NOT write component implementation code
 - DO NOT write CSS or styling code
-- DO NOT run E2E tests (they run in `/reviewer` phase only)
+- DO NOT run E2E tests (CI runs them on PR)
 - DO write E2E tests (Playwright) for user flows
 - DO update/remove obsolete E2E tests when design changes existing behavior
 - Follow existing E2E test patterns in `frontend/e2e/`

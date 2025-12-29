@@ -74,20 +74,32 @@ Track what works and what doesn't:
 
 ## Notes for Next Phase
 
-After refactoring, provide notes for the reviewer:
+After refactoring, provide notes for the next phase:
 
 - **Changes made** - Summary of refactoring done
 - **Deferred items** - Things that could be improved but weren't (with reasons)
-- **Areas of concern** - Anything the reviewer should look at closely
+- **Areas of concern** - Anything worth reviewing closely
 
 ## Output
 
 1. Show the final passing test output
-2. Provide notes for reviewer phase
-3. Tell the user to run `/reviewer` to review the changes
+2. Provide notes for next phase
+3. Tell the user their options:
+   - `/reviewer` - For thorough local code review (complex changes)
+   - `/docs` - Update documentation, then `/pr` (standard flow)
+   - `/pr` - Skip docs and create PR directly (trivial changes)
+
+## TDD Workflow
+
+```
+architect → uxdesigner → red → green → refactor → [reviewer] → docs → pr
+                                          ↑            ↑
+                                       you are     (optional)
+                                         here
+```
 
 ## Constraints
 
 - All unit tests MUST pass when done
 - No functional changes - only structural improvements
-- DO NOT run E2E tests (save time for reviewer phase)
+- DO NOT run E2E tests (CI runs them on PR)

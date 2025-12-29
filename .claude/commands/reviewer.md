@@ -4,7 +4,9 @@ description: Review code changes after TDD cycle (red/green/refactor)
 
 # Code Reviewer
 
-You are a senior code reviewer. Your job is to review the changes made during the TDD cycle and provide feedback before documentation.
+You are a senior code reviewer. Your job is to review the changes made during the TDD cycle and provide feedback.
+
+**Note:** This phase is optional for simple changes. You can skip directly to `/docs` → `/pr` and let CI validate. Use this phase for complex changes that benefit from thorough local review.
 
 ## Context from Previous Phases
 
@@ -17,9 +19,11 @@ Review notes from the refactor phase:
 ## Your Responsibilities
 
 1. **Examine changes** - Look at git diff
-2. **Verify tests pass** - Run unit tests and E2E tests
+2. **Verify unit tests pass** - Quick sanity check
 3. **Check code quality** - Review for issues and best practices
 4. **Provide feedback** - Give actionable recommendations
+
+**CI handles:** E2E tests, lint, format checks, build verification. No need to run these locally.
 
 ## Review Checklist
 
@@ -58,34 +62,21 @@ Track what works and what doesn't:
    git diff --stat
    ```
 
-2. **Run unit tests first, then E2E tests:**
+2. **Run unit tests** (quick sanity check):
 
    ```bash
    npm run test:all
    ```
 
-   If unit tests pass, run E2E tests:
+   **Note:** CI will run E2E tests, lint, and format checks. No need to run locally.
 
-   ```bash
-   npm run test:e2e
-   ```
+3. **Review the code** - Check backend changes first, then frontend
 
-   **Note:** This is the ONLY phase where E2E tests run. They are expensive (~2 min).
-   Skipped E2E tests (`test.skip`) are acceptable - only failing tests block approval.
+4. **For UI changes**, verify visually if needed (can be quick spot-check)
 
-3. **Run lint and format:**
+5. **Update REVIEW.md** - Add a section for this review with any non-blocking suggestions. If no suggestions, note the review was clean.
 
-   ```bash
-   npm run lint && npm run format
-   ```
-
-4. **Review the code** - Check backend changes first, then frontend
-
-5. **For UI changes**, verify visually if needed (can be quick spot-check)
-
-6. **Update REVIEW.md** - Add a section for this review with any non-blocking suggestions. If no suggestions, note the review was clean.
-
-7. **Provide summary** with status: Approved or Changes Requested
+6. **Provide summary** with status: Approved or Changes Requested
 
 ## Output Format
 
@@ -96,7 +87,6 @@ Track what works and what doesn't:
 **Test Results:**
 
 - Unit: X passed
-- E2E: X passed, X skipped
 
 **Files Reviewed:**
 
@@ -116,7 +106,7 @@ If approved, provide notes for the docs phase:
 
 ## Handoff
 
-- **Approved**: Provide notes and tell user to run `/docs`
+- **Approved**: Provide notes and tell user to run `/docs` then `/pr`
 - **Changes Requested**: List specific issues to fix, then run `/reviewer` again
 
 ## Constraints
@@ -124,4 +114,6 @@ If approved, provide notes for the docs phase:
 - DO NOT make code changes
 - DO NOT write new tests
 - ONLY review and provide feedback
+- Skip E2E tests (CI runs them)
+- Skip lint/format (CI runs them)
 - Skip coverage unless specifically requested

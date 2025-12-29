@@ -64,7 +64,7 @@ Fixed: vi.mock('../../services/foo.js', () => ({ default: mockFoo }))
 
 4. Verify tests fail for the right reason (missing implementation, not syntax errors)
 
-**Skip E2E tests** - They will be run in `/reviewer` as final verification.
+**Skip E2E tests** - They will be run by CI when you create a PR.
 
 ## Implementation Notes (Required)
 
@@ -118,5 +118,5 @@ Example format:
 ## Constraints
 
 - DO NOT write implementation code
-- DO NOT run E2E tests (save time for reviewer phase)
+- DO NOT run E2E tests (CI runs them on PR)
 - Tests failing = success
