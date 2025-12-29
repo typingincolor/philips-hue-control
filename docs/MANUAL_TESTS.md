@@ -276,6 +276,130 @@ This document contains manual test procedures for complex flows that are difficu
 
 ---
 
+## Hue Bridge Tests
+
+### Test 14: Initial Hue Bridge Pairing
+
+**Purpose:** Verify the complete Hue bridge pairing flow with link button press
+
+**Prerequisites:**
+
+- Hue Bridge on local network
+- Application running without demo mode: `http://localhost:5173/`
+- No existing bridge credentials stored
+
+**Steps:**
+
+1. Open the application
+2. Verify pairing screen appears with:
+   - "Press link button" instruction
+   - Bridge illustration
+   - Status indicator
+3. Press the physical link button on the Hue Bridge
+4. Wait for connection to establish
+
+**Expected Result:**
+
+- Status changes to "Connecting..."
+- After successful pairing, dashboard appears
+- Light controls are functional
+- Session persists on page refresh
+
+---
+
+### Test 15: Hue Connection with Stored Credentials
+
+**Purpose:** Verify automatic reconnection with stored credentials
+
+**Steps:**
+
+1. Complete Test 14 (initial pairing)
+2. Close browser completely
+3. Reopen application
+
+**Expected Result:**
+
+- Application automatically connects to bridge
+- No pairing screen shown
+- Dashboard appears with current light states
+
+---
+
+### Test 16: Hue Bridge Disconnect
+
+**Purpose:** Verify disconnect clears credentials correctly
+
+**Steps:**
+
+1. Connect to Hue bridge
+2. Click Settings button
+3. Click "Disconnect" in the Hue section
+4. Confirm disconnect when prompted
+
+**Expected Result:**
+
+- Pairing screen reappears
+- Refreshing page shows pairing screen (credentials cleared)
+
+---
+
+### Test 17: Hue Bridge Network Error
+
+**Purpose:** Verify graceful handling when bridge becomes unreachable
+
+**Steps:**
+
+1. Connect to Hue bridge
+2. Disconnect Hue Bridge from network (or block network access)
+3. Attempt to control a light
+
+**Expected Result:**
+
+- Error message displayed
+- Retry option available
+- Application remains functional after bridge reconnects
+
+---
+
+## Home Tab Visibility Tests
+
+### Test 18: Home Tab with Hive Connected
+
+**Purpose:** Verify Home tab appears when Hive is connected
+
+**Steps:**
+
+1. Start in disconnected state (fresh session)
+2. Navigate to Settings
+3. Connect to Hive (complete login + 2FA)
+4. Close Settings
+
+**Expected Result:**
+
+- Home tab appears in bottom navigation
+- Clicking Home tab shows Hive thermostat and schedules
+
+---
+
+### Test 19: Home Tab After Disconnect
+
+**Purpose:** Verify Home tab disappears when Hive is disconnected
+
+**Steps:**
+
+1. Connect to Hive
+2. Verify Home tab is visible
+3. Navigate to Settings
+4. Disconnect from Hive
+5. Close Settings
+
+**Expected Result:**
+
+- Home tab no longer visible in bottom navigation
+- Navigation defaults to Rooms tab
+
+---
+
 ## Test Execution Log
 
 | Test | Date | Tester | Result | Notes |
@@ -293,3 +417,9 @@ This document contains manual test procedures for complex flows that are difficu
 | 11   |      |        |        |       |
 | 12   |      |        |        |       |
 | 13   |      |        |        |       |
+| 14   |      |        |        |       |
+| 15   |      |        |        |       |
+| 16   |      |        |        |       |
+| 17   |      |        |        |       |
+| 18   |      |        |        |       |
+| 19   |      |        |        |       |

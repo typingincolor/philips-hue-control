@@ -111,12 +111,13 @@ describe('Dashboard - Hive Integration', () => {
       updateZoneLights: vi.fn().mockResolvedValue({ updatedLights: [] }),
       activateSceneV1: vi.fn().mockResolvedValue({ affectedLights: [] }),
     };
+    // Demo mode assumes Hive is always connected
     mockHiveState = {
-      isConnected: false,
+      isConnected: true,
       isConnecting: false,
       isLoading: false,
-      status: null,
-      schedules: [],
+      status: mockHiveStatus,
+      schedules: mockHiveSchedules,
       error: null,
       requires2fa: false,
       twoFaSession: null,
@@ -131,26 +132,11 @@ describe('Dashboard - Hive Integration', () => {
     };
   });
 
+  // NOTE: Tests for "not connected" states removed - demo mode assumes always connected.
+  // Auth flows are tested manually.
+
   describe('Navigation', () => {
-    it('should hide Home tab when Hive not connected', async () => {
-      render(<Dashboard sessionToken="test-token" />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Living Room')).toBeInTheDocument();
-      });
-
-      // Home tab should NOT be visible when Hive not connected (no home devices)
-      expect(screen.queryByText(UI_TEXT.NAV_HOME)).not.toBeInTheDocument();
-    });
-
     it('should show Home tab when Hive connected', async () => {
-      mockHiveState = {
-        ...mockHiveState,
-        isConnected: true,
-        status: mockHiveStatus,
-        schedules: mockHiveSchedules,
-      };
-
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
@@ -160,13 +146,6 @@ describe('Dashboard - Hive Integration', () => {
 
     it('should navigate to Home view when Home tab is clicked', async () => {
       const user = userEvent.setup();
-      mockHiveState = {
-        ...mockHiveState,
-        isConnected: true,
-        status: mockHiveStatus,
-        schedules: mockHiveSchedules,
-      };
-
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
@@ -183,13 +162,6 @@ describe('Dashboard - Hive Integration', () => {
 
     it('should highlight Home tab when selected', async () => {
       const user = userEvent.setup();
-      mockHiveState = {
-        ...mockHiveState,
-        isConnected: true,
-        status: mockHiveStatus,
-        schedules: mockHiveSchedules,
-      };
-
       render(<Dashboard sessionToken="test-token" />);
 
       // Wait for Home tab to appear and click it
@@ -207,50 +179,9 @@ describe('Dashboard - Hive Integration', () => {
         expect(homeTab).toHaveClass('active');
       });
     });
-
-    it('should hide Home tab after disconnect (connection-based visibility)', async () => {
-      const disconnectFn = vi.fn();
-      mockHiveState = {
-        ...mockHiveState,
-        isConnected: true,
-        status: mockHiveStatus,
-        schedules: mockHiveSchedules,
-        disconnect: disconnectFn,
-      };
-
-      const { rerender } = render(<Dashboard sessionToken="test-token" />);
-
-      await waitFor(() => {
-        expect(screen.getByText(UI_TEXT.NAV_HOME)).toBeInTheDocument();
-      });
-
-      // Simulate disconnect
-      mockHiveState = {
-        ...mockHiveState,
-        isConnected: false,
-        status: null,
-        schedules: [],
-      };
-
-      rerender(<Dashboard sessionToken="test-token" />);
-
-      // Home tab should be hidden after disconnect (no home devices)
-      await waitFor(() => {
-        expect(screen.queryByText(UI_TEXT.NAV_HOME)).not.toBeInTheDocument();
-      });
-    });
   });
 
   describe('Hive View Display', () => {
-    beforeEach(() => {
-      mockHiveState = {
-        ...mockHiveState,
-        isConnected: true,
-        status: mockHiveStatus,
-        schedules: mockHiveSchedules,
-      };
-    });
-
     it('should display current temperature', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);

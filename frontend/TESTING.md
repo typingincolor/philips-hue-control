@@ -49,18 +49,19 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (493 frontend + 891 backend = 1384 tests)
+### Unit Test Results (929 frontend + 909 backend = 1838 tests)
 
-#### Frontend (493 tests)
+#### Frontend (929 tests)
 
 - **Hooks**: useSession (23), useSettings (19), useWeather (11), useWebSocket (19), useLocation (17), useHive (19), useHome (13)
 - **Services**: hueApi (5), authApi (12), settingsApi (10), weatherApi (6), automationsApi (5), homeApi (5), homeAdapter (9), servicesApi (13)
 - **Components**: App (7), MotionZones (7), DashboardSummary (5), SceneSelector (8), SettingsPage (40), BottomNav (5), WeatherDisplay (11), WeatherTooltip (11), HiveView (18), DeviceTile (11), AutomationsView (8), Dashboard/index (29), index.zones (9), index.hive (17)
+- **Layout Tests**: RoomContent.layout (30), HiveView.layout (37), HomeView.layout (30), SettingsPage.layout (51), Dashboard.layout (40)
 - **Context**: DemoModeContext (6)
-- **Utils**: validation (8)
+- **Utils**: validation (8), layoutTestUtils
 - **Integration**: integration.test.jsx (12)
 
-#### Backend (891 tests)
+#### Backend (909 tests)
 
 Business logic tests including colorConversion (52), roomService, zoneService, automationService (16), sessionManager (53), websocketService (31), settingsService (43), homeService (13), deviceNormalizer (15), ServicePlugin (20), plugins (40+), and more.
 
@@ -129,7 +130,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 1384 tests run in <5 seconds
+   - 1838 tests run in <10 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 
@@ -151,16 +152,16 @@ src/
 ├── components/
 │   ├── App.test.jsx
 │   ├── MotionZones.test.jsx
-│   └── LightControl/
-│       ├── DashboardSummary.test.jsx
-│       ├── SceneSelector.test.jsx
-│       ├── SettingsPage.test.jsx
-│       ├── WeatherDisplay.test.jsx
-│       ├── index.test.jsx
-│       └── index.zones.test.jsx
+│   └── Dashboard/
+│       ├── RoomContent.layout.test.jsx   ← Layout structure tests
+│       ├── HiveView.layout.test.jsx
+│       ├── HomeView.layout.test.jsx
+│       ├── SettingsPage.layout.test.jsx
+│       └── Dashboard.layout.test.jsx
 ├── integration.test.jsx
 └── test/
-    └── setup.js                    ← Global setup (includes hook mocks)
+    ├── setup.js                    ← Global setup (includes hook mocks)
+    └── layoutTestUtils.js          ← Viewport mocks, layout assertions
 ```
 
 ## Adding New Tests
@@ -310,7 +311,7 @@ npm run test:e2e:ui
 npm run test:e2e:headed
 ```
 
-### Test Files (170 tests)
+### Test Files (203 tests)
 
 ```
 e2e/
@@ -318,6 +319,7 @@ e2e/
 ├── automations.spec.ts       # Automation triggering
 ├── demo-mode.spec.ts         # Dashboard tests in demo mode
 ├── discovery.spec.ts         # Bridge discovery flow
+├── hive-tiles.spec.ts        # Hive tiles layout/accessibility
 ├── responsive-layout.spec.ts # Responsive design tests
 ├── session.spec.ts           # Session persistence
 ├── settings-page.spec.ts     # Settings page tests
@@ -326,7 +328,7 @@ e2e/
 └── weather-settings.spec.ts  # Weather settings
 ```
 
-Note: Hive integration tests were converted to manual tests (see `docs/MANUAL_TESTS.md`).
+Note: Auth flow tests (Hive login/2FA, Hue pairing) are manual tests (see `docs/MANUAL_TESTS.md`).
 
 ### Demo Mode Testing
 

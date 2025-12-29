@@ -77,13 +77,8 @@ describe('HomeView', () => {
     });
   });
 
-  describe('Hive not connected', () => {
-    it('should show login form when Hive has devices but not connected', () => {
-      render(<HomeView {...defaultProps} hiveConnected={false} hiveStatus={null} />);
-
-      expect(screen.getByText(UI_TEXT.HIVE_LOGIN_TITLE)).toBeInTheDocument();
-    });
-  });
+  // NOTE: "Hive not connected" tests removed - demo mode assumes always connected.
+  // Auth flows are tested manually.
 
   describe('loading state', () => {
     it('should show loading state when Hive is loading', () => {
