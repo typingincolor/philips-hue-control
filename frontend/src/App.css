@@ -1813,6 +1813,7 @@ body.dark-theme {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 /* Room Content */
@@ -1908,7 +1909,7 @@ body.dark-theme {
    - Buttons fill available space, min 44px, always square
    - Grid is vertically centered between toolbar and nav
 */
-.light-tiles-grid {
+.tiles-grid {
   --grid-cols: 2;
   --grid-rows: 4;
   /* Available space - account for safe areas and minimum edge spacing */
@@ -1943,7 +1944,7 @@ body.dark-theme {
 
 /* Wide screens: 4 columns x 2 rows (iPad landscape, Raspberry Pi, desktop) */
 @media (min-width: 600px) {
-  .light-tiles-grid {
+  .tiles-grid {
     --grid-cols: 4;
     --grid-rows: 2;
   }
@@ -1969,14 +1970,14 @@ body.dark-theme {
 
 /* Mobile: slightly smaller gaps */
 @media (max-width: 500px) {
-  .light-tiles-grid {
+  .tiles-grid {
     --light-tile-gap: 12px;
   }
 }
 
 /* Short screens (Raspberry Pi): compact gaps */
 @media (max-height: 600px) {
-  .light-tiles-grid {
+  .tiles-grid {
     --light-tile-gap: 8px;
     /* Smaller centering buffer for compact screens */
     --centering-buffer: 16px;
@@ -2355,7 +2356,7 @@ body.dark-theme {
     overflow-x: auto;
   }
 
-  .light-tiles-grid {
+  .tiles-grid {
     gap: 12px;
   }
 
@@ -3146,14 +3147,15 @@ body.dark-theme {
    HIVE VIEW STYLES
    ============================================== */
 
-/* Home View (for home-level devices) */
+/* Home View (for home-level devices) - matches room-content centering */
 .home-view {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px var(--min-edge-spacing);
-  box-sizing: border-box;
   width: 100%;
-  height: fit-content;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .home-view-title {
@@ -3183,13 +3185,15 @@ body.dark-theme {
   gap: 24px;
 }
 
+/* HiveView - inner content with flex centering for login form */
 .hive-view {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px var(--min-edge-spacing);
-  box-sizing: border-box;
   width: 100%;
-  height: fit-content;
+  height: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .hive-loading,
@@ -3495,136 +3499,182 @@ body.dark-theme {
   }
 }
 
-/* Thermostat Display */
-.hive-thermostat {
+/* Hive Devices Grid - tile-based layout matching LightTile */
+/* Hive Tile - uses --tile-size to match LightTile */
+.hive-tile {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 24px;
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 16px;
-  text-align: center;
+  border: 1px solid var(--accent-primary);
+  position: relative;
+  overflow: hidden;
 }
 
-.hive-temp-display {
+.hive-tile-heating,
+.hive-tile-hotwater {
+  /* Orange border when heating-related */
+  border-color: #f97316;
+}
+
+/* Orange fill - rises from bottom when active */
+.hive-tile-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, #f97316 0%, #fb923c 100%);
+  transition: height 0.4s ease-out;
+  border-radius: 0 0 23px 23px;
+}
+
+/* Content layer - centered over fill */
+.hive-tile-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
-.hive-temp-value {
-  font-size: 4rem;
+/* Heating tile temperature display */
+.hive-tile-temp-current {
+  font-size: 2.5rem;
   font-weight: 300;
   color: var(--text-primary);
   line-height: 1;
 }
 
-.hive-mode-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  background: var(--bg-tertiary);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  text-transform: capitalize;
-}
-
-.hive-status-indicators {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-}
-
-.hive-status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.hive-status-indicator svg {
-  opacity: 0.5;
-}
-
-.hive-status-indicator.active {
-  color: var(--accent-primary);
-  background: rgba(59, 130, 246, 0.1);
-}
-
-.hive-status-indicator.active svg {
-  opacity: 1;
-  color: #f97316;
-}
-
-/* Schedules */
-.hive-schedules {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 16px;
-}
-
-.hive-schedules-empty {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-muted);
-}
-
-.hive-schedule-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hive-schedule-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-}
-
-.hive-schedule-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: var(--bg-secondary);
-  border-radius: 8px;
+.hive-tile-temp-target {
+  font-size: 1rem;
   color: var(--text-secondary);
 }
 
-.hive-schedule-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.hive-schedule-name {
+/* Hot water label */
+.hive-tile-label {
+  font-size: 1.2rem;
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.hive-schedule-time {
+/* Mode badge */
+.hive-tile-mode {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  margin-top: 8px;
+}
+
+/* Active state - text adjustments for visibility on orange */
+.hive-tile.active .hive-tile-content {
+  color: white;
+}
+
+.hive-tile.active .hive-tile-temp-current,
+.hive-tile.active .hive-tile-label {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.hive-tile.active .hive-tile-temp-target {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hive-tile.active .hive-tile-mode {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* HiveInfoTile - uses --tile-size to match LightTile */
+.hive-info-tile {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  min-width: 44px;
+  min-height: 44px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hive-info-heating {
+  border-color: rgba(249, 115, 22, 0.6);
+}
+
+.hive-info-hotwater {
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+/* Info tile content - centered vertical layout */
+.hive-info-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 12px;
+  gap: 8px;
+  text-align: center;
+}
+
+/* Info tile icon */
+.hive-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.hive-info-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.hive-info-heating .hive-info-icon {
+  color: #f97316;
+}
+
+.hive-info-hotwater .hive-info-icon {
+  color: #3b82f6;
+}
+
+.hive-info-name {
   font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.hive-info-time {
+  font-size: 0.85rem;
   color: var(--accent-primary);
   font-weight: 500;
 }
 
-.hive-schedule-days {
-  font-size: 0.8rem;
+.hive-info-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 24px;
   color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 /* Responsive adjustments for Hive */
@@ -3633,21 +3683,8 @@ body.dark-theme {
     padding: 12px var(--min-edge-spacing);
   }
 
-  .hive-thermostat {
-    padding: 16px;
-  }
-
-  .hive-temp-value {
-    font-size: 3rem;
-  }
-
-  .hive-status-indicators {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .hive-status-indicator {
-    justify-content: center;
+  .hive-tile-temp-current {
+    font-size: 2rem;
   }
 }
 

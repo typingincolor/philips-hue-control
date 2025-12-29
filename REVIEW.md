@@ -369,3 +369,85 @@ Implemented tab persistence - the selected navigation tab is now preserved acros
 
 - No CLAUDE.md updates needed - internal feature, no API changes
 - User-facing behavior: selected room/view persists across browser refresh
+
+## 2025-12-29: Hive Tile Redesign
+
+**Status:** Approved
+
+**Branch:** main (uncommitted)
+
+### Summary
+
+Redesigned the Hive heating/hot water display from a thermostat-style list view to a tile-based layout matching the LightTile visual style. Tiles show orange fill when active (heating on or hot water on), temperature with target for heating, and mode badges. Schedule tiles display in a grid format.
+
+### Changes Reviewed
+
+| File                                                          | Assessment                                                                                               |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `frontend/src/components/Dashboard/HiveTile.jsx`              | **NEW** - Clean component with proper PropTypes, aria-labels, and display-only semantics                 |
+| `frontend/src/components/Dashboard/HiveTile.test.jsx`         | **NEW** - Comprehensive tests (24 tests) covering heating/hot water states, active states, accessibility |
+| `frontend/src/components/Dashboard/HiveScheduleTile.jsx`      | **NEW** - Clean schedule tile with type-specific icons and styling                                       |
+| `frontend/src/components/Dashboard/HiveScheduleTile.test.jsx` | **NEW** - Good coverage for schedule display and accessibility                                           |
+| `frontend/src/components/Dashboard/HiveView.jsx`              | Simplified - now composes HiveTile and HiveScheduleTile, removed inline SVG icons                        |
+| `frontend/src/components/Dashboard/HiveView.test.jsx`         | Updated to test new tile-based layout, kept login/2FA/error tests                                        |
+| `frontend/src/components/Dashboard/HomeView.test.jsx`         | Updated to use data-testid selectors matching new structure                                              |
+| `frontend/src/components/Dashboard/index.hive.test.jsx`       | Updated to use data-testid selectors matching new structure                                              |
+| `frontend/src/components/Dashboard/Icons.jsx`                 | Added `HeatingIcon` and `WaterIcon` exports for shared use                                               |
+| `frontend/src/App.css`                                        | Replaced thermostat styles with tile-based grid layout, responsive design                                |
+| `frontend/e2e/hive-tiles.spec.ts`                             | **NEW** - E2E tests for tile display, responsive layouts, accessibility                                  |
+
+### Test Results
+
+- **Unit Tests:** 895 passed
+- **Lint:** Clean (0 errors, 0 warnings)
+- **E2E Tests:** To be verified by CI
+
+### Code Quality
+
+**Correctness:**
+
+- [x] All unit tests pass
+- [x] Implementation matches the request (square tiles, orange fill, temperature display)
+- [x] Edge cases handled (null data with optional chaining)
+- [x] Error handling preserved from original HiveView
+
+**Code Quality:**
+
+- [x] Code is readable and well-named
+- [x] No unnecessary complexity - components are focused and single-purpose
+- [x] Follows existing patterns (matches LightTile structure)
+- [x] No code duplication - icons extracted to Icons.jsx
+
+**Security:**
+
+- [x] No hardcoded secrets
+- [x] No user input to validate (display-only components)
+
+### Issues Found
+
+None - code is clean.
+
+### Non-Blocking Suggestions
+
+1. **Hot water tile could show icon on heating tile too** - Currently heating tile shows temperature, hot water shows icon + label. This asymmetry is intentional (temperature is more useful for heating), but could consider adding a small flame icon to heating tile for visual consistency.
+
+2. **Schedule days not displayed** - The HiveScheduleTile no longer shows which days the schedule runs (was in old list view). This could be added back if needed, but the tiles are cleaner without it.
+
+### Notes for Documentation
+
+- **New Components:**
+  - `HiveTile` - Display-only tile for heating/hot water devices
+  - `HiveScheduleTile` - Display-only tile for heating schedules
+
+- **CSS Classes:** All classes match E2E test selectors:
+  - `.hive-tile-heating`, `.hive-tile-hotwater`
+  - `.hive-tile-temp-current`, `.hive-tile-temp-target`, `.hive-tile-mode`
+  - `.hive-schedule-tile`, `.hive-schedule-name`, `.hive-schedule-time`, `.hive-schedule-icon`
+  - `.hive-devices-grid`, `.hive-schedules`
+
+- **Visual Design:**
+  - Tiles are square with aspect-ratio: 1
+  - Orange gradient fill (#f97316 → #fb923c) when active
+  - Responsive: 2-column grid, adjusts for mobile
+
+- **No API Changes** - Frontend-only visual redesign

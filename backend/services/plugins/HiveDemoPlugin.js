@@ -18,7 +18,8 @@ class HiveDemoPluginClass extends ServicePlugin {
   constructor() {
     super();
     this._router = null;
-    this._connected = false;
+    // Demo mode starts connected so E2E tests can access Home tab directly
+    this._connected = true;
   }
 
   /**

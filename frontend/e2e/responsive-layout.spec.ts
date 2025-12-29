@@ -43,7 +43,7 @@ test.describe('iPad Layout (1024x768)', () => {
   });
 
   test('should display 4 columns of light tiles', async ({ page }) => {
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
     const gridStyle = await grid.evaluate((el) => window.getComputedStyle(el));
     const columns = gridStyle.gridTemplateColumns.split(' ').length;
     expect(columns).toBe(EXPECTED_LAYOUTS.ipad.columns);
@@ -121,7 +121,7 @@ test.describe('iPhone 14 Layout (390x844)', () => {
   });
 
   test('should display 2 columns of light tiles', async ({ page }) => {
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
     const gridStyle = await grid.evaluate((el) => window.getComputedStyle(el));
     const columns = gridStyle.gridTemplateColumns.split(' ').length;
     expect(columns).toBe(EXPECTED_LAYOUTS.iphone14.columns);
@@ -196,7 +196,7 @@ test.describe('Raspberry Pi 7" Layout (800x480)', () => {
   });
 
   test('should display 4 columns of light tiles', async ({ page }) => {
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
     const gridStyle = await grid.evaluate((el) => window.getComputedStyle(el));
     const columns = gridStyle.gridTemplateColumns.split(' ').length;
     expect(columns).toBe(EXPECTED_LAYOUTS.raspberryPi.columns);

@@ -391,6 +391,72 @@ describe('HueClient', () => {
     });
   });
 
+  describe('createUser', () => {
+    it('should POST to /api endpoint with devicetype', async () => {
+      const mockResponse = {
+        status: 200,
+        data: [{ success: { username: 'new-user-123' } }],
+      };
+      axios.mockResolvedValue(mockResponse);
+
+      const result = await hueClient.createUser(bridgeIp);
+
+      expect(axios).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          url: `https://${bridgeIp}/api`,
+          data: {
+            devicetype: 'home-control#app',
+            generateclientkey: true,
+          },
+        })
+      );
+      expect(result).toBe('new-user-123');
+    });
+
+    it('should throw when link button not pressed (error 101)', async () => {
+      const mockResponse = {
+        status: 200,
+        data: [{ error: { type: 101, description: 'link button not pressed' } }],
+      };
+      axios.mockResolvedValue(mockResponse);
+
+      await expect(hueClient.createUser(bridgeIp)).rejects.toThrow('Link button not pressed');
+    });
+
+    it('should throw on other Hue errors', async () => {
+      const mockResponse = {
+        status: 200,
+        data: [{ error: { type: 7, description: 'invalid value' } }],
+      };
+      axios.mockResolvedValue(mockResponse);
+
+      await expect(hueClient.createUser(bridgeIp)).rejects.toThrow('invalid value');
+    });
+
+    it('should throw on unexpected response', async () => {
+      const mockResponse = {
+        status: 200,
+        data: [{}],
+      };
+      axios.mockResolvedValue(mockResponse);
+
+      await expect(hueClient.createUser(bridgeIp)).rejects.toThrow(
+        'Unexpected response from bridge'
+      );
+    });
+
+    it('should handle ECONNREFUSED error', async () => {
+      const error = new Error('Connection refused');
+      error.code = 'ECONNREFUSED';
+      axios.mockRejectedValue(error);
+
+      await expect(hueClient.createUser(bridgeIp)).rejects.toThrow(
+        `Cannot connect to bridge at ${bridgeIp}`
+      );
+    });
+  });
+
   describe('getLights', () => {
     it('should request lights resource', async () => {
       const mockData = { data: [{ id: 'light-1', on: { on: true } }] };

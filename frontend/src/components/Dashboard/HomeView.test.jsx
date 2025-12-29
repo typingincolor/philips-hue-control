@@ -54,38 +54,26 @@ describe('HomeView', () => {
 
       expect(screen.getByText(UI_TEXT.HOME_NO_DEVICES)).toBeInTheDocument();
     });
-
-    it('should show title even when empty', () => {
-      render(<HomeView {...defaultProps} homeDevices={[]} />);
-
-      expect(screen.getByText(UI_TEXT.HOME_TITLE)).toBeInTheDocument();
-    });
   });
 
   describe('with home devices', () => {
-    it('should show Home title', () => {
-      render(<HomeView {...defaultProps} />);
-
-      expect(screen.getByText(UI_TEXT.HOME_TITLE)).toBeInTheDocument();
-    });
-
     it('should display Hive thermostat when connected', () => {
       render(<HomeView {...defaultProps} />);
 
-      // Should show current temperature
-      expect(screen.getByText('21°')).toBeInTheDocument();
+      // Should show current temperature (rounded to 1 decimal place)
+      expect(screen.getByText('21.0°')).toBeInTheDocument();
     });
 
-    it('should show heating status indicator', () => {
+    it('should show heating tile', () => {
       render(<HomeView {...defaultProps} />);
 
-      expect(screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS)).toBeInTheDocument();
+      expect(screen.getByTestId('hive-tile-heating')).toBeInTheDocument();
     });
 
-    it('should show hot water status indicator', () => {
+    it('should show hot water tile', () => {
       render(<HomeView {...defaultProps} />);
 
-      expect(screen.getByLabelText(UI_TEXT.HIVE_HOT_WATER_STATUS)).toBeInTheDocument();
+      expect(screen.getByTestId('hive-tile-hotwater')).toBeInTheDocument();
     });
   });
 

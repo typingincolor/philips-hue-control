@@ -43,33 +43,67 @@ describe('HiveView', () => {
     vi.clearAllMocks();
   });
 
-  describe('Thermostat Display', () => {
-    it('should display current temperature', () => {
+  describe('Tile-Based Layout', () => {
+    it('should render all tiles in single grid', () => {
       render(<HiveView {...defaultProps} />);
 
-      expect(screen.getByText('19.5°')).toBeInTheDocument();
+      const tilesGrid = screen.getByTestId('hive-tiles-grid');
+      expect(tilesGrid).toBeInTheDocument();
+      expect(tilesGrid).toHaveClass('tiles-grid');
     });
 
-    it('should display heating status indicator', () => {
+    it('should render heating tile', () => {
       render(<HiveView {...defaultProps} />);
 
-      expect(screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS)).toBeInTheDocument();
+      expect(screen.getByTestId('hive-tile-heating')).toBeInTheDocument();
     });
 
-    it('should display hot water status indicator', () => {
+    it('should render hot water tile', () => {
       render(<HiveView {...defaultProps} />);
 
-      expect(screen.getByLabelText(UI_TEXT.HIVE_HOT_WATER_STATUS)).toBeInTheDocument();
+      expect(screen.getByTestId('hive-tile-hotwater')).toBeInTheDocument();
     });
 
-    it('should show heating icon in active state when heating is on', () => {
+    it('should render info tiles', () => {
       render(<HiveView {...defaultProps} />);
 
-      const heatingIndicator = screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS);
-      expect(heatingIndicator).toHaveClass('active');
+      const infoTiles = screen.getAllByTestId('hive-info-tile');
+      expect(infoTiles).toHaveLength(2);
+    });
+  });
+
+  describe('Heating Tile Display', () => {
+    it('should display current temperature rounded to 1 decimal place', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const currentTemp = screen.getByTestId('hive-tile-temp-current');
+      expect(currentTemp).toHaveTextContent('19.5°');
     });
 
-    it('should show heating icon in inactive state when heating is off', () => {
+    it('should display target temperature with arrow', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const targetTemp = screen.getByTestId('hive-tile-temp-target');
+      expect(targetTemp).toHaveTextContent('→');
+      expect(targetTemp).toHaveTextContent('21.0°');
+    });
+
+    it('should display mode badge', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const heatingTile = screen.getByTestId('hive-tile-heating');
+      const modeBadge = heatingTile.querySelector('[data-testid="hive-tile-mode"]');
+      expect(modeBadge).toHaveTextContent('schedule');
+    });
+
+    it('should show heating tile with active class when heating is on', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const heatingTile = screen.getByTestId('hive-tile-heating');
+      expect(heatingTile).toHaveClass('active');
+    });
+
+    it('should show heating tile without active class when heating is off', () => {
       const propsWithHeatingOff = {
         ...defaultProps,
         status: {
@@ -79,51 +113,61 @@ describe('HiveView', () => {
       };
       render(<HiveView {...propsWithHeatingOff} />);
 
-      const heatingIndicator = screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS);
-      expect(heatingIndicator).not.toHaveClass('active');
-    });
-
-    it('should display current mode badge', () => {
-      render(<HiveView {...defaultProps} />);
-
-      expect(screen.getByText(/schedule/i)).toBeInTheDocument();
+      const heatingTile = screen.getByTestId('hive-tile-heating');
+      expect(heatingTile).not.toHaveClass('active');
     });
   });
 
-  describe('Schedule List', () => {
-    it('should display list of schedules', () => {
+  describe('Hot Water Tile Display', () => {
+    it('should display hot water label', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const hotWaterTile = screen.getByTestId('hive-tile-hotwater');
+      expect(hotWaterTile).toHaveTextContent(/hot water/i);
+    });
+
+    it('should show hot water tile without active class when off', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const hotWaterTile = screen.getByTestId('hive-tile-hotwater');
+      expect(hotWaterTile).not.toHaveClass('active');
+    });
+
+    it('should show hot water tile with active class when on', () => {
+      const propsWithHotWaterOn = {
+        ...defaultProps,
+        status: {
+          ...defaultProps.status,
+          hotWater: { isOn: true, mode: 'on' },
+        },
+      };
+      render(<HiveView {...propsWithHotWaterOn} />);
+
+      const hotWaterTile = screen.getByTestId('hive-tile-hotwater');
+      expect(hotWaterTile).toHaveClass('active');
+    });
+  });
+
+  describe('Schedule Tiles Display', () => {
+    it('should display schedule names', () => {
       render(<HiveView {...defaultProps} />);
 
       expect(screen.getByText('Morning Warmup')).toBeInTheDocument();
       expect(screen.getByText('Hot Water AM')).toBeInTheDocument();
     });
 
-    it('should display schedule type icon', () => {
+    it('should display schedule times', () => {
       render(<HiveView {...defaultProps} />);
 
-      // Check heating and hot water icons exist
-      const scheduleItems = screen.getAllByRole('listitem');
-      expect(scheduleItems.length).toBe(2);
+      expect(screen.getByText('06:00')).toBeInTheDocument();
+      expect(screen.getByText('07:00')).toBeInTheDocument();
     });
 
-    it('should display schedule time', () => {
+    it('should display info tile icons', () => {
       render(<HiveView {...defaultProps} />);
 
-      expect(screen.getByText(/06:00/)).toBeInTheDocument();
-      expect(screen.getByText(/07:00/)).toBeInTheDocument();
-    });
-
-    it('should display schedule days', () => {
-      render(<HiveView {...defaultProps} />);
-
-      // Both schedules include Mon, so use getAllByText
-      expect(screen.getAllByText(/Mon/).length).toBeGreaterThan(0);
-    });
-
-    it('should show empty state when no schedules', () => {
-      render(<HiveView {...defaultProps} schedules={[]} />);
-
-      expect(screen.getByText(UI_TEXT.HIVE_NO_SCHEDULES)).toBeInTheDocument();
+      const infoIcons = screen.getAllByTestId('hive-info-icon');
+      expect(infoIcons).toHaveLength(2);
     });
   });
 
@@ -134,10 +178,11 @@ describe('HiveView', () => {
       expect(screen.getByText(UI_TEXT.HIVE_LOADING)).toBeInTheDocument();
     });
 
-    it('should not show content when loading', () => {
+    it('should not show tiles when loading', () => {
       render(<HiveView {...defaultProps} isLoading={true} status={null} />);
 
-      expect(screen.queryByText('19.5°')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('hive-tile-heating')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('hive-tile-hotwater')).not.toBeInTheDocument();
     });
   });
 
@@ -338,16 +383,30 @@ describe('HiveView', () => {
   });
 
   describe('Accessibility', () => {
-    it('should have accessible temperature display', () => {
+    it('should have accessible heating tile with temperature info', () => {
       render(<HiveView {...defaultProps} />);
 
-      expect(screen.getByLabelText(UI_TEXT.HIVE_CURRENT_TEMP)).toBeInTheDocument();
+      const heatingTile = screen.getByTestId('hive-tile-heating');
+      const ariaLabel = heatingTile.getAttribute('aria-label');
+      expect(ariaLabel).toContain('degree');
     });
 
-    it('should have accessible schedule list', () => {
+    it('should have accessible hot water tile', () => {
       render(<HiveView {...defaultProps} />);
 
-      expect(screen.getByRole('list', { name: UI_TEXT.HIVE_SCHEDULES })).toBeInTheDocument();
+      const hotWaterTile = screen.getByTestId('hive-tile-hotwater');
+      const ariaLabel = hotWaterTile.getAttribute('aria-label');
+      expect(ariaLabel).toBeTruthy();
+    });
+
+    it('should have accessible info tiles', () => {
+      render(<HiveView {...defaultProps} />);
+
+      const infoTiles = screen.getAllByTestId('hive-info-tile');
+      infoTiles.forEach((tile) => {
+        const ariaLabel = tile.getAttribute('aria-label');
+        expect(ariaLabel).toBeTruthy();
+      });
     });
   });
 });

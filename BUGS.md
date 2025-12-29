@@ -4,8 +4,11 @@ Known bugs to be fixed. Check off when resolved.
 
 ## Open
 
-[ ] When the frontend is reconnecting, you should not be able to click any of the buttons. They should appear as inactive. They should reactivate once reconnected to the backend.
-[ ] The project level npm package needs tidying up, the only task should be things like the run dev, deploy and production tasks. FE and BE specifics should be in the individual directories.
+- [ ] **Settings page Hive toggle state inconsistent** - Hive Heating toggle shows as OFF but displays a green connected indicator next to it. The toggle state and connection indicator are out of sync.
+
+- [ ] **Hive tokens not persisting/refreshing correctly** - After refreshing the Hive tab, shows "no devices found" message. Hive authentication tokens may not be persisting or refreshing correctly between page loads.
+
+- [ ] **Hive connection state incorrect after server restart** - After restarting the dev server, the Settings page shows Hive as connected (green indicator) even though it isn't. Related to bug #1 - state not being properly restored/validated on startup.
 
 ## Resolved
 

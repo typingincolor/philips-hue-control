@@ -29,8 +29,6 @@ export const HomeView = ({
 
   return (
     <div className="home-view">
-      <h2 className="home-view-title">{UI_TEXT.HOME_TITLE}</h2>
-
       {homeDevices.length === 0 ? (
         <div className="home-empty-state">
           <span className="home-empty-message">{UI_TEXT.HOME_NO_DEVICES}</span>

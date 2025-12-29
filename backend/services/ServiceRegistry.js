@@ -4,6 +4,7 @@
  */
 
 import { createLogger } from '../utils/logger.js';
+import { isDemoMode } from '../utils/requestContext.js';
 
 const logger = createLogger('REGISTRY');
 
@@ -89,11 +90,13 @@ class ServiceRegistryClass {
   /**
    * Get a plugin by ID
    * @param {string} id - Plugin ID
-   * @param {boolean} demoMode - If true, return demo plugin
+   * @param {boolean} [demoMode] - If true, return demo plugin. If undefined, checks request context.
    * @returns {ServicePlugin|null} Plugin instance or null
    */
-  get(id, demoMode = false) {
-    if (demoMode) {
+  get(id, demoMode) {
+    // Use explicit parameter if provided, otherwise check request context
+    const useDemo = demoMode !== undefined ? demoMode : isDemoMode();
+    if (useDemo) {
       return this._demoPlugins.get(id) || null;
     }
     return this._plugins.get(id) || null;
@@ -110,9 +113,15 @@ class ServiceRegistryClass {
 
   /**
    * Get all registered plugins
+   * @param {boolean} [demoMode] - If true, return demo plugins. If undefined, checks request context.
    * @returns {ServicePlugin[]}
    */
-  getAll() {
+  getAll(demoMode) {
+    // Use explicit parameter if provided, otherwise check request context
+    const useDemo = demoMode !== undefined ? demoMode : isDemoMode();
+    if (useDemo) {
+      return Array.from(this._demoPlugins.values());
+    }
     return Array.from(this._plugins.values());
   }
 

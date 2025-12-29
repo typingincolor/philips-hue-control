@@ -266,7 +266,7 @@ describe('Dashboard - Hive Integration', () => {
       });
     });
 
-    it('should display heating status indicator', async () => {
+    it('should display heating tile', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);
 
@@ -277,11 +277,11 @@ describe('Dashboard - Hive Integration', () => {
       await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
-        expect(screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS)).toBeInTheDocument();
+        expect(screen.getByTestId('hive-tile-heating')).toBeInTheDocument();
       });
     });
 
-    it('should display hot water status indicator', async () => {
+    it('should display hot water tile', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);
 
@@ -292,7 +292,7 @@ describe('Dashboard - Hive Integration', () => {
       await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
-        expect(screen.getByLabelText(UI_TEXT.HIVE_HOT_WATER_STATUS)).toBeInTheDocument();
+        expect(screen.getByTestId('hive-tile-hotwater')).toBeInTheDocument();
       });
     });
 
@@ -312,7 +312,7 @@ describe('Dashboard - Hive Integration', () => {
       });
     });
 
-    it('should show heating indicator as active when heating is on', async () => {
+    it('should show heating tile as active when heating is on', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);
 
@@ -323,8 +323,8 @@ describe('Dashboard - Hive Integration', () => {
       await user.click(screen.getByText(UI_TEXT.NAV_HOME));
 
       await waitFor(() => {
-        const heatingIndicator = screen.getByLabelText(UI_TEXT.HIVE_HEATING_STATUS);
-        expect(heatingIndicator).toHaveClass('active');
+        const heatingTile = screen.getByTestId('hive-tile-heating');
+        expect(heatingTile).toHaveClass('active');
       });
     });
   });

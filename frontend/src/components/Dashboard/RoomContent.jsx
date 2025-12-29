@@ -36,7 +36,7 @@ export const RoomContent = ({
           <div className="empty-state-dark-text">No lights in this room</div>
         </div>
       ) : (
-        <div className="light-tiles-grid">
+        <div className="tiles-grid">
           {lights.map((light) => (
             <LightTile
               key={light.id}

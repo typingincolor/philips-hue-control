@@ -60,6 +60,58 @@ class HueClient {
   }
 
   /**
+   * Create a new user on the Hue Bridge (requires link button to be pressed)
+   * Uses v1 API endpoint as user creation isn't available in v2
+   * @param {string} bridgeIp - Bridge IP address
+   * @returns {Promise<string>} The created username
+   */
+  async createUser(bridgeIp) {
+    const url = `https://${bridgeIp}/api`;
+
+    const config = {
+      method: 'POST',
+      url,
+      headers: { 'Content-Type': 'application/json' },
+      data: {
+        devicetype: 'home-control#app',
+        generateclientkey: true,
+      },
+      httpsAgent: this.httpsAgent,
+      timeout: REQUEST_TIMEOUT_MS,
+      validateStatus: () => true,
+    };
+
+    try {
+      const response = await axios(config);
+
+      // Hue v1 API returns an array
+      const result = response.data?.[0];
+
+      if (result?.error) {
+        const errorType = result.error.type;
+        if (errorType === 101) {
+          throw new Error(
+            'Link button not pressed. Press the button on your Hue Bridge and try again.'
+          );
+        }
+        throw new Error(result.error.description || 'Failed to create user');
+      }
+
+      if (result?.success?.username) {
+        logger.info('Created Hue user', { bridgeIp });
+        return result.success.username;
+      }
+
+      throw new Error('Unexpected response from bridge');
+    } catch (error) {
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error(`Cannot connect to bridge at ${bridgeIp}. Check IP address and network.`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Make a request to the Hue Bridge
    * @private
    */

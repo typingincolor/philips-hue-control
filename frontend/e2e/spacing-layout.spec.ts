@@ -118,7 +118,7 @@ test.describe('Layout Spacing - Desktop', () => {
   });
 
   test('light tiles should have spacing from edges', async ({ page }) => {
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
     await expect(grid).toBeVisible();
 
     const gridBox = await grid.boundingBox();
@@ -171,7 +171,7 @@ test.describe('Layout Spacing - iPad (1024x768)', () => {
   test('all components should be within viewport', async ({ page }) => {
     const toolbar = page.locator('.top-toolbar');
     const bottomNav = page.locator('.bottom-nav');
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
 
     const toolbarBox = await toolbar.boundingBox();
     const navBox = await bottomNav.boundingBox();
@@ -266,7 +266,7 @@ test.describe('Layout Spacing - iPhone 14 (390x844)', () => {
   });
 
   test('light tiles should fit on mobile screen', async ({ page }) => {
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
     const gridBox = await grid.boundingBox();
 
     expect(gridBox).not.toBeNull();
@@ -354,7 +354,7 @@ test.describe('Layout Spacing - Raspberry Pi 7" (800x480)', () => {
   });
 
   test('grid tiles should fit in compact view', async ({ page }) => {
-    const grid = page.locator('.light-tiles-grid');
+    const grid = page.locator('.tiles-grid');
     const toolbar = page.locator('.top-toolbar');
     const bottomNav = page.locator('.bottom-nav');
 

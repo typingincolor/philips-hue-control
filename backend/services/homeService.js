@@ -33,6 +33,7 @@ class HomeServiceClass {
     const allRooms = [];
     const allDevices = [];
 
+    // ServiceRegistry automatically uses request context to determine demo mode
     const plugins = ServiceRegistry.getAll();
 
     for (const plugin of plugins) {

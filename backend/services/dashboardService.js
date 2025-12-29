@@ -138,6 +138,7 @@ class DashboardService {
     });
 
     // Step 6: Fetch status from all connected service plugins
+    // ServiceRegistry automatically uses request context to determine demo mode
     const services = {};
     for (const plugin of ServiceRegistry.getAll()) {
       const pluginId = plugin.constructor.id;
