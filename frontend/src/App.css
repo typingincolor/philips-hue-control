@@ -1558,6 +1558,29 @@ button.secondary:hover:not(:disabled) {
     padding: 8px 14px;
     font-size: 0.9rem;
   }
+
+  /* Bridge pages - wider on tablets */
+  .bridge-discovery,
+  .authentication {
+    max-width: 700px;
+  }
+}
+
+/* Very narrow screens - hide progress step labels */
+@media (max-width: 360px) {
+  .step-label {
+    display: none;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .progress-line {
+    width: 30px;
+  }
 }
 
 /* Motion Alert Flash Notification */
