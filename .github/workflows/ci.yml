@@ -206,7 +206,7 @@ jobs:
           # Wait for container to be healthy
           echo "Waiting for container to start..."
           for i in {1..30}; do
-            if docker exec home-control-test wget --no-verbose --tries=1 --spider http://localhost:3001/api/v2/health 2>/dev/null; then
+            if docker exec home-control-test wget --no-verbose --tries=1 --spider http://localhost:3001/health 2>/dev/null; then
               echo "Container is healthy!"
               break
             fi
@@ -222,7 +222,7 @@ jobs:
         run: |
           # Test health endpoint
           echo "Testing health endpoint..."
-          curl -f http://localhost:3001/api/v2/health
+          curl -f http://localhost:3001/health
 
           # Test demo mode dashboard
           echo "Testing demo dashboard..."
