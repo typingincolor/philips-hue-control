@@ -338,7 +338,10 @@ class HiveAuthService {
       hiveCredentialsManager.setUsername(username);
     }
 
-    logger.debug('Stored authentication tokens', { hasRefreshToken: !!tokens.refreshToken, username });
+    logger.debug('Stored authentication tokens', {
+      hasRefreshToken: !!tokens.refreshToken,
+      username,
+    });
   }
 
   /**
