@@ -224,9 +224,9 @@ jobs:
           echo "Testing health endpoint..."
           curl -f http://localhost:3001/health
 
-          # Test demo mode dashboard
+          # Test demo mode dashboard (via Hue plugin)
           echo "Testing demo dashboard..."
-          curl -f -H "X-Demo-Mode: true" http://localhost:3001/api/v2/dashboard
+          curl -f -H "X-Demo-Mode: true" http://localhost:3001/api/v2/services/hue/dashboard
 
           # Test static files are served
           echo "Testing static file serving..."
