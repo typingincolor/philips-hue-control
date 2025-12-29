@@ -23,7 +23,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: rm -rf node_modules && npm install
+        run: rm -rf node_modules package-lock.json && npm install
 
       - name: Run ESLint
         run: npm run lint
@@ -43,7 +43,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: rm -rf node_modules && npm install
+        run: rm -rf node_modules package-lock.json && npm install
 
       - name: Run frontend tests
         run: npm run test:run --workspace=frontend
@@ -68,7 +68,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: rm -rf node_modules && npm install
+        run: rm -rf node_modules package-lock.json && npm install
 
       - name: Run backend tests
         run: npm run test:run --workspace=backend
@@ -93,7 +93,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: rm -rf node_modules && npm install
+        run: rm -rf node_modules package-lock.json && npm install
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -125,7 +125,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: rm -rf node_modules && npm install
+        run: rm -rf node_modules package-lock.json && npm install
 
       - name: Build frontend
         run: npm run build
