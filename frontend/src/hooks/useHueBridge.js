@@ -150,11 +150,12 @@ export const useHueBridge = () => {
           }
         }
 
-        // No recovery options, go to authentication
+        // No recovery options, go to settings (user can choose to re-enable Hue)
+        localStorage.removeItem(STORAGE_KEYS.BRIDGE_IP);
         setState((prev) => ({
           ...prev,
-          bridgeIp: savedIp,
-          step: 'authentication',
+          bridgeIp: null,
+          step: 'settings',
         }));
       } else {
         // No saved bridge IP, go to settings

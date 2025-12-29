@@ -602,13 +602,13 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
-      // Should detect invalid session and auto-recover
+      // Should detect invalid session and return to settings
       await waitFor(
         () => {
-          // Should either auto-recover or show auth screen
-          const hasAuth = screen.queryByText(/Press the Link Button/i);
+          // Should either auto-recover or show settings page
+          const hasSettings = document.querySelector('.settings-page');
           const hasDashboard = screen.queryByText('Living Room');
-          expect(hasAuth || hasDashboard).toBeTruthy();
+          expect(hasSettings || hasDashboard).toBeTruthy();
         },
         { timeout: 10000 }
       );

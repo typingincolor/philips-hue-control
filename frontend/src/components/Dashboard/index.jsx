@@ -477,6 +477,14 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
       ]
     : [];
 
+  // Bug fix: Auto-switch from 'hive' to 'home' tab when homeDevices becomes available
+  // This ensures the active tab indicator shows correctly when the Hive tab is replaced by Home
+  useEffect(() => {
+    if (homeDevices.length > 0 && selectedId === 'hive') {
+      setSelectedId('home');
+    }
+  }, [homeDevices.length, selectedId]);
+
   // Loading state
   if (loading && !dashboard) {
     return (

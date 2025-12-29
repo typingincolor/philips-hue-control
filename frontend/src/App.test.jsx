@@ -173,7 +173,7 @@ describe('App - Login Page Flicker Fix', () => {
     expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
   });
 
-  it('should try to reconnect when session is EXPIRED', async () => {
+  it('should go to settings when session restoration fails', async () => {
     // Setup: Store an expired session with bridge IP
     const now = Date.now();
     const expiresAt = now - 1000; // Expired 1 second ago
@@ -185,14 +185,14 @@ describe('App - Login Page Flicker Fix', () => {
     render(<App />);
 
     // With a stored bridge IP, the app tries to reconnect using server credentials
-    // When that fails with PAIRING_REQUIRED, it shows authentication screen
+    // When that fails, it clears the bridge IP and shows settings page
     await waitFor(() => {
-      expect(screen.getByTestId('authentication')).toBeInTheDocument();
+      expect(screen.getByTestId('settings-page')).toBeInTheDocument();
     });
-    expect(screen.queryByTestId('settings-page')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('authentication')).not.toBeInTheDocument();
   });
 
-  it('should try to reconnect when session token is missing', async () => {
+  it('should go to settings when session token is missing and reconnect fails', async () => {
     // Setup: Partial session data (missing token but has bridge IP)
     localStorage.setItem(STORAGE_KEYS.BRIDGE_IP, '192.168.1.100');
     localStorage.setItem(STORAGE_KEYS.SESSION_EXPIRES_AT, (Date.now() + 86400000).toString());
@@ -201,10 +201,10 @@ describe('App - Login Page Flicker Fix', () => {
     render(<App />);
 
     // With a stored bridge IP, the app tries to reconnect using server credentials
-    // When that fails with PAIRING_REQUIRED, it shows authentication screen
+    // When that fails, it clears the bridge IP and shows settings page
     await waitFor(() => {
-      expect(screen.getByTestId('authentication')).toBeInTheDocument();
+      expect(screen.getByTestId('settings-page')).toBeInTheDocument();
     });
-    expect(screen.queryByTestId('settings-page')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('authentication')).not.toBeInTheDocument();
   });
 });

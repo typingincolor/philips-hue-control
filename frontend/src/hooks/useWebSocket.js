@@ -21,6 +21,22 @@ export const useWebSocket = (sessionToken, enabled = true) => {
   const [error, setError] = useState(null);
   const socketRef = useRef(null);
   const hasConnectedOnce = useRef(false);
+  const reconnectTimeoutRef = useRef(null);
+
+  // Clear reconnecting state after timeout (don't show spinner indefinitely)
+  useEffect(() => {
+    if (isReconnecting) {
+      reconnectTimeoutRef.current = setTimeout(() => {
+        logger.warn('Reconnection timeout - clearing reconnecting state');
+        setIsReconnecting(false);
+      }, 10000); // 10 second timeout
+    }
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [isReconnecting]);
 
   const applyChanges = useCallback((changes) => {
     if (!changes || changes.length === 0) return;

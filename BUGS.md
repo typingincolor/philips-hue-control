@@ -6,6 +6,14 @@ Known bugs to be fixed. Check off when resolved.
 
 _No open bugs_
 
+## Recently Fixed
+
+- [x] **Real mode shows Bridge Connector instead of Settings** - Fresh browser visit without demo mode should show Settings page, not Bridge Connector. _(Fixed: When session restoration fails, now clears bridge IP and goes to settings instead of authentication)_
+
+- [x] **Home tab has no active indicator in bottom nav** - After logging into Hive, the Home tab appears but has no visual indicator when selected. _(Fixed: Added useEffect to auto-switch selectedId from 'hive' to 'home' when homeDevices becomes available)_
+
+- [x] **Reconnecting spinner shows for extended time** - Selecting Home tab causes "Reconnecting..." spinner to show indefinitely. _(Fixed: Added 10-second timeout to clear reconnecting state if reconnection takes too long)_
+
 ## Resolved
 
 - [x] **Settings page Hive toggle state inconsistent** - Hive Heating toggle shows as OFF but displays a green connected indicator next to it. _(Fixed: Added useEffect in Dashboard to sync settings.services.hive.enabled with hiveConnected state)_
