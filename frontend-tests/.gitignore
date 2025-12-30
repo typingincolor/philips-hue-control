@@ -1,0 +1,9 @@
+# Environment variables (contains secrets)
+.env
+
+# Test results
+test-results/
+playwright-report/
+
+# Node modules
+node_modules/
