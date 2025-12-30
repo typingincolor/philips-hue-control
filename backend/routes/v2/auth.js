@@ -120,8 +120,18 @@ router.post('/disconnect', requireSession, (req, res) => {
  * DELETE /api/v2/auth/credentials
  * Clear all stored bridge credentials (for testing/reset)
  * Does not require a session - used for test state reset
+ *
+ * Security: In production, requires X-Test-Mode header to prevent
+ * unauthorized credential clearing.
  */
 router.delete('/credentials', (req, res) => {
+  // In production, require X-Test-Mode header for security
+  if (process.env.NODE_ENV === 'production' && req.headers['x-test-mode'] !== 'true') {
+    return res.status(403).json({
+      error: 'Test endpoint not available in production without X-Test-Mode header',
+    });
+  }
+
   const bridgeIp = sessionManager.getDefaultBridgeIp();
 
   if (bridgeIp) {

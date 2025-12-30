@@ -109,6 +109,70 @@ describe('V2 Auth Refactoring', () => {
     });
   });
 
+  describe('DELETE /api/v2/auth/credentials security', () => {
+    it('should return 403 in production without X-Test-Mode header', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      try {
+        const response = await request(app).delete('/api/v2/auth/credentials');
+
+        expect(response.status).toBe(403);
+        expect(response.body.error).toContain('X-Test-Mode');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+
+    it('should succeed in production with X-Test-Mode header', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      sessionManager.getDefaultBridgeIp.mockReturnValue('192.168.1.100');
+
+      try {
+        const response = await request(app)
+          .delete('/api/v2/auth/credentials')
+          .set('X-Test-Mode', 'true');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('success', true);
+        expect(sessionManager.clearBridgeCredentials).toHaveBeenCalledWith('192.168.1.100');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+
+    it('should succeed in development without X-Test-Mode header', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+      sessionManager.getDefaultBridgeIp.mockReturnValue('192.168.1.100');
+
+      try {
+        const response = await request(app).delete('/api/v2/auth/credentials');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('success', true);
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+
+    it('should succeed in test environment without X-Test-Mode header', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
+      sessionManager.getDefaultBridgeIp.mockReturnValue(null);
+
+      try {
+        const response = await request(app).delete('/api/v2/auth/credentials');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ success: true, cleared: false });
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+  });
+
   describe('Hue plugin routes should handle pairing and connection', () => {
     it('POST /api/v2/services/hue/pair should work', async () => {
       const response = await request(app)

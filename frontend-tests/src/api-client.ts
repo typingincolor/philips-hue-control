@@ -110,9 +110,17 @@ export async function disconnectHue(): Promise<void> {
 
 /**
  * Clear all stored Hue credentials (for testing reset)
+ * Requires X-Test-Mode header in production for security
  */
 export async function clearHueCredentials(): Promise<void> {
-  const response = await request('DELETE', API.AUTH_CREDENTIALS);
+  const url = `${BASE_URL}${API.AUTH_CREDENTIALS}`;
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Test-Mode': 'true',
+    },
+  });
   if (!response.ok) {
     throw new Error(`Failed to clear Hue credentials: ${response.status}`);
   }
