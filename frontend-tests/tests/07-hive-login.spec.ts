@@ -270,8 +270,9 @@ test.describe('Hive Login - Layout Checks', () => {
     expect(emailBox).not.toBeNull();
     expect(passwordBox).not.toBeNull();
 
-    expect(emailBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE);
-    expect(passwordBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE);
+    // On compact screens (≤480px height), touch targets are 36px instead of 44px
+    expect(emailBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE_COMPACT);
+    expect(passwordBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE_COMPACT);
   });
 
   test('login button should have adequate touch target', async ({ page }) => {
@@ -289,7 +290,8 @@ test.describe('Hive Login - Layout Checks', () => {
     const buttonBox = await loginButton.boundingBox();
 
     expect(buttonBox).not.toBeNull();
-    expect(buttonBox!.width).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE * 2);
-    expect(buttonBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE);
+    // On compact screens (≤480px height), touch targets are 36px instead of 44px
+    expect(buttonBox!.width).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE_COMPACT * 2);
+    expect(buttonBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE_COMPACT);
   });
 });

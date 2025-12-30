@@ -3592,6 +3592,11 @@ body.dark-theme {
     padding: 8px;
   }
 
+  /* Keep fullscreen mode truly fullscreen */
+  .app-fullscreen {
+    padding: 0;
+  }
+
   .app-main {
     padding: 16px;
   }
@@ -3765,25 +3770,25 @@ body.dark-theme {
   /* Hive login form - compact */
   .hive-login-form,
   .hive-2fa-form {
-    margin: 12px auto;
-    padding: 16px;
+    margin: 0 auto;
+    padding: 12px 16px;
     max-width: 320px;
   }
 
   .hive-login-title,
   .hive-2fa-title {
     font-size: 1.1rem;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
 
   .hive-2fa-description {
     font-size: 0.85rem;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .hive-login-form form,
   .hive-2fa-form form {
-    gap: 10px;
+    gap: 8px;
   }
 
   .hive-login-form input,
@@ -3802,13 +3807,13 @@ body.dark-theme {
 
   .hive-login-form .hive-error,
   .hive-2fa-form .hive-error {
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 0.8rem;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .hive-back-link {
-    margin-top: 10px;
+    margin-top: 8px;
     font-size: 0.85rem;
   }
 }
