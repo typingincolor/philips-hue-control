@@ -26,6 +26,7 @@ frontend/playwright/.cache
 backend/coverage
 backend/reports
 backend/.stryker-tmp
+backend/test-results
 
 # Editor directories and files
 .vscode/*
