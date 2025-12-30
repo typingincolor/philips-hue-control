@@ -21,6 +21,8 @@ export const LAYOUT = {
   MIN_COMPONENT_GAP: 2,
   /** Minimum touch target size (accessibility) */
   MIN_BUTTON_SIZE: 44,
+  /** Minimum touch target size on compact screens (≤480px height) */
+  MIN_BUTTON_SIZE_COMPACT: 36,
   /** Top toolbar height */
   TOOLBAR_HEIGHT: 56,
   /** Bottom navigation height */
