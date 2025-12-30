@@ -2905,40 +2905,42 @@ body.dark-theme {
 /* Location settings */
 .settings-location {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-location-current {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
+  padding: 10px 12px;
   background: var(--bg-tertiary);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 0.9rem;
+  flex: 1;
 }
 
 .settings-detect-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  min-height: 44px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   border: 1px solid var(--border-color);
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   border-radius: 8px;
   cursor: pointer;
-  font-size: 0.85rem;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .settings-detect-btn:hover:not(:disabled) {
   background: var(--bg-tertiary);
   border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .settings-detect-btn:disabled {
@@ -2954,33 +2956,67 @@ body.dark-theme {
   border-radius: 6px;
 }
 
-/* Units settings */
-.settings-units {
+/* Units settings - toggle style */
+.settings-units-toggle {
   display: flex;
-  gap: 8px;
-}
-
-.settings-unit-btn {
-  flex: 1;
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  background: transparent;
-  color: var(--text-secondary);
-  border-radius: 8px;
+  align-items: center;
+  gap: 12px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.15s ease;
 }
 
-.settings-unit-btn:hover:not(.selected) {
+.settings-units-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.units-label-left,
+.units-label-right {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+  min-width: 20px;
+  text-align: center;
+}
+
+.settings-units-toggle input:not(:checked) ~ .units-label-left {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.settings-units-toggle input:checked ~ .units-label-right {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.units-toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
   background: var(--bg-tertiary);
+  border-radius: 12px;
+  transition: background-color 0.2s;
 }
 
-.settings-unit-btn.selected {
+.settings-units-toggle input:checked + .units-toggle-switch {
   background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: var(--bg-primary);
-  font-weight: 500;
+}
+
+.units-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.settings-units-toggle input:checked + .units-toggle-switch .units-toggle-thumb {
+  transform: translateX(20px);
 }
 
 .settings-auto-saved {
@@ -3385,18 +3421,22 @@ body.dark-theme {
   flex-direction: column;
   background: var(--bg-primary);
   padding: 16px;
+  width: 100%;
+  align-items: center;
 }
 
 .settings-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 600px;
 }
 
-.settings-back-btn {
+.settings-close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3405,16 +3445,24 @@ body.dark-theme {
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   transition:
     background-color 0.2s,
     color 0.2s;
+  flex-shrink: 0;
 }
 
-.settings-back-btn:hover {
+.settings-close-btn:hover {
   background: var(--bg-card);
   color: var(--text-primary);
+}
+
+.settings-close-btn svg {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  flex-shrink: 0;
 }
 
 .settings-header-title {
@@ -3422,6 +3470,8 @@ body.dark-theme {
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  flex: 1;
+  text-align: center;
 }
 
 .settings-content {
@@ -3531,23 +3581,57 @@ body.dark-theme {
 
 /* Raspberry Pi 7" touchscreen (800x480) - compact height layout */
 @media (max-height: 480px) {
-  .settings-page {
+  /* Hide app header/footer during setup flow - not needed on dedicated device */
+  .app-header,
+  .app-footer {
+    display: none;
+  }
+
+  /* Reclaim space for main content */
+  .app {
+    padding: 8px;
+  }
+
+  .app-main {
+    padding: 16px;
+  }
+
+  /* Global button size reduction - 36px touch targets */
+  button {
+    min-height: 36px;
     padding: 8px 16px;
-    max-height: 100vh;
-    overflow-y: auto;
+    font-size: 0.85rem;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='password'] {
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  /* Settings page - compact layout */
+  .settings-page {
+    padding: 12px 16px;
   }
 
   .settings-header {
-    margin-bottom: 4px;
-    padding-bottom: 4px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+  }
+
+  .settings-close-btn {
+    width: 36px;
+    height: 36px;
   }
 
   .settings-header-title {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 
   .settings-content {
-    gap: 8px;
+    gap: 12px;
   }
 
   .settings-section {
@@ -3555,86 +3639,164 @@ body.dark-theme {
   }
 
   .settings-section-label {
-    font-size: 0.65rem;
-    margin-bottom: 4px;
+    font-size: 0.7rem;
+    margin-bottom: 6px;
   }
 
   .settings-location {
-    gap: 4px;
+    gap: 6px;
   }
 
   .settings-location-current {
-    padding: 6px 8px;
-    font-size: 0.8rem;
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
 
   .settings-detect-btn {
-    padding: 6px 12px;
-    min-height: 44px;
-    font-size: 0.8rem;
-  }
-
-  .settings-units {
-    gap: 4px;
-  }
-
-  .settings-unit-btn {
-    padding: 6px 12px;
-    min-height: 44px;
-    font-size: 0.8rem;
+    width: 36px;
+    height: 36px;
   }
 
   .settings-footer {
-    padding-top: 4px;
-    margin-top: 4px;
+    padding-top: 8px;
+    margin-top: 8px;
   }
 
   .settings-auto-saved {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .service-toggle {
-    padding: 2px 0;
+    padding: 4px 0;
+  }
+
+  .service-toggle-label {
+    font-size: 0.9rem;
   }
 
   .settings-services {
-    gap: 2px;
+    gap: 4px;
   }
 
-  /* Hive login form - compact for short viewports */
+  /* Bridge Discovery - compact */
+  .bridge-discovery {
+    padding: 12px 0;
+  }
+
+  .bridge-discovery h2 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .bridge-discovery h3 {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+
+  .discovery-section,
+  .manual-section {
+    margin-bottom: 12px;
+  }
+
+  .discovery-section button {
+    margin-top: 8px;
+  }
+
+  .divider {
+    margin: 12px 0;
+    font-size: 0.8rem;
+  }
+
+  .ip-input {
+    padding: 8px 12px;
+    min-height: 36px;
+  }
+
+  .help-text {
+    margin-top: 12px;
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+
+  /* Authentication - compact */
+  .authentication {
+    padding: 12px 0;
+  }
+
+  .authentication h2 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .bridge-info {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
+
+  .bridge-info p {
+    font-size: 0.9rem;
+  }
+
+  .link-button-image {
+    margin: 12px 0;
+  }
+
+  .bridge-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .instructions h3 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+
+  .instruction-text {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  .instructions button.large {
+    min-height: 36px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+  }
+
+  /* Hive login form - compact */
   .hive-login-form,
   .hive-2fa-form {
-    margin: 8px auto;
+    margin: 12px auto;
     padding: 16px;
+    max-width: 320px;
   }
 
   .hive-login-title,
   .hive-2fa-title {
     font-size: 1.1rem;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .hive-2fa-description {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     margin-bottom: 12px;
   }
 
   .hive-login-form form,
   .hive-2fa-form form {
-    gap: 8px;
+    gap: 10px;
   }
 
   .hive-login-form input,
   .hive-2fa-form input {
-    padding: 12px 12px;
-    min-height: 44px;
+    padding: 8px 12px;
+    min-height: 36px;
     font-size: 0.9rem;
   }
 
   .hive-login-form button[type='submit'],
   .hive-2fa-form button[type='submit'] {
-    min-height: 44px;
-    padding: 10px 16px;
+    min-height: 36px;
+    padding: 8px 16px;
     font-size: 0.9rem;
   }
 
@@ -3646,8 +3808,8 @@ body.dark-theme {
   }
 
   .hive-back-link {
-    margin-top: 8px;
-    font-size: 0.8rem;
+    margin-top: 10px;
+    font-size: 0.85rem;
   }
 }
 

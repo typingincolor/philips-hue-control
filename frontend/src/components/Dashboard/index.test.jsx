@@ -610,7 +610,7 @@ describe('Dashboard', () => {
       });
     });
 
-    it('should close settings page when back button clicked', async () => {
+    it('should close settings page when close button clicked', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);
 
@@ -625,8 +625,8 @@ describe('Dashboard', () => {
         expect(document.querySelector('.settings-page')).toBeInTheDocument();
       });
 
-      // Click back button
-      await user.click(screen.getByRole('button', { name: /back/i }));
+      // Click close button
+      await user.click(screen.getByRole('button', { name: /close/i }));
 
       await waitFor(() => {
         expect(document.querySelector('.settings-page')).not.toBeInTheDocument();

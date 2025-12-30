@@ -422,22 +422,12 @@ test.describe('Weather Unit Integration', () => {
     await settingsButton.click();
     await page.waitForSelector('.settings-page');
 
-    // Find the non-selected unit button and click it
-    const celsiusButton = page.locator('.settings-unit-btn').first();
-    const fahrenheitButton = page.locator('.settings-unit-btn').last();
-
-    const isCelsiusSelected = await celsiusButton.evaluate((el) =>
-      el.classList.contains('selected')
-    );
-
-    if (isCelsiusSelected) {
-      await fahrenheitButton.click();
-    } else {
-      await celsiusButton.click();
-    }
+    // Toggle the temperature units (toggle switches between C and F)
+    const toggleSwitch = page.locator('.settings-units-toggle .units-toggle-switch');
+    await toggleSwitch.click();
 
     // Return to previous view
-    await page.click('.settings-back-btn');
+    await page.click('.settings-close-btn');
 
     // Temperature should still be valid format
     const newTemp = await tempElement.textContent();

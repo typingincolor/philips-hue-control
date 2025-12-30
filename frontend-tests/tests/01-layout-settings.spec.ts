@@ -67,8 +67,9 @@ test.describe('Settings Page Layout - Raspberry Pi 7"', () => {
 
     const buttonBox = await detectButton.boundingBox();
     expect(buttonBox).not.toBeNull();
-    expect(buttonBox!.width).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE);
-    expect(buttonBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE);
+    // On compact screens (≤480px height), buttons are 36px instead of 44px
+    expect(buttonBox!.width).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE_COMPACT);
+    expect(buttonBox!.height).toBeGreaterThanOrEqual(LAYOUT.MIN_BUTTON_SIZE_COMPACT);
   });
 
   test('should have minimum edge spacing for content', async ({ page }) => {

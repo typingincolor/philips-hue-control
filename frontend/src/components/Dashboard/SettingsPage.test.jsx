@@ -19,6 +19,7 @@ describe('SettingsPage', () => {
     onDetectLocation: vi.fn(),
     isDetecting: false,
     locationError: null,
+    hueConnected: true,
     hiveConnected: false,
   };
 
@@ -33,17 +34,35 @@ describe('SettingsPage', () => {
       expect(screen.getByText(UI_TEXT.SETTINGS_TITLE)).toBeInTheDocument();
     });
 
-    it('should render back button', () => {
-      render(<SettingsPage {...defaultProps} />);
+    it('should render close button when Hue is connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={true} hiveConnected={false} />);
 
-      expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
     });
 
-    it('should call onBack when back button clicked', async () => {
+    it('should render close button when Hive is connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={false} hiveConnected={true} />);
+
+      expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    });
+
+    it('should render close button when both services are connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={true} hiveConnected={true} />);
+
+      expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    });
+
+    it('should NOT render close button when no services are connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={false} hiveConnected={false} />);
+
+      expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+    });
+
+    it('should call onBack when close button clicked', async () => {
       const user = userEvent.setup();
       render(<SettingsPage {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: /back/i }));
+      await user.click(screen.getByRole('button', { name: /close/i }));
 
       expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
     });
@@ -135,31 +154,36 @@ describe('SettingsPage', () => {
       expect(screen.getByText('London')).toBeInTheDocument();
     });
 
-    it('should display detect location button', () => {
+    it('should display detect location button with icon', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      expect(screen.getByText(UI_TEXT.SETTINGS_DETECT_LOCATION)).toBeInTheDocument();
+      // Button is now an icon button with aria-label
+      const detectButton = screen.getByRole('button', { name: UI_TEXT.SETTINGS_DETECT_LOCATION });
+      expect(detectButton).toBeInTheDocument();
     });
 
     it('should call onDetectLocation when detect button clicked', async () => {
       const user = userEvent.setup();
       render(<SettingsPage {...defaultProps} />);
 
-      await user.click(screen.getByText(UI_TEXT.SETTINGS_DETECT_LOCATION));
+      await user.click(screen.getByRole('button', { name: UI_TEXT.SETTINGS_DETECT_LOCATION }));
 
       expect(defaultProps.onDetectLocation).toHaveBeenCalledTimes(1);
     });
 
-    it('should show detecting state', () => {
+    it('should show spinner icon when detecting', () => {
       render(<SettingsPage {...defaultProps} isDetecting={true} />);
 
-      expect(screen.getByText(UI_TEXT.SETTINGS_DETECTING)).toBeInTheDocument();
+      // Button shows spinner icon instead of locate icon when detecting
+      const detectButton = document.querySelector('.settings-detect-btn');
+      const spinner = detectButton.querySelector('.icon-spin');
+      expect(spinner).toBeInTheDocument();
     });
 
     it('should disable detect button when detecting', () => {
       render(<SettingsPage {...defaultProps} isDetecting={true} />);
 
-      const button = screen.getByRole('button', { name: UI_TEXT.SETTINGS_DETECTING });
+      const button = screen.getByRole('button', { name: UI_TEXT.SETTINGS_DETECT_LOCATION });
       expect(button).toBeDisabled();
     });
 
@@ -177,30 +201,33 @@ describe('SettingsPage', () => {
   });
 
   describe('units section', () => {
-    it('should display celsius as selected', () => {
+    it('should display temperature toggle with celsius selected', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const celsiusButton = screen.getByRole('button', { name: UI_TEXT.SETTINGS_CELSIUS });
-      expect(celsiusButton).toHaveClass('selected');
+      // Toggle is checked when celsius is selected
+      const toggle = document.querySelector('.settings-units-toggle input');
+      expect(toggle).toBeChecked();
     });
 
-    it('should display fahrenheit as not selected', () => {
+    it('should display ℉ and ℃ labels', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const fahrenheitButton = screen.getByRole('button', { name: UI_TEXT.SETTINGS_FAHRENHEIT });
-      expect(fahrenheitButton).not.toHaveClass('selected');
+      expect(screen.getByText('℉')).toBeInTheDocument();
+      expect(screen.getByText('℃')).toBeInTheDocument();
     });
 
-    it('should call onUpdateSettings with fahrenheit when clicked', async () => {
+    it('should call onUpdateSettings with fahrenheit when toggle unchecked', async () => {
       const user = userEvent.setup();
       render(<SettingsPage {...defaultProps} />);
 
-      await user.click(screen.getByRole('button', { name: UI_TEXT.SETTINGS_FAHRENHEIT }));
+      // Toggle is currently checked (celsius), clicking unchecks it (fahrenheit)
+      const toggle = document.querySelector('.settings-units-toggle input');
+      await user.click(toggle);
 
       expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith({ units: 'fahrenheit' });
     });
 
-    it('should show fahrenheit as selected when units is fahrenheit', () => {
+    it('should show toggle unchecked when units is fahrenheit', () => {
       render(
         <SettingsPage
           {...defaultProps}
@@ -211,8 +238,27 @@ describe('SettingsPage', () => {
         />
       );
 
-      const fahrenheitButton = screen.getByRole('button', { name: UI_TEXT.SETTINGS_FAHRENHEIT });
-      expect(fahrenheitButton).toHaveClass('selected');
+      const toggle = document.querySelector('.settings-units-toggle input');
+      expect(toggle).not.toBeChecked();
+    });
+
+    it('should call onUpdateSettings with celsius when toggle checked', async () => {
+      const user = userEvent.setup();
+      render(
+        <SettingsPage
+          {...defaultProps}
+          settings={{
+            ...defaultProps.settings,
+            units: 'fahrenheit',
+          }}
+        />
+      );
+
+      // Toggle is currently unchecked (fahrenheit), clicking checks it (celsius)
+      const toggle = document.querySelector('.settings-units-toggle input');
+      await user.click(toggle);
+
+      expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith({ units: 'celsius' });
     });
   });
 
@@ -225,12 +271,20 @@ describe('SettingsPage', () => {
   });
 
   describe('keyboard navigation', () => {
-    it('should call onBack when Escape key pressed', () => {
-      render(<SettingsPage {...defaultProps} />);
+    it('should call onBack when Escape key pressed and close is allowed', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={true} />);
 
       fireEvent.keyDown(document, { key: 'Escape' });
 
       expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
+    });
+
+    it('should NOT call onBack when Escape pressed if no services connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={false} hiveConnected={false} />);
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      expect(defaultProps.onBack).not.toHaveBeenCalled();
     });
   });
 
@@ -245,10 +299,10 @@ describe('SettingsPage', () => {
       expect(hiveToggle).toBeInTheDocument();
     });
 
-    it('should have back button with accessible name', () => {
-      render(<SettingsPage {...defaultProps} />);
+    it('should have close button with accessible name when services connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={true} />);
 
-      expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
     });
   });
 

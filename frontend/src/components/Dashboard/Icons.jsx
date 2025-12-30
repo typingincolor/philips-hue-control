@@ -59,6 +59,7 @@ import {
   MapPin as LucideMapPin,
   Settings as LucideSettings,
   Clock as LucideClock,
+  LocateFixed as LucideLocateFixed,
 } from 'lucide-react';
 
 // Default props for consistent styling
@@ -249,6 +250,7 @@ export const CloudLightning = (props) => <LucideCloudLightning {...defaultProps}
 export const Wind = (props) => <LucideWind {...defaultProps} {...props} />;
 export const Thermometer = (props) => <LucideThermometer {...defaultProps} {...props} />;
 export const MapPin = (props) => <LucideMapPin {...defaultProps} {...props} />;
+export const LocateFixed = (props) => <LucideLocateFixed {...defaultProps} {...props} />;
 export const Settings = (props) => <LucideSettings {...defaultProps} {...props} />;
 export const Clock = (props) => <LucideClock {...defaultProps} {...props} />;
 

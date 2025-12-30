@@ -30,7 +30,7 @@ async function openSettings(page: Page) {
 
 // Helper to close settings and return to previous view
 async function closeSettings(page: Page) {
-  await page.click('.settings-back-btn');
+  await page.click('.settings-close-btn');
   await page.waitForSelector('.settings-page', { state: 'hidden' });
 }
 
@@ -57,12 +57,12 @@ test.describe('Settings Page - Navigation', () => {
     await expect(page.locator('.settings-header-title')).toHaveText('Settings');
   });
 
-  test('should show back button in settings header', async ({ page }) => {
+  test('should show close button in settings header', async ({ page }) => {
     await openSettings(page);
-    await expect(page.locator('.settings-back-btn')).toBeVisible();
+    await expect(page.locator('.settings-close-btn')).toBeVisible();
   });
 
-  test('should return to previous view when back button clicked', async ({ page }) => {
+  test('should return to previous view when close button clicked', async ({ page }) => {
     // Start on a room tab (not Home tab which shows Hive view in demo mode)
     const roomTab = page.locator('.nav-tab:has-text("Living Room")');
     await roomTab.click();
@@ -109,13 +109,14 @@ test.describe('Settings Page - Location Section', () => {
     expect(text?.length).toBeGreaterThan(0);
   });
 
-  test('should show detect location button', async ({ page }) => {
+  test('should show detect location icon button', async ({ page }) => {
     const detectBtn = page.locator('.settings-detect-btn');
     await expect(detectBtn).toBeVisible();
-    await expect(detectBtn).toContainText(/Detect/i);
+    // Button is now an icon button with aria-label
+    await expect(detectBtn).toHaveAttribute('aria-label', /Detect Location/i);
   });
 
-  test('should show detecting state when location button clicked', async ({ page }) => {
+  test('should show spinner when location button clicked', async ({ page }) => {
     // Mock geolocation
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({ latitude: 51.5074, longitude: -0.1278 });
@@ -123,8 +124,9 @@ test.describe('Settings Page - Location Section', () => {
     const detectBtn = page.locator('.settings-detect-btn');
     await detectBtn.click();
 
-    // Should show detecting state
-    await expect(detectBtn).toContainText(/Detecting/i);
+    // Should show spinner icon when detecting
+    const spinner = detectBtn.locator('.icon-spin');
+    await expect(spinner).toBeVisible();
   });
 });
 
@@ -139,34 +141,40 @@ test.describe('Settings Page - Temperature Units', () => {
     await expect(page.locator('.settings-section-label:has-text("Temperature")')).toBeVisible();
   });
 
-  test('should show celsius and fahrenheit options', async ({ page }) => {
-    await expect(page.locator('.settings-unit-btn:has-text("Celsius")')).toBeVisible();
-    await expect(page.locator('.settings-unit-btn:has-text("Fahrenheit")')).toBeVisible();
+  test('should show temperature toggle with F and C labels', async ({ page }) => {
+    // Toggle has ℉ and ℃ labels
+    await expect(page.locator('.settings-units-toggle')).toBeVisible();
+    await expect(page.locator('text=℉')).toBeVisible();
+    await expect(page.locator('text=℃')).toBeVisible();
   });
 
-  test('should have one unit selected by default', async ({ page }) => {
-    const selectedUnit = page.locator('.settings-unit-btn.selected');
-    await expect(selectedUnit).toBeVisible();
-    const count = await selectedUnit.count();
-    expect(count).toBe(1);
+  test('should have celsius selected by default', async ({ page }) => {
+    // Toggle is checked when celsius is selected
+    const toggle = page.locator('.settings-units-toggle input');
+    await expect(toggle).toBeChecked();
   });
 
   test('should toggle unit selection when clicked', async ({ page }) => {
-    const unselectedUnit = page.locator('.settings-unit-btn:not(.selected)');
-    const initialText = await unselectedUnit.textContent();
+    const toggle = page.locator('.settings-units-toggle input');
+    const toggleSwitch = page.locator('.settings-units-toggle .units-toggle-switch');
 
-    await unselectedUnit.click();
+    // Initially checked (celsius)
+    await expect(toggle).toBeChecked();
 
-    // Should now be selected
-    await expect(
-      page.locator(`.settings-unit-btn.selected:has-text("${initialText}")`)
-    ).toBeVisible();
+    // Click the switch element to toggle (input is visually hidden)
+    await toggleSwitch.click();
+
+    // Should now be unchecked (fahrenheit)
+    await expect(toggle).not.toBeChecked();
   });
 
   test('should persist unit selection after closing and reopening', async ({ page }) => {
-    // Select Fahrenheit
-    await page.click('.settings-unit-btn:has-text("Fahrenheit")');
-    await expect(page.locator('.settings-unit-btn:has-text("Fahrenheit")')).toHaveClass(/selected/);
+    const toggle = page.locator('.settings-units-toggle input');
+    const toggleSwitch = page.locator('.settings-units-toggle .units-toggle-switch');
+
+    // Switch to Fahrenheit
+    await toggleSwitch.click();
+    await expect(toggle).not.toBeChecked();
 
     // Close settings
     await closeSettings(page);
@@ -174,8 +182,9 @@ test.describe('Settings Page - Temperature Units', () => {
     // Re-open settings
     await openSettings(page);
 
-    // Fahrenheit should still be selected
-    await expect(page.locator('.settings-unit-btn:has-text("Fahrenheit")')).toHaveClass(/selected/);
+    // Fahrenheit should still be selected (toggle unchecked)
+    const toggleAfter = page.locator('.settings-units-toggle input');
+    await expect(toggleAfter).not.toBeChecked();
   });
 });
 
@@ -297,9 +306,9 @@ test.describe('Settings Page - Accessibility', () => {
     await openSettings(page);
   });
 
-  test('back button should have aria-label', async ({ page }) => {
-    const backBtn = page.locator('.settings-back-btn');
-    await expect(backBtn).toHaveAttribute('aria-label');
+  test('close button should have aria-label', async ({ page }) => {
+    const closeBtn = page.locator('.settings-close-btn');
+    await expect(closeBtn).toHaveAttribute('aria-label', 'close');
   });
 });
 
@@ -315,16 +324,17 @@ test.describe('Settings Page - Raspberry Pi (800x480)', () => {
     await expect(page.locator('.settings-page')).toBeVisible();
   });
 
-  test('buttons should have minimum 44px touch targets', async ({ page }) => {
+  test('buttons should have minimum 36px touch targets on compact screens', async ({ page }) => {
     await page.goto('/?demo=true');
     await page.waitForSelector('.main-panel');
     await openSettings(page);
 
+    // On 800x480, buttons are reduced to 36px for compact layout
     const detectBtn = page.locator('.settings-detect-btn');
     const box = await detectBtn.boundingBox();
 
     expect(box).not.toBeNull();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(36);
   });
 
   test('should fit within viewport without horizontal scroll', async ({ page }) => {

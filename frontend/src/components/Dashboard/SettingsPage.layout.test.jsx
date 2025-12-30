@@ -8,7 +8,7 @@ import { VIEWPORTS, setupViewport, resetViewport } from '../../test/layoutTestUt
  * SettingsPage Layout Tests
  *
  * Tests the structural layout requirements for the Settings page:
- * - Header with back button and title
+ * - Header with title and close button (when services connected)
  * - Content sections (Services, Location, Units)
  * - Footer with auto-save message
  * - Proper CSS classes for styling
@@ -76,12 +76,18 @@ describe('SettingsPage Layout', () => {
   });
 
   describe('Header Layout', () => {
-    it('should render back button', () => {
+    it('should render close button when services connected', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const backButton = screen.getByRole('button', { name: /back/i });
-      expect(backButton).toBeInTheDocument();
-      expect(backButton).toHaveClass('settings-back-btn');
+      const closeButton = screen.getByRole('button', { name: /close/i });
+      expect(closeButton).toBeInTheDocument();
+      expect(closeButton).toHaveClass('settings-close-btn');
+    });
+
+    it('should NOT render close button when no services connected', () => {
+      render(<SettingsPage {...defaultProps} hueConnected={false} hiveConnected={false} />);
+
+      expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
     });
 
     it('should render title', () => {
@@ -92,15 +98,15 @@ describe('SettingsPage Layout', () => {
       expect(title).toHaveTextContent(UI_TEXT.SETTINGS_TITLE);
     });
 
-    it('should have back button before title in DOM order', () => {
+    it('should have title before close button in DOM order', () => {
       render(<SettingsPage {...defaultProps} />);
 
       const header = document.querySelector('.settings-header');
-      const backButton = header.querySelector('.settings-back-btn');
       const title = header.querySelector('.settings-header-title');
+      const closeButton = header.querySelector('.settings-close-btn');
 
-      // Back button should come before title (DOCUMENT_POSITION_FOLLOWING = 4)
-      expect(backButton.compareDocumentPosition(title) & 4).toBeTruthy();
+      // Title should come before close button (DOCUMENT_POSITION_FOLLOWING = 4)
+      expect(title.compareDocumentPosition(closeButton) & 4).toBeTruthy();
     });
   });
 
@@ -133,8 +139,9 @@ describe('SettingsPage Layout', () => {
     it('should render service toggles with checkbox role=switch', () => {
       render(<SettingsPage {...defaultProps} />);
 
+      // 2 service toggles + 1 temperature toggle = 3 switches
       const switches = screen.getAllByRole('switch');
-      expect(switches.length).toBe(2);
+      expect(switches.length).toBe(3);
     });
 
     it('should show connection status indicators', () => {
@@ -188,37 +195,37 @@ describe('SettingsPage Layout', () => {
       expect(screen.getByText(UI_TEXT.SETTINGS_UNITS)).toBeInTheDocument();
     });
 
-    it('should render settings-units container', () => {
+    it('should render settings-units-toggle container', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const units = document.querySelector('.settings-units');
-      expect(units).toBeInTheDocument();
+      const toggle = document.querySelector('.settings-units-toggle');
+      expect(toggle).toBeInTheDocument();
     });
 
-    it('should render celsius button', () => {
+    it('should render temperature toggle with ℉ and ℃ labels', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const celsiusBtn = screen.getByText(UI_TEXT.SETTINGS_CELSIUS);
-      expect(celsiusBtn).toBeInTheDocument();
-      expect(celsiusBtn).toHaveClass('settings-unit-btn');
+      expect(screen.getByText('℉')).toBeInTheDocument();
+      expect(screen.getByText('℃')).toBeInTheDocument();
     });
 
-    it('should render fahrenheit button', () => {
+    it('should have toggle checked when celsius selected', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const fahrenheitBtn = screen.getByText(UI_TEXT.SETTINGS_FAHRENHEIT);
-      expect(fahrenheitBtn).toBeInTheDocument();
-      expect(fahrenheitBtn).toHaveClass('settings-unit-btn');
+      const toggle = document.querySelector('.settings-units-toggle input');
+      expect(toggle).toBeChecked();
     });
 
-    it('should mark selected unit as selected', () => {
-      render(<SettingsPage {...defaultProps} />);
+    it('should have toggle unchecked when fahrenheit selected', () => {
+      render(
+        <SettingsPage
+          {...defaultProps}
+          settings={{ ...defaultProps.settings, units: 'fahrenheit' }}
+        />
+      );
 
-      const celsiusBtn = screen.getByText(UI_TEXT.SETTINGS_CELSIUS);
-      const fahrenheitBtn = screen.getByText(UI_TEXT.SETTINGS_FAHRENHEIT);
-
-      expect(celsiusBtn).toHaveClass('selected');
-      expect(fahrenheitBtn).not.toHaveClass('selected');
+      const toggle = document.querySelector('.settings-units-toggle input');
+      expect(toggle).not.toBeChecked();
     });
   });
 
@@ -247,10 +254,13 @@ describe('SettingsPage Layout', () => {
   });
 
   describe('Loading State', () => {
-    it('should show spinner during location detection', () => {
+    it('should show spinner icon during location detection', () => {
       render(<SettingsPage {...defaultProps} isDetecting={true} />);
 
-      expect(screen.getByText(UI_TEXT.SETTINGS_DETECTING)).toBeInTheDocument();
+      // Button shows spinner icon instead of locate icon when detecting
+      const detectButton = document.querySelector('.settings-detect-btn');
+      const spinner = detectButton.querySelector('.icon-spin');
+      expect(spinner).toBeInTheDocument();
     });
 
     it('should disable detect button during detection', () => {
@@ -292,13 +302,13 @@ describe('SettingsPage Layout', () => {
           expect(sections.length).toBe(3);
         });
 
-        it('should render header with back button', () => {
+        it('should render header with close button', () => {
           render(<SettingsPage {...defaultProps} />);
 
           const header = document.querySelector('.settings-header');
-          const backButton = header.querySelector('.settings-back-btn');
+          const closeButton = header.querySelector('.settings-close-btn');
           expect(header).toBeInTheDocument();
-          expect(backButton).toBeInTheDocument();
+          expect(closeButton).toBeInTheDocument();
         });
 
         it('should render footer', () => {
@@ -308,29 +318,30 @@ describe('SettingsPage Layout', () => {
           expect(footer).toBeInTheDocument();
         });
 
-        it('should render both service toggles', () => {
+        it('should render all toggles (services + temperature)', () => {
           render(<SettingsPage {...defaultProps} />);
 
+          // 2 service toggles + 1 temperature toggle = 3 switches
           const toggles = screen.getAllByRole('switch');
-          expect(toggles.length).toBe(2);
+          expect(toggles.length).toBe(3);
         });
 
-        it('should render both unit buttons', () => {
+        it('should render temperature toggle', () => {
           render(<SettingsPage {...defaultProps} />);
 
-          const unitButtons = document.querySelectorAll('.settings-unit-btn');
-          expect(unitButtons.length).toBe(2);
+          const unitsToggle = document.querySelector('.settings-units-toggle');
+          expect(unitsToggle).toBeInTheDocument();
         });
       });
     });
   });
 
   describe('Accessibility', () => {
-    it('should have accessible back button', () => {
+    it('should have accessible close button when services connected', () => {
       render(<SettingsPage {...defaultProps} />);
 
-      const backButton = screen.getByRole('button', { name: /back/i });
-      expect(backButton).toHaveAttribute('aria-label', 'back');
+      const closeButton = screen.getByRole('button', { name: /close/i });
+      expect(closeButton).toHaveAttribute('aria-label', 'close');
     });
 
     it('should have proper heading', () => {
@@ -340,10 +351,12 @@ describe('SettingsPage Layout', () => {
       expect(title.tagName.toLowerCase()).toBe('h2');
     });
 
-    it('should have accessible service toggles', () => {
+    it('should have accessible toggles', () => {
       render(<SettingsPage {...defaultProps} />);
 
+      // All toggles (services + temperature) should be checkboxes
       const toggles = screen.getAllByRole('switch');
+      expect(toggles.length).toBe(3);
       toggles.forEach((toggle) => {
         expect(toggle).toHaveAttribute('type', 'checkbox');
       });
