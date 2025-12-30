@@ -4,7 +4,7 @@ Known bugs to be fixed. Check off when resolved.
 
 ## Open
 
-_No open bugs_
+- [ ] **Flaky E2E test: "should preserve selected room tab across page refresh"** - Test in `frontend/e2e/settings-page.spec.ts:276` intermittently fails. Expected "Kitchen" but received "Living Room" after page refresh. Likely a race condition where room order isn't deterministic after reload, or localStorage persistence timing issue.
 
 ## Recently Fixed
 

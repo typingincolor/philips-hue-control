@@ -3522,6 +3522,79 @@ body.dark-theme {
   }
 }
 
+/* Raspberry Pi 7" touchscreen (800x480) - compact height layout */
+@media (max-height: 480px) {
+  .settings-page {
+    padding: 8px 16px;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .settings-header {
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+  }
+
+  .settings-header-title {
+    font-size: 1rem;
+  }
+
+  .settings-content {
+    gap: 8px;
+  }
+
+  .settings-section {
+    margin-bottom: 0;
+  }
+
+  .settings-section-label {
+    font-size: 0.65rem;
+    margin-bottom: 4px;
+  }
+
+  .settings-location {
+    gap: 4px;
+  }
+
+  .settings-location-current {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .settings-detect-btn {
+    padding: 6px 12px;
+    min-height: 44px;
+    font-size: 0.8rem;
+  }
+
+  .settings-units {
+    gap: 4px;
+  }
+
+  .settings-unit-btn {
+    padding: 6px 12px;
+    min-height: 44px;
+    font-size: 0.8rem;
+  }
+
+  .settings-footer {
+    padding-top: 4px;
+    margin-top: 4px;
+  }
+
+  .settings-auto-saved {
+    font-size: 0.7rem;
+  }
+
+  .service-toggle {
+    padding: 2px 0;
+  }
+
+  .settings-services {
+    gap: 2px;
+  }
+}
+
 /* Hive Devices Grid - tile-based layout matching LightTile */
 /* Hive Tile - uses --tile-size to match LightTile */
 .hive-tile {
