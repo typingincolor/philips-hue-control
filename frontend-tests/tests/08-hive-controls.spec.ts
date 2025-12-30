@@ -79,8 +79,7 @@ test.describe('Hive Heating Controls - Interactive', () => {
       '.temp-down, .decrease-temp, [aria-label*="decrease"], button:has-text("-")'
     );
 
-    const hasControls =
-      (await tempUp.count()) > 0 && (await tempDown.count()) > 0;
+    const hasControls = (await tempUp.count()) > 0 && (await tempDown.count()) > 0;
 
     if (!hasControls) {
       test.skip(true, 'Temperature adjustment controls not found');
@@ -88,14 +87,10 @@ test.describe('Hive Heating Controls - Interactive', () => {
 
     // Get current target temp if displayed
     const targetTemp = page.locator('.target-temp, .set-temp');
-    const initialTemp = (await targetTemp.count()) > 0
-      ? await targetTemp.first().textContent()
-      : 'unknown';
+    const initialTemp =
+      (await targetTemp.count()) > 0 ? await targetTemp.first().textContent() : 'unknown';
 
-    prompts.showInfo(
-      'Temperature Adjustment',
-      `Initial target temperature: ${initialTemp}`
-    );
+    prompts.showInfo('Temperature Adjustment', `Initial target temperature: ${initialTemp}`);
 
     // Increase temperature
     await tempUp.first().click();
@@ -110,17 +105,13 @@ test.describe('Hive Heating Controls - Interactive', () => {
     await tempDown.first().click();
     await page.waitForTimeout(1000);
 
-    const confirmedBack = await prompts.confirmReady(
-      'Did the target temperature decrease back?'
-    );
+    const confirmedBack = await prompts.confirmReady('Did the target temperature decrease back?');
     expect(confirmedBack).toBe(true);
   });
 
   test('should toggle heating mode', async ({ page }) => {
     // Find heating mode toggle/button
-    const modeToggle = page.locator(
-      '.heating-mode, .mode-toggle, [data-testid="heating-mode"]'
-    );
+    const modeToggle = page.locator('.heating-mode, .mode-toggle, [data-testid="heating-mode"]');
     const modeButton = page.getByRole('button', { name: /schedule|manual|off|boost/i });
 
     const hasMode = (await modeToggle.count()) > 0 || (await modeButton.count()) > 0;
@@ -166,20 +157,16 @@ test.describe('Hive Hot Water Controls - Interactive', () => {
   });
 
   test('should display hot water control', async ({ page }) => {
-    const hotWater = page.locator(
-      '.hot-water, .water-control, [data-testid="hot-water"]'
-    );
+    const hotWater = page.locator('.hot-water, .water-control, [data-testid="hot-water"]');
     const hotWaterText = page.getByText(/hot water/i);
 
-    const hasControl =
-      (await hotWater.count()) > 0 || (await hotWaterText.count()) > 0;
+    const hasControl = (await hotWater.count()) > 0 || (await hotWaterText.count()) > 0;
 
     if (!hasControl) {
       test.skip(true, 'No hot water control visible (may not be available)');
     }
 
-    const control =
-      (await hotWater.count()) > 0 ? hotWater.first() : hotWaterText.first();
+    const control = (await hotWater.count()) > 0 ? hotWater.first() : hotWaterText.first();
     await expect(control).toBeVisible();
   });
 
@@ -227,9 +214,7 @@ test.describe('Hive Dashboard Layout', () => {
   });
 
   test('Hive controls should fit within viewport', async ({ page }) => {
-    const hiveSection = page.locator(
-      '.hive-section, .heating-section, [data-service="hive"]'
-    );
+    const hiveSection = page.locator('.hive-section, .heating-section, [data-service="hive"]');
 
     if ((await hiveSection.count()) === 0) {
       test.skip(true, 'Hive section not found');
@@ -276,12 +261,10 @@ test.describe('Hive Dashboard Layout', () => {
   });
 
   test('Hive and Hue controls should not overlap', async ({ page }) => {
-    const hiveSection = page.locator(
-      '.hive-section, .heating-section, [data-service="hive"]'
-    ).first();
-    const hueSection = page.locator(
-      '.hue-section, .light-section, [data-service="hue"]'
-    ).first();
+    const hiveSection = page
+      .locator('.hive-section, .heating-section, [data-service="hive"]')
+      .first();
+    const hueSection = page.locator('.hue-section, .light-section, [data-service="hue"]').first();
 
     const hiveVisible = await hiveSection.isVisible();
     const hueVisible = await hueSection.isVisible();
@@ -295,11 +278,9 @@ test.describe('Hive Dashboard Layout', () => {
 
     if (hiveBox && hueBox) {
       const horizontalOverlap =
-        hiveBox.x < hueBox.x + hueBox.width &&
-        hiveBox.x + hiveBox.width > hueBox.x;
+        hiveBox.x < hueBox.x + hueBox.width && hiveBox.x + hiveBox.width > hueBox.x;
       const verticalOverlap =
-        hiveBox.y < hueBox.y + hueBox.height &&
-        hiveBox.y + hiveBox.height > hueBox.y;
+        hiveBox.y < hueBox.y + hueBox.height && hiveBox.y + hiveBox.height > hueBox.y;
 
       // They shouldn't overlap in both dimensions
       expect(horizontalOverlap && verticalOverlap).toBe(false);

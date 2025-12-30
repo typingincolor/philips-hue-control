@@ -32,7 +32,10 @@ test.describe('Authentication Page Layout - Raspberry Pi 7"', () => {
     await page.waitForSelector('.settings-page', { timeout: 10000 });
 
     // Enable Hue
-    const hueToggle = page.locator('.service-toggle').filter({ hasText: 'Philips Hue' });
+    const hueToggle = page
+      .locator('.service-toggle')
+      .filter({ hasText: 'Philips Hue' })
+      .locator('.service-toggle-switch');
     await hueToggle.click();
 
     // Wait for discovery page
@@ -61,9 +64,7 @@ test.describe('Authentication Page Layout - Raspberry Pi 7"', () => {
     await expect(instructions.first()).toBeVisible();
   });
 
-  test('should have authenticate/pair button visible and accessible', async ({
-    page,
-  }) => {
+  test('should have authenticate/pair button visible and accessible', async ({ page }) => {
     const authButton = page.getByRole('button', {
       name: /authenticate|pair|connect|retry/i,
     });
@@ -96,9 +97,7 @@ test.describe('Authentication Page Layout - Raspberry Pi 7"', () => {
 
   test('should fit all content without scrolling', async ({ page }) => {
     const needsScroll = await page.evaluate(() => {
-      return (
-        document.documentElement.scrollHeight > document.documentElement.clientHeight
-      );
+      return document.documentElement.scrollHeight > document.documentElement.clientHeight;
     });
 
     expect(needsScroll).toBe(false);

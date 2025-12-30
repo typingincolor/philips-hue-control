@@ -162,9 +162,7 @@ test.describe('Dashboard Layout - Raspberry Pi 7"', () => {
   });
 
   test('brightness slider should be accessible', async ({ page }) => {
-    const slider = page.locator(
-      'input[type="range"], .brightness-slider, .slider'
-    );
+    const slider = page.locator('input[type="range"], .brightness-slider, .slider');
     const count = await slider.count();
 
     if (count > 0) {
@@ -210,10 +208,8 @@ test.describe('Dashboard Layout - Room View', () => {
         if (box1 && box2) {
           // Either cards are in different rows (no vertical overlap)
           // or in same row with horizontal gap
-          const verticalOverlap =
-            box1.y < box2.y + box2.height && box1.y + box1.height > box2.y;
-          const horizontalOverlap =
-            box1.x < box2.x + box2.width && box1.x + box1.width > box2.x;
+          const verticalOverlap = box1.y < box2.y + box2.height && box1.y + box1.height > box2.y;
+          const horizontalOverlap = box1.x < box2.x + box2.width && box1.x + box1.width > box2.x;
 
           expect(verticalOverlap && horizontalOverlap).toBe(false);
         }
@@ -267,10 +263,8 @@ test.describe('Dashboard Layout - Zones View', () => {
         const box2 = await card2.boundingBox();
 
         if (box1 && box2) {
-          const verticalOverlap =
-            box1.y < box2.y + box2.height && box1.y + box1.height > box2.y;
-          const horizontalOverlap =
-            box1.x < box2.x + box2.width && box1.x + box1.width > box2.x;
+          const verticalOverlap = box1.y < box2.y + box2.height && box1.y + box1.height > box2.y;
+          const horizontalOverlap = box1.x < box2.x + box2.width && box1.x + box1.width > box2.x;
 
           expect(verticalOverlap && horizontalOverlap).toBe(false);
         }

@@ -52,7 +52,10 @@ test.describe('WebSocket Connectivity', () => {
     const hasSocketIO = await page.evaluate(() => {
       // Check for Socket.IO client in the window or as a bundled module
       // @ts-expect-error - accessing potential global
-      return typeof window.io !== 'undefined' || document.querySelector('script[src*="socket.io"]') !== null;
+      return (
+        typeof window.io !== 'undefined' ||
+        document.querySelector('script[src*="socket.io"]') !== null
+      );
     });
 
     // This is a soft check - Socket.IO may be bundled

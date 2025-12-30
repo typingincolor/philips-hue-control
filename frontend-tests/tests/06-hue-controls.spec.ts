@@ -49,9 +49,7 @@ test.describe('Hue Light Controls - Interactive', () => {
     await page.waitForTimeout(1000);
 
     // Prompt user to confirm the lights changed
-    const confirmed = await prompts.confirmReady(
-      'Did the lights in the room toggle on or off?'
-    );
+    const confirmed = await prompts.confirmReady('Did the lights in the room toggle on or off?');
     expect(confirmed).toBe(true);
 
     // Toggle back
@@ -66,9 +64,7 @@ test.describe('Hue Light Controls - Interactive', () => {
 
   test('should adjust brightness with slider', async ({ page }) => {
     // Find brightness slider
-    const slider = page.locator(
-      'input[type="range"], .brightness-slider, .slider'
-    ).first();
+    const slider = page.locator('input[type="range"], .brightness-slider, .slider').first();
     const isVisible = await slider.isVisible();
 
     if (!isVisible) {
@@ -215,9 +211,7 @@ test.describe('Hue Dashboard - Real-time Updates', () => {
 
     await page.waitForTimeout(2000);
 
-    const confirmed = await prompts.confirmReady(
-      'Did the Home Control app show the scene change?'
-    );
+    const confirmed = await prompts.confirmReady('Did the Home Control app show the scene change?');
     expect(confirmed).toBe(true);
   });
 });

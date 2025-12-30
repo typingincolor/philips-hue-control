@@ -15,6 +15,7 @@ import * as api from '../src/api-client';
 import * as prompts from '../src/prompts';
 import * as stateManager from '../src/state-manager';
 
+// These tests are interactive and require user input
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Hive Login - Interactive', () => {
@@ -83,10 +84,7 @@ test.describe('Hive Login - Interactive', () => {
       { timeout: 30000 }
     );
 
-    prompts.showInfo(
-      '2FA Required',
-      'Check your phone for the SMS verification code from Hive'
-    );
+    prompts.showInfo('2FA Required', 'Check your phone for the SMS verification code from Hive');
   });
 
   test('should complete login with 2FA code', async ({ page }) => {
@@ -124,9 +122,9 @@ test.describe('Hive Login - Interactive', () => {
     const code = await prompts.prompt2FACode();
 
     // Enter the 2FA code
-    const codeInput = page.locator(
-      'input[placeholder*="code"], input[placeholder*="2FA"], .verification-code input'
-    ).first();
+    const codeInput = page
+      .locator('input[placeholder*="code"], input[placeholder*="2FA"], .verification-code input')
+      .first();
     await codeInput.fill(code);
 
     // Submit 2FA
@@ -236,9 +234,9 @@ test.describe('Hive Login - Error Handling', () => {
         'You will receive a real SMS code - do NOT enter it.'
     );
 
-    const codeInput = page.locator(
-      'input[placeholder*="code"], input[placeholder*="2FA"], .verification-code input'
-    ).first();
+    const codeInput = page
+      .locator('input[placeholder*="code"], input[placeholder*="2FA"], .verification-code input')
+      .first();
     await codeInput.fill('000000');
 
     const verifyButton = page.getByRole('button', { name: /verify|submit|confirm/i });
@@ -266,9 +264,7 @@ test.describe('Hive Login - Layout Checks', () => {
 
     // Check no scrolling needed
     const needsScroll = await page.evaluate(() => {
-      return (
-        document.documentElement.scrollHeight > document.documentElement.clientHeight
-      );
+      return document.documentElement.scrollHeight > document.documentElement.clientHeight;
     });
 
     expect(needsScroll).toBe(false);

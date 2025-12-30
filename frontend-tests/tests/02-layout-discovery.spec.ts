@@ -32,7 +32,10 @@ test.describe('Discovery Page Layout - Raspberry Pi 7"', () => {
     await page.waitForSelector('.settings-page', { timeout: 10000 });
 
     // Enable Hue service to transition to discovery page
-    const hueToggle = page.locator('.service-toggle').filter({ hasText: 'Philips Hue' });
+    const hueToggle = page
+      .locator('.service-toggle')
+      .filter({ hasText: 'Philips Hue' })
+      .locator('.service-toggle-switch');
     await hueToggle.click();
 
     // Wait for discovery page to appear
@@ -44,7 +47,7 @@ test.describe('Discovery Page Layout - Raspberry Pi 7"', () => {
   });
 
   test('should have IP input field visible and accessible', async ({ page }) => {
-    const ipInput = page.getByPlaceholder(/ip/i);
+    const ipInput = page.locator('.ip-input');
     await expect(ipInput).toBeVisible();
     await expect(ipInput).toBeInViewport();
 
@@ -71,11 +74,7 @@ test.describe('Discovery Page Layout - Raspberry Pi 7"', () => {
   });
 
   test('should have minimum edge spacing for content', async ({ page }) => {
-    await assertMinEdgeSpacing(
-      page,
-      '.discovery-page, .bridge-discovery',
-      LAYOUT.MIN_EDGE_SPACING
-    );
+    await assertMinEdgeSpacing(page, '.discovery-page, .bridge-discovery', LAYOUT.MIN_EDGE_SPACING);
   });
 
   test('should not have any elements cut off', async ({ page }) => {
@@ -84,16 +83,14 @@ test.describe('Discovery Page Layout - Raspberry Pi 7"', () => {
 
   test('should fit all content without scrolling', async ({ page }) => {
     const needsScroll = await page.evaluate(() => {
-      return (
-        document.documentElement.scrollHeight > document.documentElement.clientHeight
-      );
+      return document.documentElement.scrollHeight > document.documentElement.clientHeight;
     });
 
     expect(needsScroll).toBe(false);
   });
 
   test('input and button should not overlap', async ({ page }) => {
-    const ipInput = page.getByPlaceholder(/ip/i);
+    const ipInput = page.locator('.ip-input');
     const connectButton = page.getByRole('button', { name: /connect/i });
 
     const inputBox = await ipInput.boundingBox();
@@ -105,11 +102,9 @@ test.describe('Discovery Page Layout - Raspberry Pi 7"', () => {
     if (inputBox && buttonBox) {
       // Check no horizontal overlap if side by side, or proper vertical gap if stacked
       const horizontalOverlap =
-        inputBox.x < buttonBox.x + buttonBox.width &&
-        inputBox.x + inputBox.width > buttonBox.x;
+        inputBox.x < buttonBox.x + buttonBox.width && inputBox.x + inputBox.width > buttonBox.x;
       const verticalOverlap =
-        inputBox.y < buttonBox.y + buttonBox.height &&
-        inputBox.y + inputBox.height > buttonBox.y;
+        inputBox.y < buttonBox.y + buttonBox.height && inputBox.y + inputBox.height > buttonBox.y;
 
       // They shouldn't overlap in both dimensions
       expect(horizontalOverlap && verticalOverlap).toBe(false);

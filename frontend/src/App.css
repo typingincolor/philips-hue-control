@@ -81,6 +81,13 @@ body {
   background: var(--bg-primary);
 }
 
+/* Reset app-main padding when in fullscreen (Dashboard) mode */
+.app-fullscreen .app-main {
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+}
+
 @media (max-width: 768px) {
   .app {
     width: calc(100% - 16px);
@@ -3592,6 +3599,55 @@ body.dark-theme {
 
   .settings-services {
     gap: 2px;
+  }
+
+  /* Hive login form - compact for short viewports */
+  .hive-login-form,
+  .hive-2fa-form {
+    margin: 8px auto;
+    padding: 16px;
+  }
+
+  .hive-login-title,
+  .hive-2fa-title {
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+
+  .hive-2fa-description {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+
+  .hive-login-form form,
+  .hive-2fa-form form {
+    gap: 8px;
+  }
+
+  .hive-login-form input,
+  .hive-2fa-form input {
+    padding: 12px 12px;
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .hive-login-form button[type='submit'],
+  .hive-2fa-form button[type='submit'] {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  .hive-login-form .hive-error,
+  .hive-2fa-form .hive-error {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+  }
+
+  .hive-back-link {
+    margin-top: 8px;
+    font-size: 0.8rem;
   }
 }
 

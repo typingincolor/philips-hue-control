@@ -63,8 +63,15 @@ function AppContent() {
     );
   }
 
+  // Use fullscreen mode for connected state and pairing flow (no padding)
+  const isFullscreen =
+    effectiveStep === 'connected' ||
+    effectiveStep === 'restoring' ||
+    effectiveStep === 'discovery' ||
+    effectiveStep === 'authentication';
+
   return (
-    <div className="app">
+    <div className={`app ${isFullscreen ? 'app-fullscreen' : ''}`}>
       {effectiveStep !== 'connected' &&
         effectiveStep !== 'restoring' &&
         effectiveStep !== 'backend_unavailable' && (

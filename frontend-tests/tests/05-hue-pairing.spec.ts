@@ -39,7 +39,10 @@ test.describe('Hue Bridge Pairing - Interactive', () => {
     await expect(page.locator('.settings-page')).toBeVisible();
 
     // Find and click the Hue toggle
-    const hueToggle = page.locator('.service-toggle').filter({ hasText: 'Philips Hue' });
+    const hueToggle = page
+      .locator('.service-toggle')
+      .filter({ hasText: 'Philips Hue' })
+      .locator('.service-toggle-switch');
     await expect(hueToggle).toBeVisible();
     await hueToggle.click();
 
@@ -56,7 +59,10 @@ test.describe('Hue Bridge Pairing - Interactive', () => {
     await page.reload();
 
     await page.waitForSelector('.settings-page', { timeout: 10000 });
-    const hueToggle = page.locator('.service-toggle').filter({ hasText: 'Philips Hue' });
+    const hueToggle = page
+      .locator('.service-toggle')
+      .filter({ hasText: 'Philips Hue' })
+      .locator('.service-toggle-switch');
     await hueToggle.click();
     await page.waitForSelector('.discovery-page, .bridge-discovery', { timeout: 10000 });
 
@@ -89,7 +95,10 @@ test.describe('Hue Bridge Pairing - Interactive', () => {
     await page.reload();
 
     await page.waitForSelector('.settings-page', { timeout: 10000 });
-    const hueToggle = page.locator('.service-toggle').filter({ hasText: 'Philips Hue' });
+    const hueToggle = page
+      .locator('.service-toggle')
+      .filter({ hasText: 'Philips Hue' })
+      .locator('.service-toggle-switch');
     await hueToggle.click();
     await page.waitForSelector('.discovery-page, .bridge-discovery', { timeout: 10000 });
 
@@ -124,9 +133,7 @@ test.describe('Hue Bridge Pairing - Interactive', () => {
     });
 
     // Verify we're on the dashboard
-    await expect(
-      page.locator('.dashboard, .light-control, .main-panel').first()
-    ).toBeVisible();
+    await expect(page.locator('.dashboard, .light-control, .main-panel').first()).toBeVisible();
 
     prompts.showInfo('Pairing Complete', 'Successfully paired with Hue Bridge!');
   });
@@ -181,10 +188,7 @@ test.describe('Hue Bridge Pairing - Interactive', () => {
     // Should have at least one light/room/zone visible
     expect(count).toBeGreaterThan(0);
 
-    prompts.showInfo(
-      'Lights Found',
-      `Found ${count} light controls on the dashboard`
-    );
+    prompts.showInfo('Lights Found', `Found ${count} light controls on the dashboard`);
   });
 });
 
