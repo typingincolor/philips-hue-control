@@ -2,14 +2,20 @@
   "name": "frontend-tests",
   "version": "1.0.0",
   "type": "module",
-  "description": "Production smoke tests for Home Control - runs against live server with interactive prompts",
+  "description": "Production smoke tests for Home Control - runs against live server",
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",
+    "test:auto": "playwright test tests/00-connectivity.spec.ts tests/01-layout-settings.spec.ts tests/04-layout-dashboard.spec.ts -g 'Server Connectivity|WebSocket Connectivity|Settings Page Layout|Dashboard Layout'",
+    "test:auto:all": "playwright test tests/00-connectivity.spec.ts tests/01-layout-settings.spec.ts tests/04-layout-dashboard.spec.ts tests/07-hive-login.spec.ts -g 'Server Connectivity|WebSocket Connectivity|Settings Page Layout|Dashboard Layout|should navigate from settings to Hive login|should show error for invalid credentials|Layout Checks'",
+    "test:interactive": "playwright test --headed",
+    "test:interactive:hue": "playwright test tests/05-hue-pairing.spec.ts tests/06-hue-controls.spec.ts --headed",
+    "test:interactive:hive": "playwright test tests/07-hive-login.spec.ts tests/08-hive-controls.spec.ts --headed -g 'Interactive|should submit credentials|should complete login|should show Hive status|should show error for invalid 2FA'",
     "test:connectivity": "playwright test tests/00-connectivity.spec.ts",
-    "test:layout": "playwright test tests/01-layout-settings.spec.ts tests/02-layout-discovery.spec.ts tests/03-layout-auth.spec.ts tests/04-layout-dashboard.spec.ts",
-    "test:hue": "playwright test tests/05-hue-pairing.spec.ts tests/06-hue-controls.spec.ts",
-    "test:hive": "playwright test tests/07-hive-login.spec.ts tests/08-hive-controls.spec.ts"
+    "test:layout": "playwright test tests/01-layout-settings.spec.ts tests/04-layout-dashboard.spec.ts",
+    "test:layout:all": "playwright test tests/01-layout-settings.spec.ts tests/02-layout-discovery.spec.ts tests/03-layout-auth.spec.ts tests/04-layout-dashboard.spec.ts",
+    "test:hue": "playwright test tests/05-hue-pairing.spec.ts tests/06-hue-controls.spec.ts --headed",
+    "test:hive": "playwright test tests/07-hive-login.spec.ts tests/08-hive-controls.spec.ts --headed"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
