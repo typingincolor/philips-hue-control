@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
 import { LightShape } from '../../propTypes/shapes';
 import { LightbulbOn, LightbulbOff, Spinner } from './Icons';
+import { COLOR_TEMPERATURE } from '../../constants/colors';
 
-export const LightTile = ({ light, onToggle, isToggling }) => {
+export const LightTile = ({ light, onToggle, onColorTemperatureChange, isToggling }) => {
+  const lightName = light.name || 'Light';
   const brightness = light.on ? light.brightness || 0 : 0;
-  const fillHeight = `${brightness}%`;
 
   // Fill color from backend, or default warm color
   const fillColor = light.color || 'rgb(255, 200, 130)';
@@ -24,24 +25,59 @@ export const LightTile = ({ light, onToggle, isToggling }) => {
     brightness
   );
 
+  // Color temperature value (default to neutral if not set)
+  const colorTemperature = light.colorTemperature || COLOR_TEMPERATURE.DEFAULT;
+
+  // State classes for styling
+  const stateClasses = `${light.on ? 'on' : 'off'} ${isToggling ? 'toggling' : ''}`;
+
+  const handleToggleClick = () => {
+    if (!isToggling) {
+      onToggle(light.id);
+    }
+  };
+
+  const handleSliderChange = (e) => {
+    e.stopPropagation();
+    if (onColorTemperatureChange) {
+      onColorTemperatureChange(light.id, parseInt(e.target.value, 10));
+    }
+  };
+
+  const handleSliderClick = (e) => {
+    e.stopPropagation();
+  };
+
+  const handleNameClick = (e) => {
+    e.stopPropagation();
+  };
+
   return (
-    <button
-      onClick={() => onToggle(light.id)}
-      disabled={isToggling}
-      className={`light-tile ${light.on ? 'on' : 'off'} ${isToggling ? 'toggling' : ''}`}
+    <div
+      className={`light-tile ${stateClasses} light-tile-flex-layout light-tile-balanced`}
+      role="group"
+      aria-label={`${lightName} controls`}
+      onClick={handleToggleClick}
       style={shadowStyle}
     >
-      {/* Brightness fill - rises from bottom */}
-      <div
-        className="light-tile-fill"
-        style={{
-          height: fillHeight,
-          background: fillGradient,
-        }}
-      />
+      {/* Full tile background fill when on */}
+      {light.on && (
+        <div
+          className="light-tile-fill light-tile-fill-rounded light-tile-fill-inset light-tile-fill-all-rounded light-tile-fill-edge-to-edge light-tile-fill-full"
+          style={{
+            background: fillGradient,
+          }}
+        />
+      )}
 
-      {/* Content layer */}
-      <div className="light-tile-content">
+      {/* Toggle button area - fills most of the tile */}
+      <button
+        className={`light-tile-toggle ${stateClasses} light-tile-toggle-contained light-tile-toggle-proportional light-tile-toggle-fill-container light-tile-toggle-flush`}
+        onClick={handleToggleClick}
+        disabled={isToggling}
+        aria-label={`Toggle ${lightName}, currently ${light.on ? 'on' : 'off'}${light.on ? ` at ${brightness}% brightness` : ''}`}
+      >
+        {/* Icon centered in toggle area */}
         {isToggling ? (
           <Spinner size={48} className="light-tile-icon" style={{ color: contentColor }} />
         ) : light.on ? (
@@ -49,19 +85,42 @@ export const LightTile = ({ light, onToggle, isToggling }) => {
         ) : (
           <LightbulbOff size={48} className="light-tile-icon" style={{ color: contentColor }} />
         )}
-        <span
-          className="light-tile-name"
-          style={{
-            color: contentColor,
-            background: pillBackground,
-            padding: '2px 8px',
-            borderRadius: '10px',
-          }}
+      </button>
+
+      {/* Color temperature slider - only visible when light is on */}
+      {light.on && (
+        <div
+          className="light-tile-slider light-tile-slider-centered light-tile-slider-padded light-tile-slider-spaced light-tile-slider-expanded"
+          onClick={handleSliderClick}
         >
-          {light.name || 'Light'}
-        </span>
-      </div>
-    </button>
+          <input
+            type="range"
+            min={COLOR_TEMPERATURE.MIN}
+            max={COLOR_TEMPERATURE.MAX}
+            value={colorTemperature}
+            onChange={handleSliderChange}
+            disabled={isToggling}
+            aria-label={`Color temperature for ${lightName}`}
+            aria-valuemin={COLOR_TEMPERATURE.MIN}
+            aria-valuemax={COLOR_TEMPERATURE.MAX}
+            aria-valuenow={colorTemperature}
+          />
+        </div>
+      )}
+
+      {/* Name label at bottom */}
+      <span
+        className="light-tile-name light-tile-name-centered light-tile-name-padded light-tile-name-spaced light-tile-name-expanded"
+        onClick={handleNameClick}
+        style={{
+          color: contentColor,
+          background: pillBackground,
+          borderRadius: '10px',
+        }}
+      >
+        {lightName}
+      </span>
+    </div>
   );
 };
 
@@ -113,5 +172,6 @@ function getContrastStyle(color, brightness) {
 LightTile.propTypes = {
   light: LightShape.isRequired,
   onToggle: PropTypes.func.isRequired,
+  onColorTemperatureChange: PropTypes.func,
   isToggling: PropTypes.bool,
 };

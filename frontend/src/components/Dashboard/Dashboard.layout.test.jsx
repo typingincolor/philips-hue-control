@@ -170,13 +170,13 @@ describe('Dashboard Layout', () => {
     });
   });
 
-  describe('Grid Structure (Migrated from E2E)', () => {
-    it('should render tiles-grid for lights', async () => {
+  describe('Carousel Structure (issue 47)', () => {
+    it('should render room-content-carousel container', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const grid = document.querySelector('.tiles-grid');
-        expect(grid).toBeInTheDocument();
+        const carousel = document.querySelector('.room-content-carousel');
+        expect(carousel).toBeInTheDocument();
       });
     });
 
@@ -189,24 +189,40 @@ describe('Dashboard Layout', () => {
       });
     });
 
-    it('should render light tiles inside tiles-grid', async () => {
+    it('should render light tiles inside lights-row carousel', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const grid = document.querySelector('.tiles-grid');
-        const tiles = grid.querySelectorAll('.light-tile');
+        const lightsCarousel = document.querySelector('.lights-row .tiles-carousel');
+        const tiles = lightsCarousel.querySelectorAll('.light-tile');
         expect(tiles.length).toBe(8);
       });
     });
 
-    it('should render light tiles as buttons', async () => {
+    it('should render two room-row elements', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const tiles = document.querySelectorAll('.light-tile');
-        tiles.forEach((tile) => {
-          expect(tile.tagName.toLowerCase()).toBe('button');
-        });
+        const rows = document.querySelectorAll('.room-row');
+        expect(rows.length).toBe(2);
+      });
+    });
+
+    it('should render scenes-row as first row', async () => {
+      render(<Dashboard sessionToken="test-token" />);
+
+      await waitFor(() => {
+        const rows = document.querySelectorAll('.room-row');
+        expect(rows[0]).toHaveClass('scenes-row');
+      });
+    });
+
+    it('should render lights-row as second row', async () => {
+      render(<Dashboard sessionToken="test-token" />);
+
+      await waitFor(() => {
+        const rows = document.querySelectorAll('.room-row');
+        expect(rows[1]).toHaveClass('lights-row');
       });
     });
   });
@@ -250,78 +266,52 @@ describe('Dashboard Layout', () => {
     });
   });
 
-  describe('Scene Drawer (Migrated from E2E)', () => {
-    it('should render scene drawer trigger', async () => {
+  describe('Scene Tiles (Migrated from E2E)', () => {
+    it('should render All On/Off tile', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const trigger = document.querySelector('.scene-drawer-trigger');
-        expect(trigger).toBeInTheDocument();
+        const allOnOffTile = document.querySelector('.all-on-off-tile');
+        expect(allOnOffTile).toBeInTheDocument();
       });
     });
 
-    it('should open drawer when trigger is clicked', async () => {
-      const user = userEvent.setup();
+    it('should render scene tiles', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(document.querySelector('.scene-drawer-trigger')).toBeInTheDocument();
-      });
-
-      const trigger = document.querySelector('.scene-drawer-trigger');
-      await user.click(trigger);
-
-      await waitFor(() => {
-        const drawer = document.querySelector('.scene-drawer');
-        expect(drawer).toBeVisible();
+        const sceneTiles = document.querySelectorAll('.scene-tile');
+        expect(sceneTiles.length).toBe(3); // Bright, Dim, Movie
       });
     });
 
-    it('should render scene items in drawer', async () => {
-      const user = userEvent.setup();
+    it('should display scene names on tiles', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(document.querySelector('.scene-drawer-trigger')).toBeInTheDocument();
-      });
-
-      await user.click(document.querySelector('.scene-drawer-trigger'));
-
-      await waitFor(() => {
-        const sceneItems = document.querySelectorAll('.scene-drawer-item');
-        expect(sceneItems.length).toBe(3); // Bright, Dim, Movie
+        expect(screen.getByText('Bright')).toBeInTheDocument();
+        expect(screen.getByText('Dim')).toBeInTheDocument();
+        expect(screen.getByText('Movie')).toBeInTheDocument();
       });
     });
 
-    it('should render toggle button in drawer', async () => {
-      const user = userEvent.setup();
+    it('should have accessible All On/Off tile', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(document.querySelector('.scene-drawer-trigger')).toBeInTheDocument();
-      });
-
-      await user.click(document.querySelector('.scene-drawer-trigger'));
-
-      await waitFor(() => {
-        const toggleButton = document.querySelector('.scene-drawer-toggle');
-        expect(toggleButton).toBeInTheDocument();
+        const allOnOffTile = document.querySelector('.all-on-off-tile');
+        expect(allOnOffTile).toHaveAttribute('aria-label');
       });
     });
 
-    it('should render close button in drawer', async () => {
-      const user = userEvent.setup();
+    it('should have accessible scene tiles', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        expect(document.querySelector('.scene-drawer-trigger')).toBeInTheDocument();
-      });
-
-      await user.click(document.querySelector('.scene-drawer-trigger'));
-
-      await waitFor(() => {
-        const closeButton = document.querySelector('.scene-drawer-close');
-        expect(closeButton).toBeInTheDocument();
+        const sceneTiles = document.querySelectorAll('.scene-tile');
+        sceneTiles.forEach((tile) => {
+          expect(tile).toHaveAttribute('aria-label');
+        });
       });
     });
   });
@@ -380,16 +370,16 @@ describe('Dashboard Layout', () => {
           });
         });
 
-        it('should render tiles-grid', async () => {
+        it('should render tiles-carousel in lights-row', async () => {
           render(<Dashboard sessionToken="test-token" />);
 
           await waitFor(() => {
-            const grid = document.querySelector('.tiles-grid');
-            expect(grid).toBeInTheDocument();
+            const carousel = document.querySelector('.lights-row .tiles-carousel');
+            expect(carousel).toBeInTheDocument();
           });
         });
 
-        it('should render 8 light tiles for full grid', async () => {
+        it('should render 8 light tiles in carousel', async () => {
           render(<Dashboard sessionToken="test-token" />);
 
           await waitFor(() => {
@@ -398,12 +388,14 @@ describe('Dashboard Layout', () => {
           });
         });
 
-        it('should render scene drawer trigger', async () => {
+        it('should render All On/Off tile and scene tiles', async () => {
           render(<Dashboard sessionToken="test-token" />);
 
           await waitFor(() => {
-            const trigger = document.querySelector('.scene-drawer-trigger');
-            expect(trigger).toBeInTheDocument();
+            const allOnOffTile = document.querySelector('.all-on-off-tile');
+            expect(allOnOffTile).toBeInTheDocument();
+            const sceneTiles = document.querySelectorAll('.scene-tile');
+            expect(sceneTiles.length).toBe(3);
           });
         });
       });

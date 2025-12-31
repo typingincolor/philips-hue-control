@@ -8,6 +8,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Architecture:** Backend handles all business logic, exposing a V2 REST API with WebSocket. Frontend is a thin presentation layer consuming pre-computed data.
 
+## UI Quality Standards (CRITICAL)
+
+**Every frontend change MUST be visually verified before considering the task complete.**
+
+### Mandatory Verification Process
+
+1. **After ANY UI change**, take a screenshot using the browser tool
+2. **Critically evaluate** what you see - don't assume it looks correct
+3. **Check against this list** before declaring done:
+   - [ ] Layout matches the requested design
+   - [ ] No overlapping or cut-off text
+   - [ ] Proper spacing and alignment (consistent margins/padding)
+   - [ ] Colors are correct and have sufficient contrast
+   - [ ] Interactive elements are visibly clickable (buttons look like buttons)
+   - [ ] Responsive: check at mobile width (375px) if applicable
+   - [ ] No console errors in browser dev tools
+   - [ ] Loading/error states look intentional, not broken
+
+### Common UI Bugs to Watch For
+
+- **Text overflow:** Long names breaking layouts or getting cut off
+- **Flexbox issues:** Items not aligning as expected, unexpected wrapping
+- **Z-index problems:** Elements hidden behind others or overlays not working
+- **Color issues:** Text unreadable against background, wrong theme colors
+- **Spacing collapse:** Missing margins when elements are conditionally rendered
+- **Icon sizing:** Icons too large/small relative to text
+- **Touch targets:** Buttons/links too small on mobile (minimum 44x44px)
+- **State mismatches:** UI not reflecting actual data state
+
+### Definition of Done for UI Tasks
+
+A UI task is NOT complete until:
+
+1. Screenshot taken and visually inspected
+2. All items on the checklist above pass
+3. Tested with realistic data (not just empty or minimal states)
+4. Edge cases considered (empty states, error states, loading states)
+5. If it looks "off" or "not quite right" - investigate and fix it
+
+### When in Doubt
+
+- Take another screenshot after each fix
+- Compare side-by-side with any mockups or descriptions provided
+- Ask yourself: "Would I be proud to ship this?"
+- If something seems wrong but you're not sure why, describe what you see
+
+### Screenshot Requirements
+
+When taking screenshots for verification:
+
+- Capture the full component/page being worked on
+- If responsive, capture at both desktop and mobile widths
+- Include any hover/active states if relevant
+- Capture error and loading states, not just success states
+
 ## Quick Start
 
 ```bash
@@ -214,6 +269,15 @@ See `frontend/TESTING.md` for detailed testing documentation.
 1. Create in `frontend/src/components/`
 2. Add UI text to `frontend/src/constants/uiText.js`
 3. Add tests in same directory
+4. **Take screenshot and verify visually before committing**
+
+### Modifying Existing UI
+
+1. Take a "before" screenshot for reference
+2. Make changes incrementally
+3. Take "after" screenshot and compare
+4. Verify on mobile width (375px) if component is responsive
+5. Check for regressions in related components
 
 ## Performance Notes
 
@@ -234,3 +298,34 @@ Uses v2 API only (not traditional `/sensors` endpoint):
 1. Fetch `behavior_instance` for zone names
 2. Fetch `convenience_area_motion` for motion status
 3. Match via `configuration.motion.motion_service.rid`
+
+## Design System Reference
+
+When creating or modifying UI components, maintain consistency with existing patterns:
+
+### Colors (from existing CSS)
+
+- Primary actions: Emerald green (`#10b981`, `#059669`)
+- Backgrounds: Neutral grays (`#f5f5f5`, `#e5e5e5`, `#1a1a1a` dark)
+- Text: `#171717` (light mode), `#fafafa` (dark mode)
+- Accents: Blue for links/info (`#3b82f6`)
+
+### Spacing
+
+- Card padding: `1rem` (16px)
+- Grid gaps: `0.75rem` to `1rem`
+- Button padding: `0.5rem 1rem`
+
+### Typography
+
+- Base size: 16px
+- Small text: 0.875rem (14px)
+- Headers: 1.25rem - 1.5rem
+- Font: System font stack
+
+### Component Patterns
+
+- Cards: Rounded corners (`0.75rem`), subtle shadow
+- Buttons: Rounded (`0.5rem`), clear hover states
+- Icons: Sized relative to text (1em or 1.25em)
+- Touch targets: Minimum 44x44px on mobile

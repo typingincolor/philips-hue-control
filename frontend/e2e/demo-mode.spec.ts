@@ -47,62 +47,34 @@ test.describe('Demo Mode Dashboard', () => {
     await expect(floorLampButton).toBeVisible();
   });
 
-  test('should have scene drawer trigger button', async ({ page }) => {
-    // Look for the floating action button that opens the scene drawer
-    const drawerTrigger = page.locator('.scene-drawer-trigger');
-    await expect(drawerTrigger).toBeVisible();
+  test('should display scene tiles in room view', async ({ page }) => {
+    // Scene tiles should be visible (replaces scene drawer)
+    const sceneTiles = page.locator('.scene-tile');
+    await expect(sceneTiles.first()).toBeVisible();
   });
 
-  test('should open scene drawer and show scenes', async ({ page }) => {
-    // Click the drawer trigger
-    const drawerTrigger = page.locator('.scene-drawer-trigger');
-    await drawerTrigger.click();
-
-    // Drawer should appear with scene items
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).toBeVisible();
-
-    // Scene items should be visible (Living Room has Bright and Relax scenes)
-    const sceneItems = page.locator('.scene-drawer-item');
-    await expect(sceneItems.first()).toBeVisible();
+  test('should display All On/Off tile', async ({ page }) => {
+    // All On/Off tile should be visible
+    const allOnOffTile = page.locator('.all-on-off-tile');
+    await expect(allOnOffTile).toBeVisible();
   });
 
-  test('should activate scene from drawer', async ({ page }) => {
-    // Open the drawer
-    const drawerTrigger = page.locator('.scene-drawer-trigger');
-    await drawerTrigger.click();
+  test('should activate scene when scene tile clicked', async ({ page }) => {
+    // Click a scene tile
+    const sceneTile = page.locator('.scene-tile').first();
+    await sceneTile.click();
 
-    // Click a scene item
-    const sceneItem = page.locator('.scene-drawer-item').first();
-    await sceneItem.click();
-
-    // Drawer should close after scene activation
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).not.toBeVisible();
+    // Scene tile should still be visible after activation
+    await expect(sceneTile).toBeVisible();
   });
 
-  test('should have toggle button in scene drawer', async ({ page }) => {
-    // Open the drawer
-    const drawerTrigger = page.locator('.scene-drawer-trigger');
-    await drawerTrigger.click();
+  test('should toggle all lights when All On/Off tile clicked', async ({ page }) => {
+    // Click All On/Off tile
+    const allOnOffTile = page.locator('.all-on-off-tile');
+    await allOnOffTile.click();
 
-    // Look for toggle button in drawer footer
-    const toggleButton = page.locator('.scene-drawer-toggle');
-    await expect(toggleButton).toBeVisible();
-  });
-
-  test('should toggle all lights from drawer', async ({ page }) => {
-    // Open the drawer
-    const drawerTrigger = page.locator('.scene-drawer-trigger');
-    await drawerTrigger.click();
-
-    // Click the toggle button
-    const toggleButton = page.locator('.scene-drawer-toggle');
-    await toggleButton.click();
-
-    // Drawer should close after toggle
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).not.toBeVisible();
+    // Tile should still be visible after toggle
+    await expect(allOnOffTile).toBeVisible();
   });
 
   test('should have settings button in toolbar', async ({ page }) => {

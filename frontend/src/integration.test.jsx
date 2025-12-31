@@ -551,25 +551,16 @@ describe('Integration Tests', () => {
 
       render(<App />);
 
-      // Wait for dashboard to appear AND RoomContent to render (includes drawer trigger)
+      // Wait for dashboard to appear AND RoomContent to render (includes scene tiles)
       await waitFor(() => {
         expect(screen.getByText('Living Room')).toBeInTheDocument();
-        expect(document.querySelector('.scene-drawer-trigger')).toBeTruthy();
+        expect(document.querySelector('.scene-tile')).toBeTruthy();
       });
 
-      // Open the scene drawer
-      const drawerTrigger = document.querySelector('.scene-drawer-trigger');
-      await user.click(drawerTrigger);
-
-      // Wait for drawer to appear and find scene items
-      await waitFor(() => {
-        expect(document.querySelector('.scene-drawer')).toBeInTheDocument();
-      });
-
-      // Click first scene in drawer
-      const sceneItems = document.querySelectorAll('.scene-drawer-item');
-      expect(sceneItems.length).toBeGreaterThan(0);
-      await user.click(sceneItems[0]);
+      // Click first scene tile
+      const sceneTiles = document.querySelectorAll('.scene-tile');
+      expect(sceneTiles.length).toBeGreaterThan(0);
+      await user.click(sceneTiles[0]);
 
       // Lights should update immediately (optimistic)
       // We don't need to wait for WebSocket poll (5 seconds)

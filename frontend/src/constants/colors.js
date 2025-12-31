@@ -12,3 +12,10 @@ export const COLOR_CONFIG = {
     b: [0.051713, -0.121364, 1.01153],
   },
 };
+
+// Color temperature range in Kelvin for white ambiance lights
+export const COLOR_TEMPERATURE = {
+  MIN: 2700, // Warm white
+  MAX: 6500, // Cool daylight
+  DEFAULT: 4000, // Neutral
+};

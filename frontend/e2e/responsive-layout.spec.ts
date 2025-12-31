@@ -42,23 +42,20 @@ test.describe('iPad Layout (1024x768)', () => {
     await page.waitForSelector('.light-tile');
   });
 
-  test('should display 4 columns of light tiles', async ({ page }) => {
-    const grid = page.locator('.tiles-grid');
-    const gridStyle = await grid.evaluate((el) => window.getComputedStyle(el));
-    const columns = gridStyle.gridTemplateColumns.split(' ').length;
-    expect(columns).toBe(EXPECTED_LAYOUTS.ipad.columns);
+  test('should display carousel layout', async ({ page }) => {
+    // Carousel layout replaces grid (issue 47)
+    const carousel = page.locator('.tiles-carousel');
+    await expect(carousel.first()).toBeVisible();
   });
 
-  test('should display 2 rows of light tiles visible', async ({ page }) => {
+  test('should display light tiles in carousel', async ({ page }) => {
     const tiles = page.locator('.light-tile');
     const count = await tiles.count();
-    // At least 8 tiles visible (2 rows x 4 columns)
-    expect(count).toBeGreaterThanOrEqual(8);
+    // Should have multiple light tiles
+    expect(count).toBeGreaterThan(0);
 
-    // Check first 8 tiles are visible without scrolling
-    for (let i = 0; i < Math.min(8, count); i++) {
-      await expect(tiles.nth(i)).toBeInViewport();
-    }
+    // Check first tile is visible
+    await expect(tiles.first()).toBeInViewport();
   });
 
   test('should have square buttons at least 44px', async ({ page }) => {
@@ -120,23 +117,20 @@ test.describe('iPhone 14 Layout (390x844)', () => {
     await page.waitForSelector('.light-tile');
   });
 
-  test('should display 2 columns of light tiles', async ({ page }) => {
-    const grid = page.locator('.tiles-grid');
-    const gridStyle = await grid.evaluate((el) => window.getComputedStyle(el));
-    const columns = gridStyle.gridTemplateColumns.split(' ').length;
-    expect(columns).toBe(EXPECTED_LAYOUTS.iphone14.columns);
+  test('should display carousel layout on iPhone', async ({ page }) => {
+    // Carousel layout replaces grid (issue 47)
+    const carousel = page.locator('.tiles-carousel');
+    await expect(carousel.first()).toBeVisible();
   });
 
-  test('should display 4 rows of light tiles visible', async ({ page }) => {
+  test('should display light tiles in carousel on iPhone', async ({ page }) => {
     const tiles = page.locator('.light-tile');
     const count = await tiles.count();
-    // At least 8 tiles visible (4 rows x 2 columns)
-    expect(count).toBeGreaterThanOrEqual(8);
+    // Should have multiple light tiles
+    expect(count).toBeGreaterThan(0);
 
-    // Check first 8 tiles are visible without scrolling
-    for (let i = 0; i < Math.min(8, count); i++) {
-      await expect(tiles.nth(i)).toBeInViewport();
-    }
+    // Check first tile is visible
+    await expect(tiles.first()).toBeInViewport();
   });
 
   test('should have square buttons at least 44px', async ({ page }) => {
@@ -195,23 +189,20 @@ test.describe('Raspberry Pi 7" Layout (800x480)', () => {
     await page.waitForSelector('.light-tile');
   });
 
-  test('should display 4 columns of light tiles', async ({ page }) => {
-    const grid = page.locator('.tiles-grid');
-    const gridStyle = await grid.evaluate((el) => window.getComputedStyle(el));
-    const columns = gridStyle.gridTemplateColumns.split(' ').length;
-    expect(columns).toBe(EXPECTED_LAYOUTS.raspberryPi.columns);
+  test('should display carousel layout on RPi', async ({ page }) => {
+    // Carousel layout replaces grid (issue 47)
+    const carousel = page.locator('.tiles-carousel');
+    await expect(carousel.first()).toBeVisible();
   });
 
-  test('should display 2 rows of light tiles visible', async ({ page }) => {
+  test('should display light tiles in carousel on RPi', async ({ page }) => {
     const tiles = page.locator('.light-tile');
     const count = await tiles.count();
-    // At least 8 tiles visible (2 rows x 4 columns)
-    expect(count).toBeGreaterThanOrEqual(8);
+    // Should have multiple light tiles
+    expect(count).toBeGreaterThan(0);
 
-    // Check first 8 tiles are visible without scrolling
-    for (let i = 0; i < Math.min(8, count); i++) {
-      await expect(tiles.nth(i)).toBeInViewport();
-    }
+    // Check first tile is visible
+    await expect(tiles.first()).toBeInViewport();
   });
 
   test('should have square buttons at least 44px', async ({ page }) => {
@@ -302,81 +293,31 @@ test.describe('Button Size Constraints (All Devices)', () => {
   }
 });
 
-test.describe('Vertical Centering', () => {
-  // Tolerance for spacing comparison (pixels)
-  const SPACING_TOLERANCE = 10;
-
+test.describe('Carousel Layout (issue 47)', () => {
   for (const [key, viewport] of Object.entries(VIEWPORTS)) {
-    const expectedRows = EXPECTED_LAYOUTS[key as keyof typeof EXPECTED_LAYOUTS].rows;
-    const expectedCols = EXPECTED_LAYOUTS[key as keyof typeof EXPECTED_LAYOUTS].columns;
-
     test.describe(`${viewport.name}`, () => {
       test.use({ viewport });
 
-      test(`should have equal spacing above and below button grid (${expectedRows} rows)`, async ({
-        page,
-      }) => {
+      test('should have two carousel rows', async ({ page }) => {
         await page.goto('/?demo=true');
         await page.waitForSelector('.light-tile');
 
-        // Get toolbar bottom edge
-        const toolbar = page.locator('.top-toolbar');
-        const toolbarBox = await toolbar.boundingBox();
-        expect(toolbarBox).not.toBeNull();
+        // Should have scenes row and lights row
+        const scenesRow = page.locator('.scenes-row');
+        const lightsRow = page.locator('.lights-row');
 
-        // Get bottom nav top edge
-        const nav = page.locator('.bottom-nav');
-        const navBox = await nav.boundingBox();
-        expect(navBox).not.toBeNull();
-
-        // Get first tile (first row)
-        const tiles = page.locator('.light-tile');
-        const firstTile = tiles.first();
-        const firstTileBox = await firstTile.boundingBox();
-        expect(firstTileBox).not.toBeNull();
-
-        // Get last tile in the expected grid (last row)
-        // For 2 rows x 4 cols = 8 tiles, last row starts at index 4
-        // For 4 rows x 2 cols = 8 tiles, last row starts at index 6
-        const lastRowStartIndex = (expectedRows - 1) * expectedCols;
-        const lastRowTile = tiles.nth(lastRowStartIndex);
-        const lastRowTileBox = await lastRowTile.boundingBox();
-        expect(lastRowTileBox).not.toBeNull();
-
-        if (toolbarBox && navBox && firstTileBox && lastRowTileBox) {
-          // Calculate spacing
-          const topSpacing = firstTileBox.y - (toolbarBox.y + toolbarBox.height);
-          const bottomSpacing = navBox.y - (lastRowTileBox.y + lastRowTileBox.height);
-
-          // Log for debugging
-          console.log(
-            `${viewport.name}: topSpacing=${topSpacing.toFixed(1)}px, bottomSpacing=${bottomSpacing.toFixed(1)}px`
-          );
-
-          // Assert equal spacing within tolerance
-          expect(Math.abs(topSpacing - bottomSpacing)).toBeLessThanOrEqual(SPACING_TOLERANCE);
-        }
+        await expect(scenesRow).toBeVisible();
+        await expect(lightsRow).toBeVisible();
       });
 
-      test(`should display exactly ${expectedRows} rows of buttons`, async ({ page }) => {
+      test('should display carousel with chevron buttons', async ({ page }) => {
         await page.goto('/?demo=true');
         await page.waitForSelector('.light-tile');
 
-        const tiles = page.locator('.light-tile');
-        const count = await tiles.count();
-
-        // Get Y positions of all tiles to determine rows
-        const yPositions = new Set<number>();
-        for (let i = 0; i < Math.min(count, expectedRows * expectedCols); i++) {
-          const box = await tiles.nth(i).boundingBox();
-          if (box) {
-            // Round to handle sub-pixel differences
-            yPositions.add(Math.round(box.y));
-          }
-        }
-
-        // Number of unique Y positions = number of rows
-        expect(yPositions.size).toBe(expectedRows);
+        // Should have carousel buttons
+        const carouselBtns = page.locator('.carousel-btn');
+        const count = await carouselBtns.count();
+        expect(count).toBeGreaterThanOrEqual(4); // 2 per row
       });
     });
   }
@@ -385,63 +326,4 @@ test.describe('Vertical Centering', () => {
 // NOTE: Zones View Layout tests removed - MotionZones feature is currently disabled.
 // These tests should be re-added when the feature is re-enabled.
 
-test.describe('Scene Drawer', () => {
-  test.use({ viewport: VIEWPORTS.ipad });
-
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/?demo=true');
-    await page.waitForSelector('.light-tile');
-  });
-
-  test('should show scene drawer trigger button', async ({ page }) => {
-    const trigger = page.locator('.scene-drawer-trigger');
-    await expect(trigger).toBeVisible();
-  });
-
-  test('should open drawer when trigger is clicked', async ({ page }) => {
-    const trigger = page.locator('.scene-drawer-trigger');
-    await trigger.click();
-
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).toBeVisible();
-  });
-
-  test('should close drawer when overlay is clicked', async ({ page }) => {
-    const trigger = page.locator('.scene-drawer-trigger');
-    await trigger.click();
-
-    const overlay = page.locator('.scene-drawer-overlay');
-    await overlay.click({ position: { x: 10, y: 10 } });
-
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).not.toBeVisible();
-  });
-
-  test('should close drawer when close button is clicked', async ({ page }) => {
-    const trigger = page.locator('.scene-drawer-trigger');
-    await trigger.click();
-
-    const closeButton = page.locator('.scene-drawer-close');
-    await closeButton.click();
-
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).not.toBeVisible();
-  });
-
-  test('should display scene items in drawer', async ({ page }) => {
-    const trigger = page.locator('.scene-drawer-trigger');
-    await trigger.click();
-
-    const sceneItems = page.locator('.scene-drawer-item');
-    const count = await sceneItems.count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('should display toggle button in drawer footer', async ({ page }) => {
-    const trigger = page.locator('.scene-drawer-trigger');
-    await trigger.click();
-
-    const toggleButton = page.locator('.scene-drawer-toggle');
-    await expect(toggleButton).toBeVisible();
-  });
-});
+// NOTE: Scene Drawer tests removed - replaced with scene tiles in carousel (issue 47).

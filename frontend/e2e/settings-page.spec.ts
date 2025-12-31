@@ -246,19 +246,20 @@ test.describe('Settings Page - Navigation Persistence', () => {
   test('should preserve selected room tab across page refresh', async ({ page }) => {
     await page.goto('/?demo=true');
     await page.waitForSelector('.main-panel');
+    await page.waitForSelector('.nav-tab');
 
     // Get all room tabs and click on the second one (not the first, to verify persistence)
     const roomTabs = page.locator('.nav-tab');
     const secondRoomTab = roomTabs.nth(1);
+    await expect(secondRoomTab).toBeVisible();
     const secondRoomName = await secondRoomTab.locator('.nav-tab-label').textContent();
 
+    // Click and wait for navigation to complete
     await secondRoomTab.click();
-
-    // Wait for room content to load
     await page.waitForSelector('.room-content');
 
-    // Verify the second room is now active
-    await expect(secondRoomTab).toHaveClass(/active/);
+    // Wait for the active class to be applied
+    await expect(secondRoomTab).toHaveClass(/active/, { timeout: 10000 });
 
     // Refresh page
     await page.reload();

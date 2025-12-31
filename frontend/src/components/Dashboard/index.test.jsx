@@ -323,26 +323,19 @@ describe('Dashboard', () => {
     });
   });
 
-  describe('Toggle room (via drawer)', () => {
-    it('should toggle all lights in room when room toggle clicked in drawer', async () => {
+  describe('Toggle room (via All On/Off tile)', () => {
+    it('should toggle all lights in room when All On/Off tile clicked', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);
 
-      // Wait for RoomContent to render (scene drawer trigger indicates room is loaded)
-      let drawerTrigger;
+      // Wait for RoomContent to render (All On/Off tile indicates room is loaded)
+      let allOnOffTile;
       await waitFor(() => {
-        drawerTrigger = document.querySelector('.scene-drawer-trigger');
-        expect(drawerTrigger).toBeTruthy();
+        allOnOffTile = document.querySelector('.all-on-off-tile');
+        expect(allOnOffTile).toBeTruthy();
       });
 
-      // Open the scene drawer
-      await user.click(drawerTrigger);
-
-      // Find toggle button in drawer
-      const toggleButton = document.querySelector('.scene-drawer-toggle');
-      expect(toggleButton).toBeTruthy();
-
-      await user.click(toggleButton);
+      await user.click(allOnOffTile);
 
       expect(updateRoomLights).toHaveBeenCalledWith(
         'room-1',
@@ -358,17 +351,13 @@ describe('Dashboard', () => {
       render(<Dashboard sessionToken="test-token" />);
 
       // Wait for RoomContent to render
-      let drawerTrigger;
+      let allOnOffTile;
       await waitFor(() => {
-        drawerTrigger = document.querySelector('.scene-drawer-trigger');
-        expect(drawerTrigger).toBeTruthy();
+        allOnOffTile = document.querySelector('.all-on-off-tile');
+        expect(allOnOffTile).toBeTruthy();
       });
 
-      // Open the scene drawer
-      await user.click(drawerTrigger);
-
-      const toggleButton = document.querySelector('.scene-drawer-toggle');
-      await user.click(toggleButton);
+      await user.click(allOnOffTile);
 
       await waitFor(() => {
         expect(mockAlert).toHaveBeenCalledWith(expect.stringContaining('Room toggle failed'));
@@ -376,27 +365,20 @@ describe('Dashboard', () => {
     });
   });
 
-  describe('Scene activation (via drawer)', () => {
-    it('should activate scene when selected from drawer', async () => {
+  describe('Scene activation (via scene tile)', () => {
+    it('should activate scene when scene tile clicked', async () => {
       const user = userEvent.setup();
       render(<Dashboard sessionToken="test-token" />);
 
       // Wait for RoomContent to render
-      let drawerTrigger;
+      let sceneTiles;
       await waitFor(() => {
-        drawerTrigger = document.querySelector('.scene-drawer-trigger');
-        expect(drawerTrigger).toBeTruthy();
+        sceneTiles = document.querySelectorAll('.scene-tile');
+        expect(sceneTiles.length).toBeGreaterThan(0);
       });
 
-      // Open the scene drawer
-      await user.click(drawerTrigger);
-
-      // Find scene button in drawer
-      const sceneItems = document.querySelectorAll('.scene-drawer-item');
-      expect(sceneItems.length).toBeGreaterThan(0);
-
-      // Click first scene
-      await user.click(sceneItems[0]);
+      // Click first scene tile
+      await user.click(sceneTiles[0]);
 
       expect(activateSceneV1).toHaveBeenCalledWith('scene-1', true);
     });
@@ -406,17 +388,13 @@ describe('Dashboard', () => {
       render(<Dashboard sessionToken="test-token" />);
 
       // Wait for RoomContent to render
-      let drawerTrigger;
+      let sceneTiles;
       await waitFor(() => {
-        drawerTrigger = document.querySelector('.scene-drawer-trigger');
-        expect(drawerTrigger).toBeTruthy();
+        sceneTiles = document.querySelectorAll('.scene-tile');
+        expect(sceneTiles.length).toBeGreaterThan(0);
       });
 
-      // Open the scene drawer
-      await user.click(drawerTrigger);
-
-      const sceneItems = document.querySelectorAll('.scene-drawer-item');
-      await user.click(sceneItems[0]);
+      await user.click(sceneTiles[0]);
 
       await waitFor(() => {
         expect(activateSceneV1).toHaveBeenCalled();
@@ -430,17 +408,13 @@ describe('Dashboard', () => {
       render(<Dashboard sessionToken="test-token" />);
 
       // Wait for RoomContent to render
-      let drawerTrigger;
+      let sceneTiles;
       await waitFor(() => {
-        drawerTrigger = document.querySelector('.scene-drawer-trigger');
-        expect(drawerTrigger).toBeTruthy();
+        sceneTiles = document.querySelectorAll('.scene-tile');
+        expect(sceneTiles.length).toBeGreaterThan(0);
       });
 
-      // Open the scene drawer
-      await user.click(drawerTrigger);
-
-      const sceneItems = document.querySelectorAll('.scene-drawer-item');
-      await user.click(sceneItems[0]);
+      await user.click(sceneTiles[0]);
 
       await waitFor(() => {
         expect(mockAlert).toHaveBeenCalledWith(expect.stringContaining('Scene not found'));

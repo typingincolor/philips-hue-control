@@ -215,10 +215,14 @@ const devices = [
 
 // Scene data (Hue API v2 format)
 const scenes = [
-  // Room scenes
+  // Room scenes - Living Room (room-1) - 6 scenes
   { id: 'scene-1', metadata: { name: 'Bright' }, group: { rid: 'room-1', rtype: 'room' } },
   { id: 'scene-2', metadata: { name: 'Relax' }, group: { rid: 'room-1', rtype: 'room' } },
   { id: 'scene-3', metadata: { name: 'Movie' }, group: { rid: 'room-1', rtype: 'room' } },
+  { id: 'scene-1a', metadata: { name: 'Energize' }, group: { rid: 'room-1', rtype: 'room' } },
+  { id: 'scene-1b', metadata: { name: 'Dimmed' }, group: { rid: 'room-1', rtype: 'room' } },
+  { id: 'scene-1c', metadata: { name: 'Nightlight' }, group: { rid: 'room-1', rtype: 'room' } },
+  // Kitchen (room-2)
   { id: 'scene-4', metadata: { name: 'Concentrate' }, group: { rid: 'room-2', rtype: 'room' } },
   { id: 'scene-5', metadata: { name: 'Cooking' }, group: { rid: 'room-2', rtype: 'room' } },
   { id: 'scene-6', metadata: { name: 'Nightlight' }, group: { rid: 'room-3', rtype: 'room' } },

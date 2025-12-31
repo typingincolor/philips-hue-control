@@ -451,3 +451,65 @@ None - code is clean.
   - Responsive: 2-column grid, adjusts for mobile
 
 - **No API Changes** - Frontend-only visual redesign
+
+## 2025-12-31: Optimistic UI Updates with WebSocket Confirmation (Issue 49)
+
+**Status:** Approved
+
+**Branch:** feature/light-tile-redesign-v2
+
+### Summary
+
+Fixed the flicker issue where toggling lights would briefly show the wrong state before settling to the correct state. The root cause was that a fixed 3-second timeout cleared optimistic state too early, before the Hue bridge had processed the command and sent WebSocket confirmation.
+
+### Changes Reviewed
+
+| File                                                   | Assessment                                                                                                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `backend/utils/stateConversion.js`                     | Added `kelvinToMirek()` function for colorTemperature conversion. Clean implementation with proper clamping (2000-6500K).                                          |
+| `backend/test/utils/stateConversion.test.js`           | Added 2 new test cases for colorTemperature conversion and range clamping. Good coverage.                                                                          |
+| `frontend/src/components/Dashboard/index.jsx`          | Core fix: Added `useRef` for synchronous optimistic state tracking. WebSocket merge now confirms state before clearing. 15s fallback timeout. Well-commented code. |
+| `frontend/src/components/Dashboard/LightTile.jsx`      | Fixed fill rendering - only renders when `light.on` is true. Clean conditional.                                                                                    |
+| `frontend/src/components/Dashboard/LightTile.test.jsx` | Updated tests to check for presence/absence of fill element instead of height style.                                                                               |
+| `frontend/src/App.css`                                 | Minor CSS addition for light tile styling.                                                                                                                         |
+
+### Test Results
+
+- **Unit Tests:** 916 passed
+- **Lint:** Not run locally (CI handles)
+- **Format:** Not run locally (CI handles)
+
+### Code Quality
+
+**Correctness:**
+
+- [x] All unit tests pass
+- [x] Implementation fixes the reported flicker issue
+- [x] Edge cases handled (fallback timeout, error handling)
+- [x] Proper state cleanup on API errors
+
+**Code Quality:**
+
+- [x] Code is readable with clear comments explaining the approach
+- [x] No unnecessary complexity - uses standard React patterns (useRef, useEffect)
+- [x] Follows existing patterns in the codebase
+- [x] No code duplication
+
+**Security:**
+
+- [x] No hardcoded secrets
+- [x] No user input to validate (internal state management)
+
+### Issues Found
+
+None - code is clean and well-structured.
+
+### Non-Blocking Suggestions
+
+1. **Zones also need optimistic state handling** - The zones in `wsDashboard.zones` aren't being merged with optimistic states in the WebSocket effect. Currently only rooms are handled. This is a minor issue since zones share lights with rooms, but could be added for completeness.
+
+### Notes for Documentation
+
+- **No API changes** - This is an internal UI fix
+- **Behavior change:** Light toggle response is now instant with no flicker
+- **Technical detail:** Optimistic state is preserved until WebSocket confirms the expected state (not a fixed timeout)

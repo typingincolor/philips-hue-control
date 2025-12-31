@@ -40,6 +40,8 @@ export default [
         alert: 'readonly',
         navigator: 'readonly',
         AbortSignal: 'readonly',
+        requestAnimationFrame: 'readonly',
+        ResizeObserver: 'readonly',
       },
     },
     settings: {

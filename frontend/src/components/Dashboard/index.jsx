@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useDemoMode } from '../../context/DemoModeContext';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -107,6 +107,9 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
   const [activatingScene, setActivatingScene] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Ref to store optimistic light states - updated synchronously to avoid React batching issues
+  const optimisticLightStates = useRef(new Map());
+
   // Automations state
   const [automations, setAutomations] = useState([]);
   const [automationsLoading, setAutomationsLoading] = useState(false);
@@ -149,15 +152,67 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
   }, [sessionToken, isDemoMode]);
 
   // Update loading state based on WebSocket connection in real mode
+  // Merge WebSocket data while preserving optimistic state for lights being toggled
   useEffect(() => {
     if (!isDemoMode) {
       if (wsDashboard) {
         setLoading(false);
         setError(null);
-        // Always sync WebSocket data - real-time updates are important
-        // The optimistic updates in toggle handlers apply immediately,
-        // and WebSocket will eventually catch up with the correct state
-        setLocalDashboard(wsDashboard);
+
+        // Check if we have any optimistic states to preserve (using ref for synchronous access)
+        const hasOptimisticStates = optimisticLightStates.current.size > 0;
+
+        if (!hasOptimisticStates) {
+          // No optimistic states, just apply WebSocket data directly
+          setLocalDashboard(wsDashboard);
+        } else {
+          // Check which optimistic states are now confirmed by WebSocket
+          // If WebSocket state matches optimistic state, we can clear it from the ref
+          const lightsToConfirm = [];
+          for (const wsRoom of wsDashboard.rooms || []) {
+            for (const wsLight of wsRoom.lights || []) {
+              const optimisticOn = optimisticLightStates.current.get(wsLight.id);
+              if (optimisticOn !== undefined && wsLight.on === optimisticOn) {
+                // WebSocket confirms our optimistic state - mark for removal
+                lightsToConfirm.push(wsLight.id);
+              }
+            }
+          }
+
+          // Clear confirmed lights from optimistic ref
+          for (const lightId of lightsToConfirm) {
+            optimisticLightStates.current.delete(lightId);
+          }
+
+          // Also clear from togglingLights state if all confirmed
+          if (lightsToConfirm.length > 0) {
+            setTogglingLights((prev) => {
+              const newSet = new Set(prev);
+              for (const lightId of lightsToConfirm) {
+                newSet.delete(lightId);
+              }
+              return newSet;
+            });
+          }
+
+          // Merge WebSocket data but preserve remaining optimistic light states from ref
+          setLocalDashboard(() => {
+            return {
+              ...wsDashboard,
+              rooms: wsDashboard.rooms?.map((wsRoom) => ({
+                ...wsRoom,
+                lights: wsRoom.lights?.map((wsLight) => {
+                  // If this light still has an optimistic state (not yet confirmed), use it
+                  const optimisticOn = optimisticLightStates.current.get(wsLight.id);
+                  if (optimisticOn !== undefined) {
+                    return { ...wsLight, on: optimisticOn };
+                  }
+                  return wsLight;
+                }),
+              })),
+            };
+          });
+        }
       } else if (wsError) {
         // Show error and stop loading spinner
         setLoading(false);
@@ -258,40 +313,91 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
   };
 
   const toggleLight = async (lightUuid) => {
+    const light = getLightByUuid(lightUuid);
+    if (!light) {
+      logger.error('Light not found:', lightUuid);
+      return;
+    }
+
+    const currentState = light.on ?? false;
+    const newOn = !currentState;
+
+    // Store optimistic state in ref SYNCHRONOUSLY (before any async operations)
+    optimisticLightStates.current.set(lightUuid, newOn);
+
     setTogglingLights((prev) => new Set(prev).add(lightUuid));
 
+    // Optimistic update - apply immediately BEFORE API call for responsive UI
+    setLocalDashboard((prev) => ({
+      ...prev,
+      summary: {
+        ...prev.summary,
+        lightsOn: newOn ? prev.summary.lightsOn + 1 : Math.max(0, prev.summary.lightsOn - 1),
+      },
+      rooms: prev.rooms.map((room) => ({
+        ...room,
+        lights: room.lights.map((l) => (l.id === lightUuid ? { ...l, on: newOn } : l)),
+      })),
+    }));
+
     try {
-      const light = getLightByUuid(lightUuid);
-      if (!light) throw new Error('Light not found');
-
-      const currentState = light.on ?? false;
-      const newState = { on: !currentState };
-
-      const response = await updateLight(lightUuid, newState, isDemoMode, light);
-
-      // Optimistic update - apply immediately for responsive UI
+      await updateLight(lightUuid, { on: newOn }, isDemoMode, light);
+      // API succeeded - WebSocket confirmation will clear optimistic state when bridge confirms
+      // Set a long fallback timeout (15s) in case WebSocket never confirms
+      setTimeout(() => {
+        if (optimisticLightStates.current.has(lightUuid)) {
+          optimisticLightStates.current.delete(lightUuid);
+          setTogglingLights((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(lightUuid);
+            return newSet;
+          });
+        }
+      }, 15000);
+    } catch (err) {
+      logger.error('Failed to toggle light:', err);
+      // Clear optimistic state from ref
+      optimisticLightStates.current.delete(lightUuid);
+      // Revert optimistic update on error
       setLocalDashboard((prev) => ({
         ...prev,
         summary: {
           ...prev.summary,
-          lightsOn: newState.on
-            ? prev.summary.lightsOn + 1
-            : Math.max(0, prev.summary.lightsOn - 1),
+          lightsOn: newOn ? Math.max(0, prev.summary.lightsOn - 1) : prev.summary.lightsOn + 1,
         },
+        rooms: prev.rooms.map((room) => ({
+          ...room,
+          lights: room.lights.map((l) => (l.id === lightUuid ? { ...l, on: currentState } : l)),
+        })),
+      }));
+      alert(`${ERROR_MESSAGES.LIGHT_TOGGLE}: ${err.message}`);
+      // Clear toggle state immediately on error
+      setTogglingLights((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(lightUuid);
+        return newSet;
+      });
+    }
+  };
+
+  const handleColorTemperatureChange = async (lightUuid, colorTemperature) => {
+    try {
+      const light = getLightByUuid(lightUuid);
+      if (!light) throw new Error('Light not found');
+
+      const newState = { colorTemperature };
+      const response = await updateLight(lightUuid, newState, isDemoMode, light);
+
+      // Optimistic update
+      setLocalDashboard((prev) => ({
+        ...prev,
         rooms: prev.rooms.map((room) => ({
           ...room,
           lights: room.lights.map((l) => (l.id === lightUuid ? response.light : l)),
         })),
       }));
     } catch (err) {
-      logger.error('Failed to toggle light:', err);
-      alert(`${ERROR_MESSAGES.LIGHT_TOGGLE}: ${err.message}`);
-    } finally {
-      setTogglingLights((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(lightUuid);
-        return newSet;
-      });
+      logger.error('Failed to update color temperature:', err);
     }
   };
 
@@ -301,34 +407,69 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
 
     const lightUuids = room.lights.map((l) => l.id);
 
+    // Store optimistic state in ref SYNCHRONOUSLY (before any async operations)
+    lightUuids.forEach((id) => {
+      optimisticLightStates.current.set(id, turnOn);
+    });
+
     setTogglingLights((prev) => {
       const newSet = new Set(prev);
       lightUuids.forEach((id) => newSet.add(id));
       return newSet;
     });
 
+    // Optimistic update - apply immediately BEFORE API call for responsive UI
+    setLocalDashboard((prev) => ({
+      ...prev,
+      rooms: prev.rooms.map((r) => {
+        if (r.id === roomId) {
+          return {
+            ...r,
+            lights: r.lights.map((l) => ({ ...l, on: turnOn })),
+          };
+        }
+        return r;
+      }),
+    }));
+
     try {
       const newState = { on: turnOn };
-      const response = await updateRoomLights(roomId, newState, isDemoMode);
-
-      // Optimistic update - apply immediately for responsive UI
+      await updateRoomLights(roomId, newState, isDemoMode);
+      // API succeeded - WebSocket confirmation will clear optimistic state when bridge confirms
+      // Set a long fallback timeout (15s) in case WebSocket never confirms
+      setTimeout(() => {
+        lightUuids.forEach((id) => {
+          if (optimisticLightStates.current.has(id)) {
+            optimisticLightStates.current.delete(id);
+          }
+        });
+        setTogglingLights((prev) => {
+          const newSet = new Set(prev);
+          lightUuids.forEach((id) => newSet.delete(id));
+          return newSet;
+        });
+      }, 15000);
+    } catch (err) {
+      logger.error('Failed to toggle room:', err);
+      // Clear optimistic state from ref
+      lightUuids.forEach((id) => {
+        optimisticLightStates.current.delete(id);
+      });
+      // Revert optimistic update on error
       setLocalDashboard((prev) => ({
         ...prev,
         rooms: prev.rooms.map((r) => {
           if (r.id === roomId) {
-            const updatedLightMap = new Map(response.updatedLights.map((l) => [l.id, l]));
             return {
               ...r,
-              lights: r.lights.map((l) => updatedLightMap.get(l.id) || l),
+              lights: r.lights.map((l) => ({ ...l, on: !turnOn })),
             };
           }
           return r;
         }),
       }));
-    } catch (err) {
-      logger.error('Failed to toggle room:', err);
       alert(`${ERROR_MESSAGES.ROOM_TOGGLE}: ${err.message}`);
-    } finally {
+      // Clear toggle state immediately on error
       setTogglingLights((prev) => {
         const newSet = new Set(prev);
         lightUuids.forEach((id) => newSet.delete(id));
@@ -343,6 +484,11 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
 
     const lightUuids = zone.lights?.map((l) => l.id) || [];
 
+    // Store optimistic state in ref SYNCHRONOUSLY (before any async operations)
+    lightUuids.forEach((id) => {
+      optimisticLightStates.current.set(id, turnOn);
+    });
+
     setTogglingZones((prev) => new Set(prev).add(zoneId));
     setTogglingLights((prev) => {
       const newSet = new Set(prev);
@@ -350,28 +496,63 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
       return newSet;
     });
 
+    // Optimistic update - apply immediately BEFORE API call for responsive UI
+    setLocalDashboard((prev) => ({
+      ...prev,
+      zones: prev.zones.map((z) => {
+        if (z.id === zoneId) {
+          return {
+            ...z,
+            lights: z.lights?.map((l) => ({ ...l, on: turnOn })) || [],
+          };
+        }
+        return z;
+      }),
+    }));
+
     try {
       const newState = { on: turnOn };
-      const response = await updateZoneLights(zoneId, newState, isDemoMode);
-
-      // Optimistic update - apply immediately for responsive UI
+      await updateZoneLights(zoneId, newState, isDemoMode);
+      // API succeeded - WebSocket confirmation will clear optimistic state when bridge confirms
+      // Set a long fallback timeout (15s) in case WebSocket never confirms
+      setTimeout(() => {
+        lightUuids.forEach((id) => {
+          if (optimisticLightStates.current.has(id)) {
+            optimisticLightStates.current.delete(id);
+          }
+        });
+        setTogglingZones((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(zoneId);
+          return newSet;
+        });
+        setTogglingLights((prev) => {
+          const newSet = new Set(prev);
+          lightUuids.forEach((id) => newSet.delete(id));
+          return newSet;
+        });
+      }, 15000);
+    } catch (err) {
+      logger.error('Failed to toggle zone:', err);
+      // Clear optimistic state from ref
+      lightUuids.forEach((id) => {
+        optimisticLightStates.current.delete(id);
+      });
+      // Revert optimistic update on error
       setLocalDashboard((prev) => ({
         ...prev,
         zones: prev.zones.map((z) => {
           if (z.id === zoneId) {
-            const updatedLightMap = new Map(response.updatedLights.map((l) => [l.id, l]));
             return {
               ...z,
-              lights: z.lights.map((l) => updatedLightMap.get(l.id) || l),
+              lights: z.lights?.map((l) => ({ ...l, on: !turnOn })) || [],
             };
           }
           return z;
         }),
       }));
-    } catch (err) {
-      logger.error('Failed to toggle zone:', err);
       alert(`${ERROR_MESSAGES.ZONE_TOGGLE}: ${err.message}`);
-    } finally {
+      // Clear toggle state immediately on error
       setTogglingZones((prev) => {
         const newSet = new Set(prev);
         newSet.delete(zoneId);
@@ -662,6 +843,7 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
             onToggleLight={toggleLight}
             onToggleRoom={toggleRoom}
             onActivateScene={handleSceneChange}
+            onColorTemperatureChange={handleColorTemperatureChange}
             togglingLights={togglingLights}
             isActivatingScene={!!activatingScene}
           />

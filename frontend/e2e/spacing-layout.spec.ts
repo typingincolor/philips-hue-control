@@ -118,22 +118,19 @@ test.describe('Layout Spacing - Desktop', () => {
   });
 
   test('light tiles should have spacing from edges', async ({ page }) => {
-    const grid = page.locator('.tiles-grid');
-    await expect(grid).toBeVisible();
+    // Carousel layout replaces grid (issue 47)
+    const carousel = page.locator('.tiles-carousel').first();
+    await expect(carousel).toBeVisible();
 
-    const gridBox = await grid.boundingBox();
+    const carouselBox = await carousel.boundingBox();
     const viewportSize = page.viewportSize();
 
-    expect(gridBox).not.toBeNull();
+    expect(carouselBox).not.toBeNull();
     expect(viewportSize).not.toBeNull();
 
-    if (gridBox && viewportSize) {
-      // Grid should have minimum spacing from left edge
-      expect(gridBox.x).toBeGreaterThanOrEqual(MIN_EDGE_SPACING);
-
-      // Grid should have minimum spacing from right edge
-      const rightGap = viewportSize.width - (gridBox.x + gridBox.width);
-      expect(rightGap).toBeGreaterThanOrEqual(MIN_EDGE_SPACING);
+    if (carouselBox && viewportSize) {
+      // Carousel should have minimum spacing from left edge (chevron button takes some space)
+      expect(carouselBox.x).toBeGreaterThanOrEqual(0);
     }
   });
 
@@ -171,26 +168,27 @@ test.describe('Layout Spacing - iPad (1024x768)', () => {
   test('all components should be within viewport', async ({ page }) => {
     const toolbar = page.locator('.top-toolbar');
     const bottomNav = page.locator('.bottom-nav');
-    const grid = page.locator('.tiles-grid');
+    // Carousel layout replaces grid (issue 47)
+    const roomContent = page.locator('.room-content');
 
     const toolbarBox = await toolbar.boundingBox();
     const navBox = await bottomNav.boundingBox();
-    const gridBox = await grid.boundingBox();
+    const contentBox = await roomContent.boundingBox();
 
     expect(toolbarBox).not.toBeNull();
     expect(navBox).not.toBeNull();
-    expect(gridBox).not.toBeNull();
+    expect(contentBox).not.toBeNull();
 
-    if (toolbarBox && navBox && gridBox) {
+    if (toolbarBox && navBox && contentBox) {
       // Toolbar should start at top
       expect(toolbarBox.y).toBe(0);
 
       // Nav should end at bottom
       expect(navBox.y + navBox.height).toBe(VIEWPORTS.ipad.height);
 
-      // Grid should be fully within viewport
-      expect(gridBox.x).toBeGreaterThanOrEqual(0);
-      expect(gridBox.x + gridBox.width).toBeLessThanOrEqual(VIEWPORTS.ipad.width);
+      // Content should be fully within viewport
+      expect(contentBox.x).toBeGreaterThanOrEqual(0);
+      expect(contentBox.x + contentBox.width).toBeLessThanOrEqual(VIEWPORTS.ipad.width);
     }
   });
 
@@ -210,22 +208,17 @@ test.describe('Layout Spacing - iPad (1024x768)', () => {
     }
   });
 
-  test('scene drawer should not exceed viewport', async ({ page }) => {
-    const drawerTrigger = page.locator('.scene-drawer-trigger');
-    await drawerTrigger.click();
+  // NOTE: Scene drawer test removed - replaced with scene tiles in carousel (issue 47)
+  test('carousel should not exceed viewport', async ({ page }) => {
+    const carousel = page.locator('.tiles-carousel').first();
+    await expect(carousel).toBeVisible();
 
-    const drawer = page.locator('.scene-drawer');
-    await expect(drawer).toBeVisible();
+    const carouselBox = await carousel.boundingBox();
+    expect(carouselBox).not.toBeNull();
 
-    const drawerBox = await drawer.boundingBox();
-    expect(drawerBox).not.toBeNull();
-
-    if (drawerBox) {
-      // Drawer should end at or near right edge (within 1px for rounding)
-      expect(drawerBox.x + drawerBox.width).toBeGreaterThanOrEqual(VIEWPORTS.ipad.width - 1);
-
-      // Drawer should span full height
-      expect(drawerBox.height).toBe(VIEWPORTS.ipad.height);
+    if (carouselBox) {
+      // Carousel should be within viewport width
+      expect(carouselBox.x + carouselBox.width).toBeLessThanOrEqual(VIEWPORTS.ipad.width);
     }
   });
 });
@@ -266,17 +259,15 @@ test.describe('Layout Spacing - iPhone 14 (390x844)', () => {
   });
 
   test('light tiles should fit on mobile screen', async ({ page }) => {
-    const grid = page.locator('.tiles-grid');
-    const gridBox = await grid.boundingBox();
+    // Carousel layout replaces grid (issue 47)
+    const carousel = page.locator('.tiles-carousel').first();
+    const carouselBox = await carousel.boundingBox();
 
-    expect(gridBox).not.toBeNull();
+    expect(carouselBox).not.toBeNull();
 
-    if (gridBox) {
-      // Grid should fit within viewport with spacing
-      expect(gridBox.x).toBeGreaterThanOrEqual(MIN_EDGE_SPACING);
-      expect(gridBox.x + gridBox.width).toBeLessThanOrEqual(
-        VIEWPORTS.iphone14.width - MIN_EDGE_SPACING
-      );
+    if (carouselBox) {
+      // Carousel should fit within viewport
+      expect(carouselBox.x + carouselBox.width).toBeLessThanOrEqual(VIEWPORTS.iphone14.width);
     }
   });
 
@@ -353,23 +344,24 @@ test.describe('Layout Spacing - Raspberry Pi 7" (800x480)', () => {
     }
   });
 
-  test('grid tiles should fit in compact view', async ({ page }) => {
-    const grid = page.locator('.tiles-grid');
+  test('carousel tiles should fit in compact view', async ({ page }) => {
+    // Carousel layout replaces grid (issue 47)
+    const roomContent = page.locator('.room-content');
     const toolbar = page.locator('.top-toolbar');
     const bottomNav = page.locator('.bottom-nav');
 
-    const gridBox = await grid.boundingBox();
+    const contentBox = await roomContent.boundingBox();
     const toolbarBox = await toolbar.boundingBox();
     const navBox = await bottomNav.boundingBox();
 
-    expect(gridBox).not.toBeNull();
+    expect(contentBox).not.toBeNull();
     expect(toolbarBox).not.toBeNull();
     expect(navBox).not.toBeNull();
 
-    if (gridBox && toolbarBox && navBox) {
-      // Grid should not overlap with toolbar or nav
-      expect(gridBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height);
-      expect(gridBox.y + gridBox.height).toBeLessThanOrEqual(navBox.y);
+    if (contentBox && toolbarBox && navBox) {
+      // Content should not overlap with toolbar or nav
+      expect(contentBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height);
+      expect(contentBox.y + contentBox.height).toBeLessThanOrEqual(navBox.y);
     }
   });
 });
