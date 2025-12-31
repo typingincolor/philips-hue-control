@@ -54,38 +54,38 @@ describe('LightTile', () => {
   });
 
   describe('brightness fill', () => {
-    it('should set fill height to 100% when light is on', () => {
+    it('should render fill when light is on', () => {
       const { container } = render(<LightTile {...defaultProps} />);
       const fill = container.querySelector('.light-tile-fill');
-      expect(fill.style.height).toBe('100%');
+      expect(fill).toBeInTheDocument();
     });
 
-    it('should set fill height to 0% when light is off', () => {
+    it('should not render fill when light is off', () => {
       const offLight = { ...defaultLight, on: false, brightness: 75 };
       const { container } = render(<LightTile {...defaultProps} light={offLight} />);
       const fill = container.querySelector('.light-tile-fill');
-      expect(fill.style.height).toBe('0%');
+      expect(fill).not.toBeInTheDocument();
     });
 
-    it('should show full fill regardless of brightness when on', () => {
+    it('should render fill regardless of brightness when on', () => {
       const dimLight = { ...defaultLight, brightness: 0 };
       const { container } = render(<LightTile {...defaultProps} light={dimLight} />);
       const fill = container.querySelector('.light-tile-fill');
-      expect(fill.style.height).toBe('100%');
+      expect(fill).toBeInTheDocument();
     });
 
-    it('should show full fill at 100% brightness', () => {
+    it('should render fill at 100% brightness', () => {
       const brightLight = { ...defaultLight, brightness: 100 };
       const { container } = render(<LightTile {...defaultProps} light={brightLight} />);
       const fill = container.querySelector('.light-tile-fill');
-      expect(fill.style.height).toBe('100%');
+      expect(fill).toBeInTheDocument();
     });
 
-    it('should show full fill even with undefined brightness when on', () => {
+    it('should render fill even with undefined brightness when on', () => {
       const noBrightnessLight = { ...defaultLight, brightness: undefined };
       const { container } = render(<LightTile {...defaultProps} light={noBrightnessLight} />);
       const fill = container.querySelector('.light-tile-fill');
-      expect(fill.style.height).toBe('100%');
+      expect(fill).toBeInTheDocument();
     });
   });
 
@@ -813,12 +813,13 @@ describe('LightTile', () => {
         expect(toggle).toHaveClass('light-tile-toggle-flush');
       });
 
-      it('should have fill covering full toggle height (not brightness-based)', () => {
+      it('should render fill when light is on (covers full toggle via CSS)', () => {
         const { container } = render(<LightTile {...defaultProps} light={lightWithSlider} />);
 
         const fill = container.querySelector('.light-tile-fill');
-        // Fill should always be 100% height, not based on brightness percentage
-        expect(fill.style.height).toBe('100%');
+        // Fill is rendered when on; CSS positions it to cover full toggle area
+        expect(fill).toBeInTheDocument();
+        expect(fill).toHaveClass('light-tile-fill-full');
       });
     });
   });

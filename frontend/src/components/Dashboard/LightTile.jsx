@@ -62,13 +62,14 @@ export const LightTile = ({ light, onToggle, onColorTemperatureChange, isTogglin
       style={shadowStyle}
     >
       {/* Full tile background fill when on */}
-      <div
-        className="light-tile-fill light-tile-fill-rounded light-tile-fill-inset light-tile-fill-all-rounded light-tile-fill-edge-to-edge light-tile-fill-full"
-        style={{
-          height: light.on ? '100%' : '0%',
-          background: fillGradient,
-        }}
-      />
+      {light.on && (
+        <div
+          className="light-tile-fill light-tile-fill-rounded light-tile-fill-inset light-tile-fill-all-rounded light-tile-fill-edge-to-edge light-tile-fill-full"
+          style={{
+            background: fillGradient,
+          }}
+        />
+      )}
 
       {/* Toggle button area - fills most of the tile */}
       <button

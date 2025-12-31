@@ -2192,6 +2192,11 @@ body.dark-theme {
   /* Keep amber border */
 }
 
+.light-tile.off {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
 .light-tile.toggling {
   opacity: 0.7;
 }
