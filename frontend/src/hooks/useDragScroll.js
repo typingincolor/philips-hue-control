@@ -1,30 +1,39 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 
 /**
  * Hook for drag-to-scroll functionality
  * Enables horizontal scrolling via mouse drag and touch on mobile
+ * Returns a callback ref that should be passed to the scrollable element
  */
 export const useDragScroll = () => {
-  const ref = useRef(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const elementRef = useRef(null);
+  const cleanupRef = useRef(null);
 
-  useEffect(() => {
-    const el = ref.current;
+  // Check if event target is an input element that needs its own drag behavior
+  const isInputElement = (target) => {
+    if (!target || !target.tagName) return false;
+    const tagName = target.tagName.toLowerCase();
+    return tagName === 'input' || tagName === 'select' || tagName === 'textarea';
+  };
+
+  // Callback ref that sets up event listeners when element is attached
+  const setRef = useCallback((el) => {
+    // Clean up previous element if any
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+
+    elementRef.current = el;
+
     if (!el) return;
-
-    // Check if event target is an interactive element that should handle its own events
-    const isInteractiveElement = (target) => {
-      if (!target || !target.tagName) return false;
-      const tagName = target.tagName.toLowerCase();
-      return tagName === 'input' || tagName === 'button' || tagName === 'select' || tagName === 'textarea';
-    };
 
     // Mouse handlers
     const handleMouseDown = (e) => {
-      // Don't capture events from interactive elements
-      if (isInteractiveElement(e.target)) return;
+      if (isInputElement(e.target)) return;
 
       isDragging.current = true;
       startX.current = e.pageX - el.offsetLeft;
@@ -52,8 +61,7 @@ export const useDragScroll = () => {
 
     // Touch handlers for mobile/touchscreen
     const handleTouchStart = (e) => {
-      // Don't capture events from interactive elements
-      if (isInteractiveElement(e.target)) return;
+      if (isInputElement(e.target)) return;
 
       isDragging.current = true;
       startX.current = e.touches[0].pageX - el.offsetLeft;
@@ -73,18 +81,17 @@ export const useDragScroll = () => {
 
     el.style.cursor = 'grab';
 
-    // Mouse events
+    // Add event listeners
     el.addEventListener('mousedown', handleMouseDown);
     el.addEventListener('mouseup', handleMouseUp);
     el.addEventListener('mouseleave', handleMouseLeave);
     el.addEventListener('mousemove', handleMouseMove);
-
-    // Touch events
     el.addEventListener('touchstart', handleTouchStart, { passive: true });
     el.addEventListener('touchend', handleTouchEnd);
     el.addEventListener('touchmove', handleTouchMove, { passive: true });
 
-    return () => {
+    // Store cleanup function
+    cleanupRef.current = () => {
       el.removeEventListener('mousedown', handleMouseDown);
       el.removeEventListener('mouseup', handleMouseUp);
       el.removeEventListener('mouseleave', handleMouseLeave);
@@ -95,5 +102,5 @@ export const useDragScroll = () => {
     };
   }, []);
 
-  return ref;
+  return setRef;
 };

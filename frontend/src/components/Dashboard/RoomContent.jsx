@@ -27,26 +27,26 @@ export const RoomContent = ({
   const scenesCarouselRef = useRef(null);
   const lightsCarouselRef = useRef(null);
 
-  // Drag scroll hooks
-  const scenesDragRef = useDragScroll();
-  const lightsDragRef = useDragScroll();
+  // Drag scroll hooks - these return callback refs
+  const setScenesDragRef = useDragScroll();
+  const setLightsDragRef = useDragScroll();
 
   // Combine refs for scenes carousel
   const setScenesRef = useCallback(
     (el) => {
       scenesCarouselRef.current = el;
-      scenesDragRef.current = el;
+      setScenesDragRef(el);
     },
-    [scenesDragRef]
+    [setScenesDragRef]
   );
 
   // Combine refs for lights carousel
   const setLightsRef = useCallback(
     (el) => {
       lightsCarouselRef.current = el;
-      lightsDragRef.current = el;
+      setLightsDragRef(el);
     },
-    [lightsDragRef]
+    [setLightsDragRef]
   );
 
   // Update scroll button states for scenes
