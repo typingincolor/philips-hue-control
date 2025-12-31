@@ -177,10 +177,7 @@ describe('SceneTile', () => {
       };
       render(<SceneTile {...defaultProps} scene={longNameScene} />);
       // Button should have title for tooltip on hover
-      expect(screen.getByRole('button')).toHaveAttribute(
-        'title',
-        'This Is A Very Long Scene Name'
-      );
+      expect(screen.getByRole('button')).toHaveAttribute('title', 'This Is A Very Long Scene Name');
     });
   });
 

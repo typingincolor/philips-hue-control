@@ -9,30 +9,35 @@ Take a screenshot of the current browser state and perform a critical visual rev
 3. **Identify any issues** using this checklist:
 
 ### Layout & Structure
+
 - [ ] Elements are properly aligned (no unexpected shifts)
 - [ ] Spacing is consistent (margins, padding, gaps)
 - [ ] Nothing is overlapping that shouldn't be
 - [ ] Content fits within its container
 
 ### Text & Readability
+
 - [ ] All text is fully visible (no truncation unless intentional)
 - [ ] Font sizes are appropriate and readable
 - [ ] Text has sufficient contrast against background
 - [ ] Long content wraps or truncates gracefully
 
 ### Visual Polish
+
 - [ ] Colors match the design system
 - [ ] Borders/shadows are consistent with other components
 - [ ] Icons are properly sized and aligned with text
 - [ ] Hover/active states work correctly (if applicable)
 
 ### Functionality Indicators
+
 - [ ] Buttons look clickable
 - [ ] Interactive elements have appropriate cursor styles
 - [ ] Loading states look intentional
 - [ ] Error states are clearly communicated
 
 ### Responsive (if applicable)
+
 - [ ] Check at 375px width for mobile
 - [ ] Check at 768px for tablet
 - [ ] No horizontal scrolling unless intended

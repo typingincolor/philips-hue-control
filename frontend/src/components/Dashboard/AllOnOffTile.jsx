@@ -19,13 +19,7 @@ export const AllOnOffTile = ({ anyOn, onToggle, roomId, isToggling, className = 
       aria-pressed={anyOn}
     >
       <div className="all-on-off-tile-icon">
-        {isToggling ? (
-          <Spinner size={24} />
-        ) : anyOn ? (
-          <Moon size={24} />
-        ) : (
-          <Sun size={24} />
-        )}
+        {isToggling ? <Spinner size={24} /> : anyOn ? <Moon size={24} /> : <Sun size={24} />}
       </div>
       <span className="all-on-off-tile-name">{label}</span>
     </button>

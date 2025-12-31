@@ -1,4 +1,3 @@
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -58,6 +57,7 @@ A UI task is NOT complete until:
 ### Screenshot Requirements
 
 When taking screenshots for verification:
+
 - Capture the full component/page being worked on
 - If responsive, capture at both desktop and mobile widths
 - Include any hover/active states if relevant
@@ -304,23 +304,27 @@ Uses v2 API only (not traditional `/sensors` endpoint):
 When creating or modifying UI components, maintain consistency with existing patterns:
 
 ### Colors (from existing CSS)
+
 - Primary actions: Emerald green (`#10b981`, `#059669`)
 - Backgrounds: Neutral grays (`#f5f5f5`, `#e5e5e5`, `#1a1a1a` dark)
 - Text: `#171717` (light mode), `#fafafa` (dark mode)
 - Accents: Blue for links/info (`#3b82f6`)
 
 ### Spacing
+
 - Card padding: `1rem` (16px)
 - Grid gaps: `0.75rem` to `1rem`
 - Button padding: `0.5rem 1rem`
 
 ### Typography
+
 - Base size: 16px
 - Small text: 0.875rem (14px)
 - Headers: 1.25rem - 1.5rem
 - Font: System font stack
 
 ### Component Patterns
+
 - Cards: Rounded corners (`0.75rem`), subtle shadow
 - Buttons: Rounded (`0.5rem`), clear hover states
 - Icons: Sized relative to text (1em or 1.25em)

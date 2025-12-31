@@ -212,7 +212,7 @@ test.describe('Light Tiles - Edge Cases', () => {
     const emptyState = page.locator('.empty-state-dark');
 
     // Either carousel or empty state should be visible
-    const hasContent = await tilesCarousel.first().isVisible() || await emptyState.isVisible();
+    const hasContent = (await tilesCarousel.first().isVisible()) || (await emptyState.isVisible());
     expect(hasContent).toBe(true);
   });
 

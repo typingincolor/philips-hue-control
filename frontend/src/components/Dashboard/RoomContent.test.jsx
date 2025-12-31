@@ -312,7 +312,10 @@ describe('RoomContent', () => {
   describe('real-time state updates', () => {
     it('should calculate anyOn from actual light states', () => {
       // When lights change, anyOn should update immediately
-      const singleOnLight = [{ ...mockLights[0], on: true }, { ...mockLights[1], on: false }];
+      const singleOnLight = [
+        { ...mockLights[0], on: true },
+        { ...mockLights[1], on: false },
+      ];
       const roomOneOn = { ...mockRoom, lights: singleOnLight };
       render(<RoomContent {...defaultProps} room={roomOneOn} />);
 

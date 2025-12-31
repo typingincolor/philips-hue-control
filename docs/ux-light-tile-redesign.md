@@ -22,6 +22,7 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 **Location**: `frontend/src/components/Dashboard/RoomContent.jsx`
 
 **Layout**:
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ [All Off] [Scene1] [Scene2] [Scene3] [Scene4] ...       │  ← Row 1: Scene tiles
@@ -32,11 +33,13 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 ```
 
 **Changes**:
+
 - Remove SceneDrawer component and floating trigger button
 - Add scene tiles row above light tiles row
 - Both rows use same tile size and grid layout
 
 **States**:
+
 - **Loading**: Skeleton tiles (pulsing placeholders)
 - **Empty (no lights)**: Current empty state message
 - **Normal**: Scene row + Light row
@@ -48,6 +51,7 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 **Location**: `frontend/src/components/Dashboard/SceneTile.jsx`
 
 **Visual Description**:
+
 ```
 ┌─────────────────┐
 │                 │
@@ -58,11 +62,13 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 ```
 
 **Elements**:
+
 - Scene-specific icon (uses existing `SceneIcon` component)
 - Scene name (truncated with ellipsis if too long)
 - Subtle border/background to define tile boundaries
 
 **States**:
+
 - **Default**: Dark background, muted text
 - **Hover**: Slight brightness increase
 - **Active/Pressed**: Visual feedback (scale down slightly)
@@ -77,6 +83,7 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 **Location**: `frontend/src/components/Dashboard/AllOnOffTile.jsx`
 
 **Visual Description**:
+
 ```
 ┌─────────────────┐
 │                 │
@@ -87,11 +94,13 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 ```
 
 **Elements**:
+
 - Icon: Sun (when lights are off) / Moon (when lights are on)
 - Label: "All On" / "All Off" based on current state
 - **Distinct accent background** to differentiate from scene tiles
 
 **States**:
+
 - **Lights Off**: Blue/accent background, Sun icon, "All On" label
 - **Lights On**: Orange/warm background, Moon icon, "All Off" label
 - **Toggling**: Spinner replaces icon
@@ -105,6 +114,7 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 **Location**: `frontend/src/components/Dashboard/LightTile.jsx`
 
 **Visual Description**:
+
 ```
 ┌─────────────────┐
 │                 │
@@ -117,29 +127,34 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 ```
 
 **Elements**:
+
 - Lightbulb icon (filled when on, outline when off)
 - **Tile background color** reflects light's current color & brightness
 - Color temperature slider (horizontal, warm-to-cool)
 - Light name label (truncated with ellipsis if needed)
 
 **Color Behavior**:
+
 - Background color = light's RGB color at light's brightness level
 - When off: Dark/neutral background
 - Brightness affects color saturation/intensity of background
 
 **Slider**:
+
 - Range: Warm white (2700K) ↔ Cool white (6500K)
 - Visual: Gradient from orange-yellow to blue-white
 - Updates light in real-time on change (debounced)
 - Only visible when light is on
 
 **States**:
+
 - **Off**: Dark background, outline bulb icon, no slider
 - **On**: Colored background, filled bulb icon, slider visible
 - **Toggling**: Spinner replaces bulb icon
 - **Adjusting**: Slider thumb active
 
 **Interaction**:
+
 - **Tap** (not on slider): Toggle light on/off
 - **Slider drag**: Adjust color temperature
 
@@ -184,12 +199,12 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 
 ### Tile Sizing
 
-| Platform | Tiles Across | Tile Size | Gap |
-|----------|--------------|-----------|-----|
-| RPi (800px) | 10 | ~72px | 8px |
-| Phone (390px) | 2 | ~180px | 12px |
-| Tablet (820px) | 10 | ~74px | 8px |
-| Desktop (1280px) | 12-15 | ~80px | 10px |
+| Platform         | Tiles Across | Tile Size | Gap  |
+| ---------------- | ------------ | --------- | ---- |
+| RPi (800px)      | 10           | ~72px     | 8px  |
+| Phone (390px)    | 2            | ~180px    | 12px |
+| Tablet (820px)   | 10           | ~74px     | 8px  |
+| Desktop (1280px) | 12-15        | ~80px     | 10px |
 
 **Calculation**: `tile_width = (container_width - (gaps * (tiles - 1))) / tiles`
 
@@ -203,6 +218,7 @@ All tiles are the same size. Grid is left-aligned and responsive to screen width
 ### Colors
 
 Use existing CSS variables:
+
 - `--bg-card`: Tile default background
 - `--text-primary`: Tile labels
 - `--text-secondary`: Secondary text
@@ -210,6 +226,7 @@ Use existing CSS variables:
 - Light colors: From backend `light.color` property
 
 **All On/Off Tile Accents**:
+
 - Lights off state: `rgba(59, 130, 246, 0.3)` (blue tint)
 - Lights on state: `rgba(251, 146, 60, 0.3)` (orange tint)
 

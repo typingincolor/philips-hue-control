@@ -15,11 +15,7 @@ export const SceneTile = ({ scene, onActivate, isActivating }) => {
       title={scene.name}
     >
       <div className="scene-tile-icon">
-        {isActivating ? (
-          <Spinner size={24} />
-        ) : (
-          <SceneIcon name={scene.name} size={24} />
-        )}
+        {isActivating ? <Spinner size={24} /> : <SceneIcon name={scene.name} size={24} />}
       </div>
       <span className="scene-tile-name">{scene.name}</span>
     </button>

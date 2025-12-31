@@ -49,9 +49,9 @@ View mutation report: `open reports/mutation/html/index.html`
 
 ## Test Coverage
 
-### Unit Test Results (929 frontend + 909 backend = 1838 tests)
+### Unit Test Results (1096 frontend + 916 backend = 2012 tests)
 
-#### Frontend (929 tests)
+#### Frontend (1096 tests)
 
 - **Hooks**: useSession (23), useSettings (19), useWeather (11), useWebSocket (19), useLocation (17), useHive (19), useHome (13)
 - **Services**: hueApi (5), authApi (12), settingsApi (10), weatherApi (6), automationsApi (5), homeApi (5), homeAdapter (9), servicesApi (13)
@@ -61,7 +61,7 @@ View mutation report: `open reports/mutation/html/index.html`
 - **Utils**: validation (8), layoutTestUtils
 - **Integration**: integration.test.jsx (12)
 
-#### Backend (909 tests)
+#### Backend (916 tests)
 
 Business logic tests including colorConversion (52), roomService, zoneService, automationService (16), sessionManager (53), websocketService (31), settingsService (43), homeService (13), deviceNormalizer (15), ServicePlugin (20), plugins (40+), and more.
 
@@ -130,7 +130,7 @@ Some mutants survive because they don't produce observable differences:
    - Mathematical code has expected survivors
 
 4. **Fast Execution**
-   - 1838 tests run in <10 seconds
+   - 2012 tests run in <10 seconds
    - Mutation testing completes in ~15 minutes
    - Enables rapid development cycles
 
