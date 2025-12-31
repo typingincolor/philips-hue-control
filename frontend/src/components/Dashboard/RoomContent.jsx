@@ -89,22 +89,35 @@ export const RoomContent = ({
   // Scroll handlers - scroll by one tile at a time
   const scrollScenesLeft = () => {
     const el = scenesCarouselRef.current;
-    if (el) el.scrollBy({ left: -getScrollDistance(el), behavior: 'smooth' });
+    if (el) {
+      el.scrollBy({ left: -getScrollDistance(el), behavior: 'smooth' });
+      // Update button states after scroll animation
+      setTimeout(updateScenesScroll, 300);
+    }
   };
 
   const scrollScenesRight = () => {
     const el = scenesCarouselRef.current;
-    if (el) el.scrollBy({ left: getScrollDistance(el), behavior: 'smooth' });
+    if (el) {
+      el.scrollBy({ left: getScrollDistance(el), behavior: 'smooth' });
+      setTimeout(updateScenesScroll, 300);
+    }
   };
 
   const scrollLightsLeft = () => {
     const el = lightsCarouselRef.current;
-    if (el) el.scrollBy({ left: -getScrollDistance(el), behavior: 'smooth' });
+    if (el) {
+      el.scrollBy({ left: -getScrollDistance(el), behavior: 'smooth' });
+      setTimeout(updateLightsScroll, 300);
+    }
   };
 
   const scrollLightsRight = () => {
     const el = lightsCarouselRef.current;
-    if (el) el.scrollBy({ left: getScrollDistance(el), behavior: 'smooth' });
+    if (el) {
+      el.scrollBy({ left: getScrollDistance(el), behavior: 'smooth' });
+      setTimeout(updateLightsScroll, 300);
+    }
   };
 
   // Setup scroll listeners

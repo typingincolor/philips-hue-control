@@ -1924,13 +1924,6 @@ body.dark-theme {
   touch-action: pan-x;
 }
 
-/* Add space at end of carousel so last items can scroll fully into view */
-.tiles-carousel::after {
-  content: '';
-  flex: 0 0 calc(100% - 150px);
-  /* Creates space so the last item can scroll to the left side */
-}
-
 .tiles-carousel::-webkit-scrollbar {
   display: none;
 }
@@ -2004,6 +1997,13 @@ body.dark-theme {
   aspect-ratio: 1;
   min-width: unset !important;
   min-height: unset !important;
+  box-sizing: border-box;
+}
+
+/* Ensure all carousel tiles use border-box */
+.tiles-carousel .scene-tile,
+.tiles-carousel .light-tile {
+  box-sizing: border-box;
 }
 
 .room-header-bar {
