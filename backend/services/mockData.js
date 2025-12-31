@@ -381,6 +381,7 @@ const defaultSettings = {
   services: {
     hue: { enabled: true },
     hive: { enabled: true },
+    spotify: { enabled: true },
   },
 };
 
@@ -611,6 +612,38 @@ const spotifyDevices = [
     is_active: false,
     is_restricted: false,
     volume_percent: 30,
+  },
+  {
+    id: 'device-dining',
+    name: 'Dining Room',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 55,
+  },
+  {
+    id: 'device-garden',
+    name: 'Garden',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 40,
+  },
+  {
+    id: 'device-bathroom',
+    name: 'Bathroom',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 35,
+  },
+  {
+    id: 'device-garage',
+    name: 'Garage',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 60,
   },
   {
     id: 'device-phone',

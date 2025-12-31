@@ -140,12 +140,22 @@ export const SpotifyView = ({
   // Scroll handlers for speakers carousel (scroll by column width)
   const scrollSpeakersLeft = () => {
     const el = speakersRef.current;
-    if (el) el.scrollBy({ left: -200, behavior: 'smooth' });
+    if (!el) return;
+    // Get the first card to measure actual column width
+    const card = el.querySelector('.spotify-speaker-card');
+    const gap = 8; // Default gap
+    const columnWidth = card ? card.offsetWidth + gap : 208;
+    el.scrollBy({ left: -columnWidth, behavior: 'smooth' });
   };
 
   const scrollSpeakersRight = () => {
     const el = speakersRef.current;
-    if (el) el.scrollBy({ left: 200, behavior: 'smooth' });
+    if (!el) return;
+    // Get the first card to measure actual column width
+    const card = el.querySelector('.spotify-speaker-card');
+    const gap = 8; // Default gap
+    const columnWidth = card ? card.offsetWidth + gap : 208;
+    el.scrollBy({ left: columnWidth, behavior: 'smooth' });
   };
 
   // Get device icon based on type
