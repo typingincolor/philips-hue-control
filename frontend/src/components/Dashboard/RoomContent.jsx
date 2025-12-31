@@ -240,6 +240,9 @@ export const RoomContent = ({
             <ChevronLeft size={20} />
           </button>
 
+          {/* Spacer to align with All Off tile above */}
+          <div className="carousel-spacer" aria-hidden="true" />
+
           <div className="tiles-carousel lights-carousel" ref={setLightsRef}>
             {lights.map((light) => (
               <LightTile

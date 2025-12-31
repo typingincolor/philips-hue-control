@@ -2003,6 +2003,14 @@ body.dark-theme {
   box-sizing: border-box;
 }
 
+/* Spacer to align lights row with scenes row */
+.carousel-spacer {
+  flex: 0 0 auto;
+  height: calc(100% - 8px);
+  margin: 4px 0;
+  aspect-ratio: 1;
+}
+
 /* Ensure all carousel tiles use border-box */
 .tiles-carousel .scene-tile,
 .tiles-carousel .light-tile {
