@@ -150,7 +150,7 @@ class HomeServiceClass {
 
   /**
    * Update all devices in a room
-   * @param {string} roomId - Room ID (home room ID like 'home-living-room' or serviceId:roomId)
+   * @param {string} roomId - Room ID (home room ID like 'home-living-room')
    * @param {Object} state - New state to apply
    * @param {boolean} demoMode - Whether to use demo mode
    * @returns {Promise<Object>} Result object
@@ -158,9 +158,16 @@ class HomeServiceClass {
   async updateRoomDevices(roomId, state, demoMode = false) {
     this._ensureInitialized();
 
-    // If roomId is in serviceId:roomId format, use it directly
-    if (roomId.includes(':')) {
-      const [serviceId, originalId] = roomId.split(':');
+    // Resolve home room ID to service room IDs
+    const serviceRooms = roomMappingService.getServiceRoomIds(roomId);
+
+    if (serviceRooms.length === 0) {
+      throw new Error(`Room not found: ${roomId}`);
+    }
+
+    // Update each service's room (usually just one, but could be merged rooms)
+    const results = [];
+    for (const { serviceId, roomId: serviceRoomId } of serviceRooms) {
       const plugin = ServiceRegistry.get(serviceId, demoMode);
 
       if (!plugin) {
@@ -171,38 +178,11 @@ class HomeServiceClass {
         throw new Error(`Service ${serviceId} does not support room updates`);
       }
 
-      return plugin.updateRoomDevices(originalId, state);
-    }
-
-    // Resolve home room ID to service room IDs
-    let serviceRooms = roomMappingService.getServiceRoomIds(roomId);
-
-    // Fallback: try with 'home-' prefix if not found (handles V1-style IDs from WebSocket)
-    if (serviceRooms.length === 0 && !roomId.startsWith('home-')) {
-      serviceRooms = roomMappingService.getServiceRoomIds(`home-${roomId}`);
-    }
-
-    if (serviceRooms.length === 0) {
-      throw new Error(`Room not found: ${roomId}`);
-    }
-
-    // Update each service's room
-    const results = [];
-    for (const { serviceId, roomId: serviceRoomId } of serviceRooms) {
-      const plugin = ServiceRegistry.get(serviceId, demoMode);
-
-      if (!plugin) {
-        continue;
-      }
-
-      if (typeof plugin.updateRoomDevices !== 'function') {
-        continue;
-      }
-
       const result = await plugin.updateRoomDevices(serviceRoomId, state);
       results.push(result);
     }
 
+    // Return combined result
     return {
       success: results.every((r) => r.success),
       updatedLights: results.flatMap((r) => r.updatedLights || []),

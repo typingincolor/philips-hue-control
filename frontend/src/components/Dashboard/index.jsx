@@ -6,6 +6,7 @@ import { useSettings } from '../../hooks/useSettings';
 import { useLocation } from '../../hooks/useLocation';
 import { useWeather } from '../../hooks/useWeather';
 import { useHive } from '../../hooks/useHive';
+import { useSpotify } from '../../hooks/useSpotify';
 import { disconnectService } from '../../services/servicesApi';
 import {
   getDashboardFromHome,
@@ -25,6 +26,7 @@ import { ZonesView } from './ZonesView';
 import { AutomationsView } from './AutomationsView';
 import { HiveView } from './HiveView';
 import { HomeView } from './HomeView';
+import { SpotifyView } from './SpotifyView';
 // MotionZones disabled - will be revisited later
 // import { MotionZones } from '../MotionZones';
 import { SettingsPage } from './SettingsPage';
@@ -88,6 +90,33 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
     cancel2fa: hiveCancel2fa,
     clearError: hiveClearError,
   } = useHive(isDemoMode);
+
+  // Spotify integration
+  const {
+    isConnected: spotifyConnected,
+    isConfigured: spotifyConfigured,
+    isLoading: spotifyLoading,
+    error: spotifyError,
+    user: spotifyUser,
+    devices: spotifyDevices,
+    playlists: spotifyPlaylists,
+    playback: spotifyPlayback,
+    selectedPlaylist: spotifySelectedPlaylist,
+    selectedDevices: spotifySelectedDevices,
+    setSelectedPlaylist: setSpotifySelectedPlaylist,
+    toggleDevice: spotifyToggleDevice,
+    play: spotifyPlay,
+    pause: spotifyPause,
+    next: spotifyNext,
+    previous: spotifyPrevious,
+    setVolume: spotifySetVolume,
+    toggleShuffle: spotifyToggleShuffle,
+    connect: spotifyConnect,
+    disconnect: spotifyDisconnect,
+    refresh: spotifyRefresh,
+    checkConnection: spotifyCheckConnection,
+    clearError: spotifyClearError,
+  } = useSpotify(isDemoMode);
 
   // Refetch weather when settings change (location or units updated)
   useEffect(() => {
@@ -218,7 +247,8 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
         persistedId === 'zones' ||
         persistedId === 'automations' ||
         persistedId === 'home' ||
-        persistedId === 'hive';
+        persistedId === 'hive' ||
+        persistedId === 'spotify';
 
       if (persistedId && (isValidRoomId || isValidSpecialView)) {
         setSelectedId(persistedId);
@@ -454,6 +484,15 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only check on mount and when settings change
   }, [settings.services?.hive?.enabled]);
 
+  // Check Spotify connection on mount (auto-connect if credentials are saved)
+  useEffect(() => {
+    const spotifyEnabled = settings.services?.spotify?.enabled;
+    if (spotifyEnabled && !spotifyConnected && !spotifyLoading) {
+      spotifyCheckConnection();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only check on mount and when settings change
+  }, [settings.services?.spotify?.enabled]);
+
   // Sync Hive settings with connection state (Bug fix: toggle/indicator mismatch)
   useEffect(() => {
     const hiveEnabled = settings.services?.hive?.enabled ?? false;
@@ -487,7 +526,8 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
     selectedId !== 'zones' &&
     selectedId !== 'automations' &&
     selectedId !== 'hive' &&
-    selectedId !== 'home'
+    selectedId !== 'home' &&
+    selectedId !== 'spotify'
       ? dashboard?.rooms?.find((r) => r.id === selectedId)
       : null;
 
@@ -584,9 +624,15 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
             locationError={locationError}
             hueConnected={!!sessionToken}
             hiveConnected={hiveConnected}
+            spotifyConnected={spotifyConnected}
+            showSpotifyOption={isDemoMode || spotifyConfigured}
             onEnableHive={() => {
               setSettingsOpen(false);
               setSelectedId('hive');
+            }}
+            onEnableSpotify={() => {
+              setSettingsOpen(false);
+              setSelectedId('spotify');
             }}
             onDisableHue={async () => {
               // Clear Hue credentials on backend and return to settings step
@@ -602,6 +648,12 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
               await hiveDisconnect();
               // Update settings to mark as disabled
               updateSettings({ services: { hive: { enabled: false } } });
+            }}
+            onDisableSpotify={async () => {
+              // Clear Spotify credentials
+              await spotifyDisconnect();
+              // Update settings to mark as disabled
+              updateSettings({ services: { spotify: { enabled: false } } });
             }}
           />
         ) : selectedId === 'home' ? (
@@ -621,6 +673,29 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
             hiveConnecting={hiveConnecting}
             hiveVerifying={hiveVerifying}
             hivePendingUsername={hivePendingUsername}
+          />
+        ) : selectedId === 'spotify' ? (
+          <SpotifyView
+            isConnected={spotifyConnected}
+            isConfigured={spotifyConfigured}
+            isLoading={spotifyLoading}
+            error={spotifyError}
+            user={spotifyUser}
+            devices={spotifyDevices}
+            playlists={spotifyPlaylists}
+            playback={spotifyPlayback}
+            selectedPlaylist={spotifySelectedPlaylist}
+            selectedDevices={spotifySelectedDevices}
+            onSelectPlaylist={setSpotifySelectedPlaylist}
+            onToggleDevice={spotifyToggleDevice}
+            onPlay={spotifyPlay}
+            onPause={spotifyPause}
+            onNext={spotifyNext}
+            onPrevious={spotifyPrevious}
+            onSetVolume={spotifySetVolume}
+            onToggleShuffle={spotifyToggleShuffle}
+            onConnect={spotifyConnect}
+            onClearError={spotifyClearError}
           />
         ) : selectedId === 'hive' ? (
           <HiveView
@@ -683,6 +758,7 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
         services={settings.services}
         hueConnected={!!sessionToken}
         hiveConnected={hiveConnected}
+        spotifyConnected={spotifyConnected}
         homeDevices={homeDevices}
       />
     </div>

@@ -148,12 +148,16 @@ const ServiceRegistry = new ServiceRegistryClass();
 // Auto-register built-in plugins
 import HuePlugin from './plugins/HuePlugin.js';
 import HivePlugin from './plugins/HivePlugin.js';
+import SpotifyPlugin from './plugins/SpotifyPlugin.js';
 import HueDemoPlugin from './plugins/HueDemoPlugin.js';
 import HiveDemoPlugin from './plugins/HiveDemoPlugin.js';
+import SpotifyDemoPlugin from './plugins/SpotifyDemoPlugin.js';
 
 ServiceRegistry.register(HuePlugin);
 ServiceRegistry.register(HivePlugin);
+ServiceRegistry.register(SpotifyPlugin);
 ServiceRegistry.registerDemo(HueDemoPlugin);
 ServiceRegistry.registerDemo(HiveDemoPlugin);
+ServiceRegistry.registerDemo(SpotifyDemoPlugin);
 
 export default ServiceRegistry;

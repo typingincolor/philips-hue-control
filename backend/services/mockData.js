@@ -575,3 +575,256 @@ export const getMockHiveSchedules = () => [
     days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
 ];
+
+// ===== Spotify Mock Data =====
+
+// Mock Spotify devices (speakers/Connect devices)
+const spotifyDevices = [
+  {
+    id: 'device-office',
+    name: 'Office Speaker',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 65,
+  },
+  {
+    id: 'device-living-room',
+    name: 'Living Room',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 50,
+  },
+  {
+    id: 'device-kitchen',
+    name: 'Kitchen',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 45,
+  },
+  {
+    id: 'device-bedroom',
+    name: 'Bedroom',
+    type: 'Speaker',
+    is_active: false,
+    is_restricted: false,
+    volume_percent: 30,
+  },
+  {
+    id: 'device-phone',
+    name: "Andrew's iPhone",
+    type: 'Smartphone',
+    is_active: true,
+    is_restricted: false,
+    volume_percent: 70,
+  },
+];
+
+// Mock Spotify playlists
+const spotifyPlaylists = [
+  {
+    id: 'playlist-chill',
+    name: 'Chill Vibes',
+    uri: 'spotify:playlist:chill',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273e8b066f70c206551210d902b',
+    trackCount: 47,
+  },
+  {
+    id: 'playlist-focus',
+    name: 'Deep Focus',
+    uri: 'spotify:playlist:focus',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96',
+    trackCount: 128,
+  },
+  {
+    id: 'playlist-morning',
+    name: 'Morning Coffee',
+    uri: 'spotify:playlist:morning',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b2738a3f0a3ca7929dea23cd274c',
+    trackCount: 63,
+  },
+  {
+    id: 'playlist-dinner',
+    name: 'Dinner Party',
+    uri: 'spotify:playlist:dinner',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273f8553e18a11209d4becd0336',
+    trackCount: 92,
+  },
+  {
+    id: 'playlist-workout',
+    name: 'Workout Mix',
+    uri: 'spotify:playlist:workout',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b2732e8ed79e177ff6011076f5f0',
+    trackCount: 55,
+  },
+  {
+    id: 'playlist-jazz',
+    name: 'Jazz Classics',
+    uri: 'spotify:playlist:jazz',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273d9b35d65e49dd7fb0bb82da1',
+    trackCount: 78,
+  },
+  {
+    id: 'playlist-indie',
+    name: 'Indie Folk',
+    uri: 'spotify:playlist:indie',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b2734718e2b124f79258be7bc452',
+    trackCount: 45,
+  },
+  {
+    id: 'playlist-classical',
+    name: 'Classical Study',
+    uri: 'spotify:playlist:classical',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+    trackCount: 156,
+  },
+  {
+    id: 'playlist-lofi',
+    name: 'Lo-Fi Beats',
+    uri: 'spotify:playlist:lofi',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b2738a3f0a3ca7929dea23cd274c',
+    trackCount: 89,
+  },
+  {
+    id: 'playlist-rock',
+    name: 'Classic Rock',
+    uri: 'spotify:playlist:rock',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b2739293c743fa542094336c5e12',
+    trackCount: 112,
+  },
+  {
+    id: 'playlist-electronic',
+    name: 'Electronic Dance',
+    uri: 'spotify:playlist:electronic',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273e8b066f70c206551210d902b',
+    trackCount: 134,
+  },
+  {
+    id: 'playlist-rnb',
+    name: 'R&B Soul',
+    uri: 'spotify:playlist:rnb',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96',
+    trackCount: 67,
+  },
+  {
+    id: 'playlist-country',
+    name: 'Country Hits',
+    uri: 'spotify:playlist:country',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273f8553e18a11209d4becd0336',
+    trackCount: 88,
+  },
+  {
+    id: 'playlist-hiphop',
+    name: 'Hip Hop',
+    uri: 'spotify:playlist:hiphop',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b2732e8ed79e177ff6011076f5f0',
+    trackCount: 95,
+  },
+  {
+    id: 'playlist-ambient',
+    name: 'Ambient',
+    uri: 'spotify:playlist:ambient',
+    imageUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+    trackCount: 42,
+  },
+];
+
+// Mock currently playing track
+const initialPlayback = {
+  isPlaying: false,
+  shuffleState: false,
+  repeatState: 'off',
+  progressMs: 0,
+  device: spotifyDevices[4], // Phone is active by default
+  track: {
+    id: 'track-1',
+    name: 'Weightless',
+    artist: 'Marconi Union',
+    album: 'Ambient Transmissions Vol 2',
+    albumArt: 'https://i.scdn.co/image/ab67616d0000b273e8b066f70c206551210d902b',
+    durationMs: 480000,
+    uri: 'spotify:track:1',
+  },
+};
+
+// Mutable state for Spotify playback
+let currentPlayback = deepClone(initialPlayback);
+let currentDevices = deepClone(spotifyDevices);
+
+/**
+ * Get mock Spotify devices
+ */
+export const getMockSpotifyDevices = () => deepClone(currentDevices);
+
+/**
+ * Get mock Spotify playlists
+ */
+export const getMockSpotifyPlaylists = () => deepClone(spotifyPlaylists);
+
+/**
+ * Get mock Spotify playback state
+ */
+export const getMockSpotifyPlayback = () => deepClone(currentPlayback);
+
+/**
+ * Get full mock Spotify status
+ */
+export const getMockSpotifyStatus = () => ({
+  connected: true,
+  user: {
+    id: 'demo-user',
+    displayName: 'Demo User',
+  },
+  devices: getMockSpotifyDevices(),
+  playback: getMockSpotifyPlayback(),
+  playlists: getMockSpotifyPlaylists(),
+});
+
+/**
+ * Set mock Spotify playback state
+ */
+export const setMockSpotifyPlayback = (state) => {
+  currentPlayback = { ...currentPlayback, ...state };
+  if (state.track) {
+    currentPlayback.track = { ...currentPlayback.track, ...state.track };
+  }
+  if (state.device) {
+    currentPlayback.device = { ...currentPlayback.device, ...state.device };
+  }
+};
+
+/**
+ * Set mock device volume
+ */
+export const setMockSpotifyDeviceVolume = (deviceId, volumePercent) => {
+  const device = currentDevices.find((d) => d.id === deviceId);
+  if (device) {
+    device.volume_percent = volumePercent;
+  }
+  if (currentPlayback.device?.id === deviceId) {
+    currentPlayback.device.volume_percent = volumePercent;
+  }
+};
+
+/**
+ * Set active device
+ */
+export const setMockSpotifyActiveDevice = (deviceId) => {
+  currentDevices.forEach((d) => {
+    d.is_active = d.id === deviceId;
+  });
+  const activeDevice = currentDevices.find((d) => d.id === deviceId);
+  if (activeDevice) {
+    currentPlayback.device = deepClone(activeDevice);
+  }
+};
+
+/**
+ * Reset mock Spotify data
+ */
+export const resetMockSpotifyData = () => {
+  currentPlayback = deepClone(initialPlayback);
+  currentDevices = deepClone(spotifyDevices);
+};

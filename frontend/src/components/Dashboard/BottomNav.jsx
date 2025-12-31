@@ -15,6 +15,7 @@ import {
   Door,
   Clock,
   Thermometer,
+  MusicIcon,
 } from './Icons';
 
 // Icon size for nav tabs
@@ -60,9 +61,11 @@ export const BottomNav = ({
   services,
   hueConnected = false,
   hiveConnected = false,
+  spotifyConnected = false,
   homeDevices = [],
 }) => {
   const isHomeSelected = selectedId === 'home';
+  const isSpotifySelected = selectedId === 'spotify';
   const isZonesSelected = selectedId === 'zones';
   const isAutomationsSelected = selectedId === 'automations';
   const isHiveSelected = selectedId === 'hive';
@@ -72,6 +75,7 @@ export const BottomNav = ({
   // (defaults to true for Hue if services prop is missing for backwards compatibility)
   const hueEnabled = services?.hue?.enabled ?? true;
   const hiveEnabled = services?.hive?.enabled ?? false;
+  const spotifyEnabled = services?.spotify?.enabled ?? false;
 
   // Combined visibility: must be both enabled in settings AND connected
   const showHueTabs = hueEnabled && hueConnected;
@@ -79,6 +83,8 @@ export const BottomNav = ({
   const showHiveTab = hiveEnabled && hiveConnected && homeDevices.length === 0;
   // Show Home tab when there are home-level devices
   const showHomeTab = homeDevices.length > 0;
+  // Spotify tab shown when enabled AND connected
+  const showSpotifyTab = spotifyEnabled && spotifyConnected;
 
   return (
     <nav className="bottom-nav" ref={navRef}>
@@ -90,6 +96,17 @@ export const BottomNav = ({
         >
           <Home size={NAV_ICON_SIZE} className="nav-tab-icon" />
           <span className="nav-tab-label">{UI_TEXT.NAV_HOME}</span>
+        </button>
+      )}
+
+      {/* Spotify tab - shown when Spotify is enabled AND connected */}
+      {showSpotifyTab && (
+        <button
+          className={`nav-tab ${isSpotifySelected ? 'active' : ''}`}
+          onClick={() => onSelect('spotify')}
+        >
+          <MusicIcon size={NAV_ICON_SIZE} className="nav-tab-icon" />
+          <span className="nav-tab-label">{UI_TEXT.SPOTIFY.NAV_SPOTIFY}</span>
         </button>
       )}
 
@@ -166,9 +183,11 @@ BottomNav.propTypes = {
   services: PropTypes.shape({
     hue: PropTypes.shape({ enabled: PropTypes.bool }),
     hive: PropTypes.shape({ enabled: PropTypes.bool }),
+    spotify: PropTypes.shape({ enabled: PropTypes.bool }),
   }),
   hueConnected: PropTypes.bool,
   hiveConnected: PropTypes.bool,
+  spotifyConnected: PropTypes.bool,
   homeDevices: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string.isRequired,

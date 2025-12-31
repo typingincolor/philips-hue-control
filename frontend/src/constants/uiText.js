@@ -139,4 +139,45 @@ export const UI_TEXT = {
   HIVE_BACK_TO_LOGIN: 'Back to login',
   HIVE_INVALID_CODE: 'Invalid verification code',
   HIVE_TAB_LINK: 'Use the Hive tab to connect',
+
+  // Spotify
+  SPOTIFY: {
+    // Navigation
+    NAV_SPOTIFY: 'Spotify',
+
+    // Login
+    LOGIN_TITLE: 'Connect to Spotify',
+    LOGIN_DESCRIPTION: 'Connect your Spotify Premium account to control playback on your speakers.',
+    CONNECT: 'Connect to Spotify',
+    NOT_CONFIGURED: 'Spotify is not configured. Please set up credentials in the server.',
+
+    // Loading
+    LOADING: 'Loading Spotify...',
+
+    // Now Playing
+    NOW_PLAYING: 'Now Playing',
+    NO_TRACK: 'No track playing',
+
+    // Transport Controls
+    PLAY: 'Play',
+    PAUSE: 'Pause',
+    NEXT: 'Next track',
+    PREVIOUS: 'Previous track',
+    SHUFFLE: 'Toggle shuffle',
+
+    // Playlist
+    SELECT_PLAYLIST: 'Select a playlist...',
+    NO_PLAYLISTS: 'No playlists found',
+
+    // Speakers
+    SPEAKERS: 'Speakers',
+    NO_SPEAKERS: 'No speakers available. Make sure Spotify is open on a device.',
+
+    // User
+    LOGGED_IN_AS: 'Logged in as',
+
+    // Settings
+    SETTINGS_SPOTIFY: 'Spotify',
+    SPOTIFY_TAB_LINK: 'Use the Spotify tab to connect',
+  },
 };

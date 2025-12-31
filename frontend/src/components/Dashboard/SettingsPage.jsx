@@ -47,13 +47,17 @@ export const SettingsPage = ({
   locationError,
   hueConnected,
   hiveConnected,
+  spotifyConnected,
+  showSpotifyOption = false,
   onEnableHue,
   onEnableHive,
+  onEnableSpotify,
   onDisableHue,
   onDisableHive,
+  onDisableSpotify,
 }) => {
   // Only show close button if at least one service is connected (there's somewhere to go back to)
-  const canClose = hueConnected || hiveConnected;
+  const canClose = hueConnected || hiveConnected || spotifyConnected;
 
   // Close on Escape key (only if close is allowed)
   useEffect(() => {
@@ -70,6 +74,7 @@ export const SettingsPage = ({
   const { units = 'celsius', services = {} } = settings || {};
   const hueEnabled = services?.hue?.enabled ?? true;
   const hiveEnabled = services?.hive?.enabled ?? false;
+  const spotifyEnabled = services?.spotify?.enabled ?? false;
 
   const handleServiceToggle = (service, enabled) => {
     // When enabling a disconnected service, call the enable callback instead
@@ -82,6 +87,10 @@ export const SettingsPage = ({
         onEnableHive();
         return;
       }
+      if (service === 'spotify' && !spotifyConnected && onEnableSpotify) {
+        onEnableSpotify();
+        return;
+      }
     } else {
       // When disabling, call disable callback to clear credentials
       if (service === 'hue' && onDisableHue) {
@@ -90,6 +99,10 @@ export const SettingsPage = ({
       }
       if (service === 'hive' && onDisableHive) {
         onDisableHive();
+        return;
+      }
+      if (service === 'spotify' && onDisableSpotify) {
+        onDisableSpotify();
         return;
       }
     }
@@ -127,6 +140,14 @@ export const SettingsPage = ({
               onChange={(enabled) => handleServiceToggle('hive', enabled)}
               connected={hiveConnected}
             />
+            {showSpotifyOption && (
+              <ServiceToggle
+                label={UI_TEXT.SPOTIFY.SETTINGS_SPOTIFY}
+                checked={spotifyEnabled}
+                onChange={(enabled) => handleServiceToggle('spotify', enabled)}
+                connected={spotifyConnected}
+              />
+            )}
           </div>
         </div>
 
@@ -191,6 +212,7 @@ SettingsPage.propTypes = {
     services: PropTypes.shape({
       hue: PropTypes.shape({ enabled: PropTypes.bool }),
       hive: PropTypes.shape({ enabled: PropTypes.bool }),
+      spotify: PropTypes.shape({ enabled: PropTypes.bool }),
     }),
   }),
   onUpdateSettings: PropTypes.func.isRequired,
@@ -199,8 +221,12 @@ SettingsPage.propTypes = {
   locationError: PropTypes.string,
   hueConnected: PropTypes.bool,
   hiveConnected: PropTypes.bool,
+  spotifyConnected: PropTypes.bool,
+  showSpotifyOption: PropTypes.bool,
   onEnableHue: PropTypes.func,
   onEnableHive: PropTypes.func,
+  onEnableSpotify: PropTypes.func,
   onDisableHue: PropTypes.func,
   onDisableHive: PropTypes.func,
+  onDisableSpotify: PropTypes.func,
 };

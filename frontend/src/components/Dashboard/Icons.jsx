@@ -21,6 +21,8 @@ import {
   Menu as LucideMenu,
   X as LucideX,
   ArrowLeft as LucideArrowLeft,
+  ChevronLeft as LucideChevronLeft,
+  ChevronRight as LucideChevronRight,
   // Scene icons
   Sunrise,
   Sunset,
@@ -60,6 +62,14 @@ import {
   Settings as LucideSettings,
   Clock as LucideClock,
   LocateFixed as LucideLocateFixed,
+  // Spotify icons
+  Play as LucidePlay,
+  Pause as LucidePause,
+  SkipBack as LucideSkipBack,
+  SkipForward as LucideSkipForward,
+  Shuffle as LucideShuffle,
+  Speaker as LucideSpeaker,
+  Smartphone as LucideSmartphone,
 } from 'lucide-react';
 
 // Default props for consistent styling
@@ -107,6 +117,10 @@ export const X = (props) => <LucideX {...defaultProps} {...props} />;
 
 // Arrow left (back button)
 export const ArrowLeft = (props) => <LucideArrowLeft {...defaultProps} {...props} />;
+
+// Chevron icons for carousel navigation
+export const ChevronLeft = (props) => <LucideChevronLeft {...defaultProps} {...props} />;
+export const ChevronRight = (props) => <LucideChevronRight {...defaultProps} {...props} />;
 
 // Sofa icon (living room)
 export const Sofa = (props) => <LucideSofa {...defaultProps} {...props} />;
@@ -332,3 +346,16 @@ export const WaterIcon = (props) => (
     <path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8zm0 18c-3.35 0-6-2.57-6-6.2 0-2.34 1.95-5.44 6-9.14 4.05 3.7 6 6.79 6 9.14 0 3.63-2.65 6.2-6 6.2z" />
   </svg>
 );
+
+// ============================================
+// Spotify Icons
+// ============================================
+
+export const MusicIcon = (props) => <Music {...defaultProps} {...props} />;
+export const PlayIcon = (props) => <LucidePlay {...defaultProps} {...props} />;
+export const PauseIcon = (props) => <LucidePause {...defaultProps} {...props} />;
+export const SkipBackIcon = (props) => <LucideSkipBack {...defaultProps} {...props} />;
+export const SkipForwardIcon = (props) => <LucideSkipForward {...defaultProps} {...props} />;
+export const ShuffleIcon = (props) => <LucideShuffle {...defaultProps} {...props} />;
+export const SpeakerIcon = (props) => <LucideSpeaker {...defaultProps} {...props} />;
+export const SmartphoneIcon = (props) => <LucideSmartphone {...defaultProps} {...props} />;

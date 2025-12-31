@@ -156,3 +156,170 @@ export async function getHiveSchedules(demoMode = false) {
   });
   return handleResponse(response);
 }
+
+// ============================================================================
+// Spotify-specific endpoints
+// ============================================================================
+
+/**
+ * Get Spotify OAuth authorization URL
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Object with authUrl
+ */
+export async function getSpotifyAuthUrl(demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/auth-url`, {
+    method: 'GET',
+    headers: getHeaders(demoMode),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Get Spotify available devices
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Object with devices array
+ */
+export async function getSpotifyDevices(demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/devices`, {
+    method: 'GET',
+    headers: getHeaders(demoMode),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Get Spotify user's playlists
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Object with playlists array
+ */
+export async function getSpotifyPlaylists(demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/playlists`, {
+    method: 'GET',
+    headers: getHeaders(demoMode),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Get Spotify current playback state
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Object with playback state
+ */
+export async function getSpotifyPlayback(demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/playback`, {
+    method: 'GET',
+    headers: getHeaders(demoMode),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Start or resume Spotify playback
+ * @param {Object} options - Playback options
+ * @param {string} options.deviceId - Target device ID
+ * @param {string} options.contextUri - Playlist/album URI to play
+ * @param {Array<string>} options.uris - Track URIs to play
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function spotifyPlay(options = {}, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/play`, {
+    method: 'POST',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify(options),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Pause Spotify playback
+ * @param {string} deviceId - Target device ID
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function spotifyPause(deviceId, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/pause`, {
+    method: 'POST',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify({ deviceId }),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Skip to next track
+ * @param {string} deviceId - Target device ID
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function spotifyNext(deviceId, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/next`, {
+    method: 'POST',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify({ deviceId }),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Skip to previous track
+ * @param {string} deviceId - Target device ID
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function spotifyPrevious(deviceId, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/previous`, {
+    method: 'POST',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify({ deviceId }),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Set Spotify playback volume
+ * @param {number} volumePercent - Volume 0-100
+ * @param {string} deviceId - Target device ID
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function setSpotifyVolume(volumePercent, deviceId, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/volume`, {
+    method: 'PUT',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify({ volumePercent, deviceId }),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Toggle Spotify shuffle mode
+ * @param {boolean} state - Shuffle on/off
+ * @param {string} deviceId - Target device ID
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function setSpotifyShuffle(state, deviceId, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/shuffle`, {
+    method: 'PUT',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify({ state, deviceId }),
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Transfer playback to a device
+ * @param {string} deviceId - Target device ID
+ * @param {boolean} play - Start playing on new device
+ * @param {boolean} demoMode - Whether demo mode is enabled
+ * @returns {Promise<Object>} Result object
+ */
+export async function setSpotifyDevice(deviceId, play = true, demoMode = false) {
+  const response = await fetch(`${API_BASE}/spotify/device`, {
+    method: 'PUT',
+    headers: getHeaders(demoMode),
+    body: JSON.stringify({ deviceId, play }),
+  });
+  return handleResponse(response);
+}

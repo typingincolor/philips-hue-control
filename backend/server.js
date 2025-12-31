@@ -1,10 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
-import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { load } from 'js-yaml';
 import swaggerUi from 'swagger-ui-express';
 import v2Routes from './routes/v2/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -12,6 +10,8 @@ import { detectDemoMode } from './middleware/demoMode.js';
 import { rateLimit, discoveryRateLimit } from './middleware/rateLimit.js';
 import { openApiSpec } from './openapi.js';
 import websocketService from './services/websocketService.js';
+import spotifyService from './services/spotifyService.js';
+import { loadConfig, getSpotifyConfig } from './utils/configLoader.js';
 import { createLogger } from './utils/logger.js';
 
 const logger = createLogger('SERVER');
@@ -19,9 +19,14 @@ const logger = createLogger('SERVER');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load configuration
-const configPath = path.resolve(__dirname, '../config.yaml');
-const config = load(readFileSync(configPath, 'utf-8'));
+// Load configuration (with env var interpolation)
+const config = loadConfig();
+
+// Initialize Spotify service with config
+const spotifyConfig = getSpotifyConfig(config);
+if (spotifyConfig) {
+  spotifyService.initialize(spotifyConfig);
+}
 
 const app = express();
 const PORT = process.env.PORT || config.server.port;

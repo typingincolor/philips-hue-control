@@ -25,5 +25,6 @@ export const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
 export const BRIDGE_CREDENTIALS_FILE = path.join(DATA_DIR, 'bridge-credentials.json');
 export const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 export const HIVE_CREDENTIALS_FILE = path.join(DATA_DIR, 'hive-credentials.json');
+export const SPOTIFY_CREDENTIALS_FILE = path.join(DATA_DIR, 'spotify-credentials.json');
 export const SLUG_MAPPINGS_FILE = path.join(DATA_DIR, 'slug-mappings.json');
 export const ROOM_MAPPINGS_FILE = path.join(DATA_DIR, 'roomMappings.json');
