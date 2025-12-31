@@ -443,7 +443,6 @@ describe('LightTile', () => {
       delete lightNoTemp.colorTemperature;
       const { container } = render(<LightTile {...defaultProps} light={lightNoTemp} />);
       // Component should handle missing colorTemperature gracefully
-      const slider = container.querySelector('.light-tile-slider');
       // Slider may or may not render depending on implementation
       expect(container.querySelector('.light-tile')).toBeInTheDocument();
     });

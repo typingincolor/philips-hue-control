@@ -6,7 +6,6 @@ import { COLOR_TEMPERATURE } from '../../constants/colors';
 export const LightTile = ({ light, onToggle, onColorTemperatureChange, isToggling }) => {
   const lightName = light.name || 'Light';
   const brightness = light.on ? light.brightness || 0 : 0;
-  const fillHeight = light.on ? '100%' : '0%'; // Fill covers full toggle area when on
 
   // Fill color from backend, or default warm color
   const fillColor = light.color || 'rgb(255, 200, 130)';
