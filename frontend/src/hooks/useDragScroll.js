@@ -14,8 +14,18 @@ export const useDragScroll = () => {
     const el = ref.current;
     if (!el) return;
 
+    // Check if event target is an interactive element that should handle its own events
+    const isInteractiveElement = (target) => {
+      if (!target || !target.tagName) return false;
+      const tagName = target.tagName.toLowerCase();
+      return tagName === 'input' || tagName === 'button' || tagName === 'select' || tagName === 'textarea';
+    };
+
     // Mouse handlers
     const handleMouseDown = (e) => {
+      // Don't capture events from interactive elements
+      if (isInteractiveElement(e.target)) return;
+
       isDragging.current = true;
       startX.current = e.pageX - el.offsetLeft;
       scrollLeft.current = el.scrollLeft;
@@ -42,6 +52,9 @@ export const useDragScroll = () => {
 
     // Touch handlers for mobile/touchscreen
     const handleTouchStart = (e) => {
+      // Don't capture events from interactive elements
+      if (isInteractiveElement(e.target)) return;
+
       isDragging.current = true;
       startX.current = e.touches[0].pageX - el.offsetLeft;
       scrollLeft.current = el.scrollLeft;
