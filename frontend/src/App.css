@@ -1989,26 +1989,11 @@ body.dark-theme {
   min-height: unset !important;
 }
 
-/* Sticky tile stays fixed while others scroll */
-.sticky-tile {
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  /* Add padding-right that matches the gap so tiles don't overlap */
-  margin-right: 0;
-  /* Background extends to cover scrolling content behind */
-  background-clip: padding-box;
-}
-
-/* Add pseudo-element to cover the gap area */
-.sticky-tile::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: -12px;
-  width: 12px;
+/* Fixed tile in carousel row - sits between chevron and scrollable area */
+.carousel-fixed-tile {
+  flex: 0 0 auto;
   height: 100%;
-  background: var(--bg-primary);
+  aspect-ratio: 1;
 }
 
 .room-header-bar {

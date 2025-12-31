@@ -87,19 +87,19 @@ describe('RoomContent', () => {
       expect(rows[1]).toHaveClass('lights-row');
     });
 
-    it('should render All On/Off tile INSIDE scenes carousel with sticky class', () => {
+    it('should render All On/Off tile in carousel container with fixed class', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
-      const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
-      // All On/Off should be inside carousel with sticky-tile class
-      const allOnOffTile = scenesCarousel.querySelector('.all-on-off-tile.sticky-tile');
+      const carouselContainer = container.querySelector('.scenes-row .tiles-carousel-container');
+      // All On/Off should be in carousel container with carousel-fixed-tile class
+      const allOnOffTile = carouselContainer.querySelector('.all-on-off-tile.carousel-fixed-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
 
-    it('should render All On/Off tile as first item in scenes carousel', () => {
+    it('should render All On/Off tile before scenes carousel (not inside it)', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
       const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
-      const firstChild = scenesCarousel.firstElementChild;
-      expect(firstChild).toHaveClass('all-on-off-tile');
+      const allOnOffInCarousel = scenesCarousel.querySelector('.all-on-off-tile');
+      expect(allOnOffInCarousel).toBeNull();
     });
 
     it('should render scenes inside tiles-carousel', () => {
@@ -116,11 +116,11 @@ describe('RoomContent', () => {
       expect(lightTiles).toHaveLength(2);
     });
 
-    it('should render All On/Off tile in scenes carousel even when no scenes', () => {
+    it('should render All On/Off tile in scenes row even when no scenes', () => {
       const roomNoScenes = { ...mockRoom, scenes: [] };
       const { container } = render(<RoomContent {...defaultProps} room={roomNoScenes} />);
-      const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
-      const allOnOffTile = scenesCarousel.querySelector('.all-on-off-tile');
+      const scenesRow = container.querySelector('.scenes-row');
+      const allOnOffTile = scenesRow.querySelector('.all-on-off-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
   });
