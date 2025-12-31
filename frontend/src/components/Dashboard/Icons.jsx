@@ -21,6 +21,8 @@ import {
   Menu as LucideMenu,
   X as LucideX,
   ArrowLeft as LucideArrowLeft,
+  ChevronLeft as LucideChevronLeft,
+  ChevronRight as LucideChevronRight,
   // Scene icons
   Sunrise,
   Sunset,
@@ -107,6 +109,10 @@ export const X = (props) => <LucideX {...defaultProps} {...props} />;
 
 // Arrow left (back button)
 export const ArrowLeft = (props) => <LucideArrowLeft {...defaultProps} {...props} />;
+
+// Chevron icons (carousel navigation)
+export const ChevronLeft = (props) => <LucideChevronLeft {...defaultProps} {...props} />;
+export const ChevronRight = (props) => <LucideChevronRight {...defaultProps} {...props} />;
 
 // Sofa icon (living room)
 export const Sofa = (props) => <LucideSofa {...defaultProps} {...props} />;

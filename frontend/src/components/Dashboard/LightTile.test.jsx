@@ -119,9 +119,9 @@ describe('LightTile', () => {
         brightness: 60,
         shadow: '0 0 20px rgba(255, 200, 130, 0.5)',
       };
-      render(<LightTile {...defaultProps} light={lightWithShadow} />);
-      const button = screen.getByRole('button');
-      expect(button.style.boxShadow).toBe('0 0 20px rgba(255, 200, 130, 0.5)');
+      const { container } = render(<LightTile {...defaultProps} light={lightWithShadow} />);
+      const tile = container.querySelector('.light-tile');
+      expect(tile.style.boxShadow).toBe('0 0 20px rgba(255, 200, 130, 0.5)');
     });
 
     it('should not apply shadow when brightness < 50', () => {
@@ -130,9 +130,9 @@ describe('LightTile', () => {
         brightness: 40,
         shadow: '0 0 20px rgba(255, 200, 130, 0.5)',
       };
-      render(<LightTile {...defaultProps} light={lightWithShadow} />);
-      const button = screen.getByRole('button');
-      expect(button.style.boxShadow).toBe('');
+      const { container } = render(<LightTile {...defaultProps} light={lightWithShadow} />);
+      const tile = container.querySelector('.light-tile');
+      expect(tile.style.boxShadow).toBe('');
     });
 
     it('should not apply shadow when light is off', () => {
@@ -142,16 +142,16 @@ describe('LightTile', () => {
         brightness: 75,
         shadow: '0 0 20px rgba(255, 200, 130, 0.5)',
       };
-      render(<LightTile {...defaultProps} light={lightWithShadow} />);
-      const button = screen.getByRole('button');
-      expect(button.style.boxShadow).toBe('');
+      const { container } = render(<LightTile {...defaultProps} light={lightWithShadow} />);
+      const tile = container.querySelector('.light-tile');
+      expect(tile.style.boxShadow).toBe('');
     });
 
     it('should not apply shadow when no shadow property', () => {
       const lightNoShadow = { ...defaultLight, brightness: 75 };
-      render(<LightTile {...defaultProps} light={lightNoShadow} />);
-      const button = screen.getByRole('button');
-      expect(button.style.boxShadow).toBe('');
+      const { container } = render(<LightTile {...defaultProps} light={lightNoShadow} />);
+      const tile = container.querySelector('.light-tile');
+      expect(tile.style.boxShadow).toBe('');
     });
 
     it('should apply shadow at exactly 50% brightness', () => {
@@ -160,9 +160,9 @@ describe('LightTile', () => {
         brightness: 50,
         shadow: '0 0 20px rgba(255, 200, 130, 0.5)',
       };
-      render(<LightTile {...defaultProps} light={lightWithShadow} />);
-      const button = screen.getByRole('button');
-      expect(button.style.boxShadow).toBe('0 0 20px rgba(255, 200, 130, 0.5)');
+      const { container } = render(<LightTile {...defaultProps} light={lightWithShadow} />);
+      const tile = container.querySelector('.light-tile');
+      expect(tile.style.boxShadow).toBe('0 0 20px rgba(255, 200, 130, 0.5)');
     });
   });
 
@@ -647,15 +647,16 @@ describe('LightTile', () => {
       expect(onToggle).not.toHaveBeenCalled();
     });
 
-    it('should have brightness fill only in the toggle area', () => {
+    it('should have full tile background fill (issue 47)', () => {
       const { container } = render(<LightTile {...defaultProps} light={lightWithSlider} />);
 
-      // The fill should be inside the toggle area
-      const toggleArea = container.querySelector('.light-tile-toggle');
+      // The fill should cover the entire tile (direct child of tile, not toggle)
+      const tile = container.querySelector('.light-tile');
       const fill = container.querySelector('.light-tile-fill');
 
       expect(fill).toBeInTheDocument();
-      expect(toggleArea.contains(fill)).toBe(true);
+      expect(tile.contains(fill)).toBe(true);
+      expect(fill).toHaveClass('light-tile-fill-full');
     });
 
     it('should show name label when light is off (no slider)', () => {

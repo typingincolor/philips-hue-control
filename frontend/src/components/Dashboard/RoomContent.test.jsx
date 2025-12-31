@@ -63,37 +63,124 @@ describe('RoomContent', () => {
     });
   });
 
-  describe('two-row layout', () => {
-    it('should render tiles-grid container', () => {
+  describe('carousel layout (issue 47)', () => {
+    it('should render room-content-carousel container', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
-      expect(container.querySelector('.tiles-grid')).toBeInTheDocument();
+      expect(container.querySelector('.room-content-carousel')).toBeInTheDocument();
     });
 
-    it('should render scene tiles row with All On/Off tile first', () => {
+    it('should render two room-row elements', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
-      const allOnOffTile = container.querySelector('.all-on-off-tile');
+      const rows = container.querySelectorAll('.room-row');
+      expect(rows).toHaveLength(2);
+    });
+
+    it('should render scenes-row as first row', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const rows = container.querySelectorAll('.room-row');
+      expect(rows[0]).toHaveClass('scenes-row');
+    });
+
+    it('should render lights-row as second row', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const rows = container.querySelectorAll('.room-row');
+      expect(rows[1]).toHaveClass('lights-row');
+    });
+
+    it('should render All On/Off tile OUTSIDE scenes carousel (fixed position)', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const scenesRow = container.querySelector('.scenes-row');
+      // All On/Off should be direct child of scenes-row, NOT inside tiles-carousel
+      const allOnOffTile = scenesRow.querySelector(':scope > .all-on-off-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
 
-    it('should render scene tiles after All On/Off tile', () => {
+    it('should NOT have All On/Off tile inside tiles-carousel', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
-      const sceneTiles = container.querySelectorAll('.scene-tile');
+      const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
+      const allOnOffInCarousel = scenesCarousel?.querySelector('.all-on-off-tile');
+      expect(allOnOffInCarousel).toBeNull();
+    });
+
+    it('should render scenes inside tiles-carousel', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
+      const sceneTiles = scenesCarousel.querySelectorAll('.scene-tile');
       expect(sceneTiles).toHaveLength(3);
     });
 
-    it('should render light tiles row', () => {
+    it('should render lights inside tiles-carousel in lights-row', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
-      const lightTiles = container.querySelectorAll('.light-tile');
+      const lightsCarousel = container.querySelector('.lights-row .tiles-carousel');
+      const lightTiles = lightsCarousel.querySelectorAll('.light-tile');
       expect(lightTiles).toHaveLength(2);
     });
 
-    it('should show All On/Off tile even when no scenes', () => {
+    it('should render All On/Off tile in scenes-row even when no scenes', () => {
       const roomNoScenes = { ...mockRoom, scenes: [] };
       const { container } = render(<RoomContent {...defaultProps} room={roomNoScenes} />);
-      const allOnOffTile = container.querySelector('.all-on-off-tile');
+      const scenesRow = container.querySelector('.scenes-row');
+      const allOnOffTile = scenesRow.querySelector('.all-on-off-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
+  });
 
+  describe('carousel containers (issue 47)', () => {
+    it('should render tiles-carousel-container in scenes-row', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const scenesRow = container.querySelector('.scenes-row');
+      expect(scenesRow.querySelector('.tiles-carousel-container')).toBeInTheDocument();
+    });
+
+    it('should render tiles-carousel-container in lights-row', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const lightsRow = container.querySelector('.lights-row');
+      expect(lightsRow.querySelector('.tiles-carousel-container')).toBeInTheDocument();
+    });
+
+    it('should render left chevron button in scenes carousel', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const scenesContainer = container.querySelector('.scenes-row .tiles-carousel-container');
+      const leftBtn = scenesContainer.querySelector('.carousel-btn-left');
+      expect(leftBtn).toBeInTheDocument();
+    });
+
+    it('should render right chevron button in scenes carousel', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const scenesContainer = container.querySelector('.scenes-row .tiles-carousel-container');
+      const rightBtn = scenesContainer.querySelector('.carousel-btn-right');
+      expect(rightBtn).toBeInTheDocument();
+    });
+
+    it('should render left chevron button in lights carousel', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const lightsContainer = container.querySelector('.lights-row .tiles-carousel-container');
+      const leftBtn = lightsContainer.querySelector('.carousel-btn-left');
+      expect(leftBtn).toBeInTheDocument();
+    });
+
+    it('should render right chevron button in lights carousel', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const lightsContainer = container.querySelector('.lights-row .tiles-carousel-container');
+      const rightBtn = lightsContainer.querySelector('.carousel-btn-right');
+      expect(rightBtn).toBeInTheDocument();
+    });
+
+    it('should have aria-label on carousel buttons', () => {
+      const { container } = render(<RoomContent {...defaultProps} />);
+      const leftBtns = container.querySelectorAll('.carousel-btn-left');
+      const rightBtns = container.querySelectorAll('.carousel-btn-right');
+
+      leftBtns.forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-label');
+      });
+      rightBtns.forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-label');
+      });
+    });
+  });
+
+  describe('removed components', () => {
     it('should not render SceneDrawer (removed in redesign)', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
       expect(container.querySelector('.scene-drawer')).not.toBeInTheDocument();
@@ -219,6 +306,8 @@ describe('RoomContent', () => {
       expect(container.querySelector('.room-content')).toBeInTheDocument();
     });
   });
+
+  // Note: Issue 42 "separate grids" tests removed - superseded by carousel layout tests (issue 47)
 
   describe('real-time state updates', () => {
     it('should calculate anyOn from actual light states', () => {

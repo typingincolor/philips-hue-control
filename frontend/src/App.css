@@ -1857,6 +1857,136 @@ body.dark-theme {
   overflow: hidden;
 }
 
+/* Carousel Layout (issue 47) - Two fixed-height rows */
+.room-content-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: stretch; /* Override .room-content center */
+  overflow: visible; /* Override .room-content hidden */
+}
+
+.room-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  max-height: 50%;
+}
+
+/* Scenes row has fixed All On/Off + carousel */
+.scenes-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* All On/Off tile in scenes row - fixed size, square */
+.scenes-row > .all-on-off-tile {
+  flex-shrink: 0;
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1;
+}
+
+/* Lights row - full width carousel */
+.lights-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Carousel container with chevron buttons */
+.tiles-carousel-container {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Scrollable carousel area */
+.tiles-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  cursor: grab;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 0;
+  touch-action: pan-x;
+}
+
+.tiles-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.tiles-carousel:active {
+  cursor: grabbing;
+}
+
+/* Carousel chevron buttons - minimal style like Spotify */
+.carousel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  min-height: 40px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.carousel-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.carousel-btn:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.carousel-btn:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Tiles in carousel - fill row height, maintain aspect ratio */
+.tiles-carousel .light-tile,
+.tiles-carousel .scene-tile {
+  flex: 0 0 auto;
+  width: auto !important;
+  height: 100% !important;
+  aspect-ratio: 1 !important;
+  scroll-snap-align: start;
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+/* All On/Off tile in carousel context - fixed square size */
+.room-content-carousel .scenes-row > .all-on-off-tile {
+  flex-shrink: 0;
+  width: auto !important;
+  height: 100% !important;
+  aspect-ratio: 1 !important;
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
 .room-header-bar {
   display: flex;
   align-items: center;
@@ -1980,12 +2110,36 @@ body.dark-theme {
   }
 }
 
+/* Responsive grid with auto-fit columns (issue 42/46) */
+.tiles-grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Tiles inside responsive grid should fill their cells */
+.tiles-grid-responsive .light-tile,
+.tiles-grid-responsive .scene-tile,
+.tiles-grid-responsive .all-on-off-tile {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+/* Scenes grid spacing */
+.scenes-grid {
+  margin-bottom: 8px;
+}
+
 /* Light Tile */
 .light-tile {
+  position: relative;
   width: var(--tile-size);
   height: var(--tile-size);
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 100px;
+  min-height: 100px;
   border-radius: 24px;
   background: var(--bg-card);
   border: 1px solid var(--accent-primary);
@@ -2223,12 +2377,32 @@ body.dark-theme {
   top: 6px;
 }
 
+/* Full tile fill - covers entire tile */
+.light-tile-fill-full {
+  position: absolute;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* Ensure tile content appears above fill */
+.light-tile-toggle,
+.light-tile-slider,
+.light-tile-name {
+  position: relative;
+  z-index: 1;
+}
+
 /* Scene Tile */
 .scene-tile {
   width: var(--tile-size);
   height: var(--tile-size);
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 100px;
+  min-height: 100px;
   border-radius: 24px;
   background: var(--bg-card);
   border: 1px solid var(--accent-secondary);
@@ -2270,8 +2444,8 @@ body.dark-theme {
 .all-on-off-tile {
   width: var(--tile-size);
   height: var(--tile-size);
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 100px;
+  min-height: 100px;
   border-radius: 24px;
   background: var(--bg-card);
   border: 2px solid var(--accent-primary);

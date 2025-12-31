@@ -1,8 +1,10 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { LightTile } from './LightTile';
 import { SceneTile } from './SceneTile';
 import { AllOnOffTile } from './AllOnOffTile';
-import { Home, LightbulbOff } from './Icons';
+import { Home, LightbulbOff, ChevronLeft, ChevronRight } from './Icons';
+import { useDragScroll } from '../../hooks/useDragScroll';
 
 export const RoomContent = ({
   room,
@@ -13,6 +15,112 @@ export const RoomContent = ({
   togglingLights = new Set(),
   isActivatingScene = false,
 }) => {
+  // Scroll state for scenes carousel
+  const [canScrollScenesLeft, setCanScrollScenesLeft] = useState(false);
+  const [canScrollScenesRight, setCanScrollScenesRight] = useState(false);
+
+  // Scroll state for lights carousel
+  const [canScrollLightsLeft, setCanScrollLightsLeft] = useState(false);
+  const [canScrollLightsRight, setCanScrollLightsRight] = useState(false);
+
+  // Refs for carousels
+  const scenesCarouselRef = useRef(null);
+  const lightsCarouselRef = useRef(null);
+
+  // Drag scroll hooks
+  const scenesDragRef = useDragScroll();
+  const lightsDragRef = useDragScroll();
+
+  // Combine refs for scenes carousel
+  const setScenesRef = useCallback(
+    (el) => {
+      scenesCarouselRef.current = el;
+      scenesDragRef.current = el;
+    },
+    [scenesDragRef]
+  );
+
+  // Combine refs for lights carousel
+  const setLightsRef = useCallback(
+    (el) => {
+      lightsCarouselRef.current = el;
+      lightsDragRef.current = el;
+    },
+    [lightsDragRef]
+  );
+
+  // Update scroll button states for scenes
+  const updateScenesScroll = useCallback(() => {
+    const el = scenesCarouselRef.current;
+    if (!el) return;
+    setCanScrollScenesLeft(el.scrollLeft > 0);
+    setCanScrollScenesRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+  }, []);
+
+  // Update scroll button states for lights
+  const updateLightsScroll = useCallback(() => {
+    const el = lightsCarouselRef.current;
+    if (!el) return;
+    setCanScrollLightsLeft(el.scrollLeft > 0);
+    setCanScrollLightsRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+  }, []);
+
+  // Scroll handlers
+  const scrollScenesLeft = () => {
+    const el = scenesCarouselRef.current;
+    if (el) el.scrollBy({ left: -200, behavior: 'smooth' });
+  };
+
+  const scrollScenesRight = () => {
+    const el = scenesCarouselRef.current;
+    if (el) el.scrollBy({ left: 200, behavior: 'smooth' });
+  };
+
+  const scrollLightsLeft = () => {
+    const el = lightsCarouselRef.current;
+    if (el) el.scrollBy({ left: -200, behavior: 'smooth' });
+  };
+
+  const scrollLightsRight = () => {
+    const el = lightsCarouselRef.current;
+    if (el) el.scrollBy({ left: 200, behavior: 'smooth' });
+  };
+
+  // Setup scroll listeners
+  useEffect(() => {
+    const scenesEl = scenesCarouselRef.current;
+    const lightsEl = lightsCarouselRef.current;
+
+    if (scenesEl) {
+      scenesEl.addEventListener('scroll', updateScenesScroll);
+    }
+    if (lightsEl) {
+      lightsEl.addEventListener('scroll', updateLightsScroll);
+    }
+
+    // Delay initial check to ensure DOM is rendered
+    const rafId = requestAnimationFrame(() => {
+      updateScenesScroll();
+      updateLightsScroll();
+    });
+
+    // ResizeObserver to update on resize
+    const resizeObserver = new ResizeObserver(() => {
+      updateScenesScroll();
+      updateLightsScroll();
+    });
+
+    if (scenesEl) resizeObserver.observe(scenesEl);
+    if (lightsEl) resizeObserver.observe(lightsEl);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (scenesEl) scenesEl.removeEventListener('scroll', updateScenesScroll);
+      if (lightsEl) lightsEl.removeEventListener('scroll', updateLightsScroll);
+      resizeObserver.disconnect();
+    };
+  }, [updateScenesScroll, updateLightsScroll]);
+
   if (!room) {
     return (
       <div className="empty-state-dark">
@@ -39,34 +147,81 @@ export const RoomContent = ({
   }
 
   return (
-    <div className="room-content">
-      <div className="tiles-grid">
-        {/* Row 1: All On/Off tile + Scene tiles */}
+    <div className="room-content room-content-carousel">
+      {/* Row 1: All On/Off fixed + Scenes carousel */}
+      <div className="room-row scenes-row">
         <AllOnOffTile
           anyOn={anyOn}
           onToggle={onToggleRoom}
           roomId={room.id}
           isToggling={isActivatingScene}
         />
-        {scenes.map((scene) => (
-          <SceneTile
-            key={scene.id}
-            scene={scene}
-            onActivate={onActivateScene}
-            isActivating={isActivatingScene}
-          />
-        ))}
 
-        {/* Row 2: Light tiles */}
-        {lights.map((light) => (
-          <LightTile
-            key={light.id}
-            light={light}
-            onToggle={onToggleLight}
-            onColorTemperatureChange={onColorTemperatureChange}
-            isToggling={togglingLights.has(light.id)}
-          />
-        ))}
+        <div className="tiles-carousel-container">
+          <button
+            className="carousel-btn carousel-btn-left"
+            onClick={scrollScenesLeft}
+            disabled={!canScrollScenesLeft}
+            aria-label="Scroll scenes left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div className="tiles-carousel scenes-carousel" ref={setScenesRef}>
+            {scenes.map((scene) => (
+              <SceneTile
+                key={scene.id}
+                scene={scene}
+                onActivate={onActivateScene}
+                isActivating={isActivatingScene}
+              />
+            ))}
+          </div>
+
+          <button
+            className="carousel-btn carousel-btn-right"
+            onClick={scrollScenesRight}
+            disabled={!canScrollScenesRight}
+            aria-label="Scroll scenes right"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2: Lights carousel */}
+      <div className="room-row lights-row">
+        <div className="tiles-carousel-container">
+          <button
+            className="carousel-btn carousel-btn-left"
+            onClick={scrollLightsLeft}
+            disabled={!canScrollLightsLeft}
+            aria-label="Scroll lights left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div className="tiles-carousel lights-carousel" ref={setLightsRef}>
+            {lights.map((light) => (
+              <LightTile
+                key={light.id}
+                light={light}
+                onToggle={onToggleLight}
+                onColorTemperatureChange={onColorTemperatureChange}
+                isToggling={togglingLights.has(light.id)}
+              />
+            ))}
+          </div>
+
+          <button
+            className="carousel-btn carousel-btn-right"
+            onClick={scrollLightsRight}
+            disabled={!canScrollLightsRight}
+            aria-label="Scroll lights right"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );

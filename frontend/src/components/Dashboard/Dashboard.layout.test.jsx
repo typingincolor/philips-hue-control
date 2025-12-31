@@ -170,13 +170,13 @@ describe('Dashboard Layout', () => {
     });
   });
 
-  describe('Grid Structure (Migrated from E2E)', () => {
-    it('should render tiles-grid for lights', async () => {
+  describe('Carousel Structure (issue 47)', () => {
+    it('should render room-content-carousel container', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const grid = document.querySelector('.tiles-grid');
-        expect(grid).toBeInTheDocument();
+        const carousel = document.querySelector('.room-content-carousel');
+        expect(carousel).toBeInTheDocument();
       });
     });
 
@@ -189,24 +189,40 @@ describe('Dashboard Layout', () => {
       });
     });
 
-    it('should render light tiles inside tiles-grid', async () => {
+    it('should render light tiles inside lights-row carousel', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const grid = document.querySelector('.tiles-grid');
-        const tiles = grid.querySelectorAll('.light-tile');
+        const lightsCarousel = document.querySelector('.lights-row .tiles-carousel');
+        const tiles = lightsCarousel.querySelectorAll('.light-tile');
         expect(tiles.length).toBe(8);
       });
     });
 
-    it('should render light tiles as buttons', async () => {
+    it('should render two room-row elements', async () => {
       render(<Dashboard sessionToken="test-token" />);
 
       await waitFor(() => {
-        const tiles = document.querySelectorAll('.light-tile');
-        tiles.forEach((tile) => {
-          expect(tile.tagName.toLowerCase()).toBe('button');
-        });
+        const rows = document.querySelectorAll('.room-row');
+        expect(rows.length).toBe(2);
+      });
+    });
+
+    it('should render scenes-row as first row', async () => {
+      render(<Dashboard sessionToken="test-token" />);
+
+      await waitFor(() => {
+        const rows = document.querySelectorAll('.room-row');
+        expect(rows[0]).toHaveClass('scenes-row');
+      });
+    });
+
+    it('should render lights-row as second row', async () => {
+      render(<Dashboard sessionToken="test-token" />);
+
+      await waitFor(() => {
+        const rows = document.querySelectorAll('.room-row');
+        expect(rows[1]).toHaveClass('lights-row');
       });
     });
   });
@@ -354,16 +370,16 @@ describe('Dashboard Layout', () => {
           });
         });
 
-        it('should render tiles-grid', async () => {
+        it('should render tiles-carousel in lights-row', async () => {
           render(<Dashboard sessionToken="test-token" />);
 
           await waitFor(() => {
-            const grid = document.querySelector('.tiles-grid');
-            expect(grid).toBeInTheDocument();
+            const carousel = document.querySelector('.lights-row .tiles-carousel');
+            expect(carousel).toBeInTheDocument();
           });
         });
 
-        it('should render 8 light tiles for full grid', async () => {
+        it('should render 8 light tiles in carousel', async () => {
           render(<Dashboard sessionToken="test-token" />);
 
           await waitFor(() => {

@@ -59,24 +59,24 @@ export const LightTile = ({ light, onToggle, onColorTemperatureChange, isTogglin
       role="group"
       aria-label={`${lightName} controls`}
       onClick={handleToggleClick}
+      style={shadowStyle}
     >
+      {/* Full tile background fill when on */}
+      <div
+        className="light-tile-fill light-tile-fill-rounded light-tile-fill-inset light-tile-fill-all-rounded light-tile-fill-edge-to-edge light-tile-fill-full"
+        style={{
+          height: light.on ? '100%' : '0%',
+          background: fillGradient,
+        }}
+      />
+
       {/* Toggle button area - fills most of the tile */}
       <button
         className={`light-tile-toggle ${stateClasses} light-tile-toggle-contained light-tile-toggle-proportional light-tile-toggle-fill-container light-tile-toggle-flush`}
         onClick={handleToggleClick}
         disabled={isToggling}
-        style={shadowStyle}
         aria-label={`Toggle ${lightName}, currently ${light.on ? 'on' : 'off'}${light.on ? ` at ${brightness}% brightness` : ''}`}
       >
-        {/* Brightness fill - rises from bottom */}
-        <div
-          className="light-tile-fill light-tile-fill-rounded light-tile-fill-inset light-tile-fill-all-rounded light-tile-fill-edge-to-edge"
-          style={{
-            height: fillHeight,
-            background: fillGradient,
-          }}
-        />
-
         {/* Icon centered in toggle area */}
         {isToggling ? (
           <Spinner size={48} className="light-tile-icon" style={{ color: contentColor }} />

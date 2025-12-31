@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 
 /**
  * Hook for drag-to-scroll functionality
- * Enables horizontal scrolling via mouse drag on desktop
+ * Enables horizontal scrolling via mouse drag and touch on mobile
  */
 export const useDragScroll = () => {
   const ref = useRef(null);
@@ -14,6 +14,7 @@ export const useDragScroll = () => {
     const el = ref.current;
     if (!el) return;
 
+    // Mouse handlers
     const handleMouseDown = (e) => {
       isDragging.current = true;
       startX.current = e.pageX - el.offsetLeft;
@@ -35,21 +36,49 @@ export const useDragScroll = () => {
       if (!isDragging.current) return;
       e.preventDefault();
       const x = e.pageX - el.offsetLeft;
-      const walk = (x - startX.current) * 1.5; // Scroll speed multiplier
+      const walk = (x - startX.current) * 1.5;
+      el.scrollLeft = scrollLeft.current - walk;
+    };
+
+    // Touch handlers for mobile/touchscreen
+    const handleTouchStart = (e) => {
+      isDragging.current = true;
+      startX.current = e.touches[0].pageX - el.offsetLeft;
+      scrollLeft.current = el.scrollLeft;
+    };
+
+    const handleTouchEnd = () => {
+      isDragging.current = false;
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging.current) return;
+      const x = e.touches[0].pageX - el.offsetLeft;
+      const walk = (x - startX.current) * 1.5;
       el.scrollLeft = scrollLeft.current - walk;
     };
 
     el.style.cursor = 'grab';
+
+    // Mouse events
     el.addEventListener('mousedown', handleMouseDown);
     el.addEventListener('mouseup', handleMouseUp);
     el.addEventListener('mouseleave', handleMouseLeave);
     el.addEventListener('mousemove', handleMouseMove);
+
+    // Touch events
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
+    el.addEventListener('touchend', handleTouchEnd);
+    el.addEventListener('touchmove', handleTouchMove, { passive: true });
 
     return () => {
       el.removeEventListener('mousedown', handleMouseDown);
       el.removeEventListener('mouseup', handleMouseUp);
       el.removeEventListener('mouseleave', handleMouseLeave);
       el.removeEventListener('mousemove', handleMouseMove);
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchmove', handleTouchMove);
     };
   }, []);
 

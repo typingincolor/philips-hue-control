@@ -2,6 +2,14 @@ import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
+// Mock ResizeObserver (not available in jsdom)
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+global.ResizeObserver = ResizeObserverMock;
+
 // Mock hooks that make network calls - prevents "Failed to parse URL" warnings
 // Individual test files can override these mocks as needed
 vi.mock('../hooks/useSettings', () => ({
