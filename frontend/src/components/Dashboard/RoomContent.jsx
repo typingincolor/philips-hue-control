@@ -31,24 +31,6 @@ export const RoomContent = ({
   const setScenesDragRef = useDragScroll();
   const setLightsDragRef = useDragScroll();
 
-  // Combine refs for scenes carousel
-  const setScenesRef = useCallback(
-    (el) => {
-      scenesCarouselRef.current = el;
-      setScenesDragRef(el);
-    },
-    [setScenesDragRef]
-  );
-
-  // Combine refs for lights carousel
-  const setLightsRef = useCallback(
-    (el) => {
-      lightsCarouselRef.current = el;
-      setLightsDragRef(el);
-    },
-    [setLightsDragRef]
-  );
-
   // Update scroll button states for scenes
   const updateScenesScroll = useCallback(() => {
     const el = scenesCarouselRef.current;
@@ -64,6 +46,36 @@ export const RoomContent = ({
     setCanScrollLightsLeft(el.scrollLeft > 0);
     setCanScrollLightsRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
   }, []);
+
+  // Combine refs for scenes carousel
+  const setScenesRef = useCallback(
+    (el) => {
+      scenesCarouselRef.current = el;
+      setScenesDragRef(el);
+      // Schedule scroll state update after DOM settles
+      if (el) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(updateScenesScroll);
+        });
+      }
+    },
+    [setScenesDragRef, updateScenesScroll]
+  );
+
+  // Combine refs for lights carousel
+  const setLightsRef = useCallback(
+    (el) => {
+      lightsCarouselRef.current = el;
+      setLightsDragRef(el);
+      // Schedule scroll state update after DOM settles
+      if (el) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(updateLightsScroll);
+        });
+      }
+    },
+    [setLightsDragRef, updateLightsScroll]
+  );
 
   // Scroll handlers
   const scrollScenesLeft = () => {
