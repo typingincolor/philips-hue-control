@@ -164,15 +164,8 @@ export const RoomContent = ({
 
   return (
     <div className="room-content room-content-carousel">
-      {/* Row 1: All On/Off fixed + Scenes carousel */}
+      {/* Row 1: Scenes carousel with sticky All On/Off */}
       <div className="room-row scenes-row">
-        <AllOnOffTile
-          anyOn={anyOn}
-          onToggle={onToggleRoom}
-          roomId={room.id}
-          isToggling={isActivatingScene}
-        />
-
         <div className="tiles-carousel-container">
           <button
             className="carousel-btn carousel-btn-left"
@@ -184,6 +177,13 @@ export const RoomContent = ({
           </button>
 
           <div className="tiles-carousel scenes-carousel" ref={setScenesRef}>
+            <AllOnOffTile
+              anyOn={anyOn}
+              onToggle={onToggleRoom}
+              roomId={room.id}
+              isToggling={isActivatingScene}
+              className="sticky-tile"
+            />
             {scenes.map((scene) => (
               <SceneTile
                 key={scene.id}

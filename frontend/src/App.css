@@ -1979,14 +1979,21 @@ body.dark-theme {
   min-height: unset !important;
 }
 
-/* All On/Off tile in carousel context - fixed square size */
-.room-content-carousel .scenes-row > .all-on-off-tile {
-  flex-shrink: 0;
+/* All On/Off tile in carousel - sticky first position */
+.tiles-carousel .all-on-off-tile {
+  flex: 0 0 auto;
   width: auto !important;
   height: 100% !important;
   aspect-ratio: 1 !important;
   min-width: unset !important;
   min-height: unset !important;
+}
+
+/* Sticky tile stays fixed while others scroll */
+.sticky-tile {
+  position: sticky;
+  left: 0;
+  z-index: 5;
 }
 
 .room-header-bar {

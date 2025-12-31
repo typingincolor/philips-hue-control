@@ -87,19 +87,19 @@ describe('RoomContent', () => {
       expect(rows[1]).toHaveClass('lights-row');
     });
 
-    it('should render All On/Off tile OUTSIDE scenes carousel (fixed position)', () => {
+    it('should render All On/Off tile INSIDE scenes carousel with sticky class', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
-      const scenesRow = container.querySelector('.scenes-row');
-      // All On/Off should be direct child of scenes-row, NOT inside tiles-carousel
-      const allOnOffTile = scenesRow.querySelector(':scope > .all-on-off-tile');
+      const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
+      // All On/Off should be inside carousel with sticky-tile class
+      const allOnOffTile = scenesCarousel.querySelector('.all-on-off-tile.sticky-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
 
-    it('should NOT have All On/Off tile inside tiles-carousel', () => {
+    it('should render All On/Off tile as first item in scenes carousel', () => {
       const { container } = render(<RoomContent {...defaultProps} />);
       const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
-      const allOnOffInCarousel = scenesCarousel?.querySelector('.all-on-off-tile');
-      expect(allOnOffInCarousel).toBeNull();
+      const firstChild = scenesCarousel.firstElementChild;
+      expect(firstChild).toHaveClass('all-on-off-tile');
     });
 
     it('should render scenes inside tiles-carousel', () => {
@@ -116,11 +116,11 @@ describe('RoomContent', () => {
       expect(lightTiles).toHaveLength(2);
     });
 
-    it('should render All On/Off tile in scenes-row even when no scenes', () => {
+    it('should render All On/Off tile in scenes carousel even when no scenes', () => {
       const roomNoScenes = { ...mockRoom, scenes: [] };
       const { container } = render(<RoomContent {...defaultProps} room={roomNoScenes} />);
-      const scenesRow = container.querySelector('.scenes-row');
-      const allOnOffTile = scenesRow.querySelector('.all-on-off-tile');
+      const scenesCarousel = container.querySelector('.scenes-row .tiles-carousel');
+      const allOnOffTile = scenesCarousel.querySelector('.all-on-off-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
   });
@@ -355,11 +355,11 @@ describe('RoomContent', () => {
     it('should be keyboard navigable through all tiles', async () => {
       const { container } = render(<RoomContent {...defaultProps} />);
 
-      // Tab through tiles
-      const allTiles = container.querySelectorAll('button');
+      // Get all non-disabled buttons (tiles)
+      const allTiles = container.querySelectorAll('button:not(:disabled)');
       expect(allTiles.length).toBeGreaterThan(0);
 
-      // First tile should be focusable
+      // First non-disabled tile should be focusable
       allTiles[0].focus();
       expect(allTiles[0]).toHaveFocus();
     });

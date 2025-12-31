@@ -97,12 +97,12 @@ describe('RoomContent Layout', () => {
       expect(tiles.length).toBe(8);
     });
 
-    it('should render All On/Off tile outside carousel', () => {
+    it('should render All On/Off tile inside carousel with sticky class', () => {
       render(<RoomContent {...defaultProps} />);
 
-      const scenesRow = document.querySelector('.scenes-row');
-      // Direct child of scenes-row, not inside carousel
-      const allOnOffTile = scenesRow.querySelector(':scope > .all-on-off-tile');
+      const scenesCarousel = document.querySelector('.scenes-row .tiles-carousel');
+      // All On/Off should be inside carousel with sticky-tile class
+      const allOnOffTile = scenesCarousel.querySelector('.all-on-off-tile.sticky-tile');
       expect(allOnOffTile).toBeInTheDocument();
     });
 
