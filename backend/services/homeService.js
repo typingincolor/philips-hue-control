@@ -150,31 +150,63 @@ class HomeServiceClass {
 
   /**
    * Update all devices in a room
-   * @param {string} roomId - Room ID (can be plain ID or prefixed with serviceId:)
+   * @param {string} roomId - Room ID (home room ID like 'home-living-room' or serviceId:roomId)
    * @param {Object} state - New state to apply
    * @param {boolean} demoMode - Whether to use demo mode
    * @returns {Promise<Object>} Result object
    */
   async updateRoomDevices(roomId, state, demoMode = false) {
-    // Room IDs may or may not be prefixed - try to find the service
-    let serviceId = 'hue';
-    let originalId = roomId;
+    this._ensureInitialized();
 
+    // If roomId is in serviceId:roomId format, use it directly
     if (roomId.includes(':')) {
-      [serviceId, originalId] = roomId.split(':');
+      const [serviceId, originalId] = roomId.split(':');
+      const plugin = ServiceRegistry.get(serviceId, demoMode);
+
+      if (!plugin) {
+        throw new Error(`Unknown service: ${serviceId}`);
+      }
+
+      if (typeof plugin.updateRoomDevices !== 'function') {
+        throw new Error(`Service ${serviceId} does not support room updates`);
+      }
+
+      return plugin.updateRoomDevices(originalId, state);
     }
 
-    const plugin = ServiceRegistry.get(serviceId, demoMode);
+    // Resolve home room ID to service room IDs
+    let serviceRooms = roomMappingService.getServiceRoomIds(roomId);
 
-    if (!plugin) {
-      throw new Error(`Unknown service: ${serviceId}`);
+    // Fallback: try with 'home-' prefix if not found (handles V1-style IDs from WebSocket)
+    if (serviceRooms.length === 0 && !roomId.startsWith('home-')) {
+      serviceRooms = roomMappingService.getServiceRoomIds(`home-${roomId}`);
     }
 
-    if (typeof plugin.updateRoomDevices !== 'function') {
-      throw new Error(`Service ${serviceId} does not support room updates`);
+    if (serviceRooms.length === 0) {
+      throw new Error(`Room not found: ${roomId}`);
     }
 
-    return plugin.updateRoomDevices(originalId, state);
+    // Update each service's room
+    const results = [];
+    for (const { serviceId, roomId: serviceRoomId } of serviceRooms) {
+      const plugin = ServiceRegistry.get(serviceId, demoMode);
+
+      if (!plugin) {
+        continue;
+      }
+
+      if (typeof plugin.updateRoomDevices !== 'function') {
+        continue;
+      }
+
+      const result = await plugin.updateRoomDevices(serviceRoomId, state);
+      results.push(result);
+    }
+
+    return {
+      success: results.every((r) => r.success),
+      updatedLights: results.flatMap((r) => r.updatedLights || []),
+    };
   }
 
   /**

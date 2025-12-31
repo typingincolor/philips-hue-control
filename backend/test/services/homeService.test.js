@@ -356,4 +356,59 @@ describe('homeService', () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe('updateRoomDevices', () => {
+    it('should resolve home room ID to service room ID', async () => {
+      // Mock the room mapping service to return the service room ID
+      const roomMappingService = await import('../../services/roomMappingService.js');
+      roomMappingService.default.getServiceRoomIds.mockReturnValue([
+        { serviceId: 'hue', roomId: 'living-room' },
+      ]);
+
+      mockHuePlugin.updateRoomDevices = vi.fn().mockResolvedValue({
+        success: true,
+        updatedLights: [{ id: 'light-1', state: { on: true } }],
+      });
+
+      // Call with home-prefixed room ID (as used by the Home API)
+      const result = await homeService.updateRoomDevices('home-living-room', { on: true }, false);
+
+      // The plugin should receive the service room ID 'living-room', not 'home-living-room'
+      expect(mockHuePlugin.updateRoomDevices).toHaveBeenCalledWith('living-room', { on: true });
+      expect(result.success).toBe(true);
+    });
+
+    it('should resolve V1-style room ID by adding home- prefix', async () => {
+      // Mock: first call returns empty (V1-style ID), second call with home- prefix succeeds
+      const roomMappingService = await import('../../services/roomMappingService.js');
+      roomMappingService.default.getServiceRoomIds
+        .mockReturnValueOnce([]) // First call: 'dining-room' not found
+        .mockReturnValueOnce([{ serviceId: 'hue', roomId: 'dining-room' }]); // Second: 'home-dining-room' found
+
+      mockHuePlugin.updateRoomDevices = vi.fn().mockResolvedValue({
+        success: true,
+        updatedLights: [{ id: 'light-1', state: { on: false } }],
+      });
+
+      // Call with V1-style room ID (from WebSocket dashboard_update)
+      const result = await homeService.updateRoomDevices('dining-room', { on: false }, false);
+
+      // Should have tried with home- prefix
+      expect(roomMappingService.default.getServiceRoomIds).toHaveBeenCalledWith('dining-room');
+      expect(roomMappingService.default.getServiceRoomIds).toHaveBeenCalledWith('home-dining-room');
+      expect(mockHuePlugin.updateRoomDevices).toHaveBeenCalledWith('dining-room', { on: false });
+      expect(result.success).toBe(true);
+    });
+
+    it('should throw error when home room ID has no mapping', async () => {
+      // Mock the room mapping service to return empty array (no mappings)
+      const roomMappingService = await import('../../services/roomMappingService.js');
+      roomMappingService.default.getServiceRoomIds.mockReturnValue([]);
+
+      // Call with a home room ID that has no service room mapping
+      await expect(
+        homeService.updateRoomDevices('home-unknown-room', { on: true }, false)
+      ).rejects.toThrow('Room not found: home-unknown-room');
+    });
+  });
 });

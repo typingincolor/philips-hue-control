@@ -5,6 +5,7 @@ import {
   normalizeHueLight,
   normalizeHiveThermostat,
   normalizeHiveHotWater,
+  normalizeDashboardLight,
 } from '../../services/deviceNormalizer.js';
 import { DeviceTypes } from '../../models/Device.js';
 import slugMappingService from '../../services/slugMappingService.js';
@@ -183,6 +184,65 @@ describe('deviceNormalizer', () => {
 
       expect(device.capabilities).toContain('on');
       expect(device.capabilities).toContain('mode');
+    });
+  });
+
+  describe('normalizeDashboardLight', () => {
+    it('should preserve slug and UUID from pre-enriched light', () => {
+      // This simulates a light that has already been through enrichLight()
+      // enrichLight() sets: id = slug (without serviceId prefix), _uuid = original UUID
+      // createDevice() then adds the serviceId prefix
+      const preEnrichedLight = {
+        id: 'bedroom-lamp', // Slug from enrichLight (without hue: prefix)
+        _uuid: 'abc-123-def-456', // Original UUID from enrichLight
+        name: 'Bedroom Lamp',
+        on: true,
+        brightness: 80,
+        color: '#ff9900',
+      };
+
+      const device = normalizeDashboardLight(preEnrichedLight);
+
+      // createDevice adds the serviceId prefix
+      expect(device.id).toBe('hue:bedroom-lamp');
+      // The device should preserve the original UUID, not the slug
+      expect(device._uuid).toBe('abc-123-def-456');
+      expect(device.name).toBe('Bedroom Lamp');
+      expect(device.state.on).toBe(true);
+      expect(device.state.brightness).toBe(80);
+    });
+
+    it('should not corrupt slug mappings when processing pre-enriched lights', () => {
+      // First, create a proper slug mapping for a light
+      const originalUuid = 'original-uuid-123';
+      const lightName = 'TV Backlight';
+      const expectedSlug = slugMappingService.getSlug('hue', originalUuid, lightName);
+
+      // Now simulate passing a pre-enriched light through normalizeDashboardLight
+      // The pre-enriched light has: id = slug (without prefix), _uuid = original UUID
+      const preEnrichedLight = {
+        id: expectedSlug, // Slug without serviceId prefix
+        _uuid: originalUuid, // Original UUID
+        name: lightName,
+        on: true,
+        brightness: 50,
+      };
+
+      // Process through normalizeDashboardLight
+      const device = normalizeDashboardLight(preEnrichedLight);
+
+      // Device should have prefixed id and preserved UUID
+      expect(device.id).toBe(`hue:${expectedSlug}`);
+      expect(device._uuid).toBe(originalUuid);
+
+      // The slug mapping should still resolve the original UUID to the same slug
+      // It should NOT have created a mapping from the slug to something else
+      const resolvedSlug = slugMappingService.getSlug('hue', originalUuid, lightName);
+      expect(resolvedSlug).toBe(expectedSlug);
+
+      // Looking up by UUID should return the device slug, not a corrupted chain
+      const uuidLookup = slugMappingService.getUuid('hue', expectedSlug);
+      expect(uuidLookup).toBe(originalUuid);
     });
   });
 });

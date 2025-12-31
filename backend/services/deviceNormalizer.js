@@ -110,14 +110,14 @@ export function normalizeHiveHotWater(hiveHotWater) {
 
 /**
  * Normalize a dashboard light object to unified device format
- * @param {Object} light - Dashboard light object (pre-processed format)
+ * @param {Object} light - Dashboard light object (pre-processed format from enrichLight)
  * @returns {Object} Normalized device
  */
 export function normalizeDashboardLight(light) {
-  const slug = slugMappingService.getSlug('hue', light.id, light.name);
-
+  // Light is already enriched with slug as id and _uuid from enrichLight()
+  // Do NOT call slugMappingService.getSlug() here - it would create corrupt mappings
   const device = createDevice({
-    id: slug,
+    id: light.id,
     name: light.name,
     type: DeviceTypes.LIGHT,
     serviceId: 'hue',
@@ -130,7 +130,7 @@ export function normalizeDashboardLight(light) {
   });
 
   // Preserve original UUID for reference (internal use only)
-  device._uuid = light.id;
+  device._uuid = light._uuid;
 
   return device;
 }
