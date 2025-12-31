@@ -1994,6 +1994,21 @@ body.dark-theme {
   position: sticky;
   left: 0;
   z-index: 5;
+  /* Add padding-right that matches the gap so tiles don't overlap */
+  margin-right: 0;
+  /* Background extends to cover scrolling content behind */
+  background-clip: padding-box;
+}
+
+/* Add pseudo-element to cover the gap area */
+.sticky-tile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -12px;
+  width: 12px;
+  height: 100%;
+  background: var(--bg-primary);
 }
 
 .room-header-bar {

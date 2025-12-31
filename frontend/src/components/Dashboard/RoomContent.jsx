@@ -77,25 +77,34 @@ export const RoomContent = ({
     [setLightsDragRef, updateLightsScroll]
   );
 
-  // Scroll handlers
+  // Calculate scroll distance (one tile width + gap)
+  const getScrollDistance = (carouselEl) => {
+    if (!carouselEl) return 200;
+    const firstTile = carouselEl.querySelector('.scene-tile, .light-tile, .all-on-off-tile');
+    if (!firstTile) return 200;
+    const gap = 12; // matches CSS gap
+    return firstTile.offsetWidth + gap;
+  };
+
+  // Scroll handlers - scroll by one tile at a time
   const scrollScenesLeft = () => {
     const el = scenesCarouselRef.current;
-    if (el) el.scrollBy({ left: -200, behavior: 'smooth' });
+    if (el) el.scrollBy({ left: -getScrollDistance(el), behavior: 'smooth' });
   };
 
   const scrollScenesRight = () => {
     const el = scenesCarouselRef.current;
-    if (el) el.scrollBy({ left: 200, behavior: 'smooth' });
+    if (el) el.scrollBy({ left: getScrollDistance(el), behavior: 'smooth' });
   };
 
   const scrollLightsLeft = () => {
     const el = lightsCarouselRef.current;
-    if (el) el.scrollBy({ left: -200, behavior: 'smooth' });
+    if (el) el.scrollBy({ left: -getScrollDistance(el), behavior: 'smooth' });
   };
 
   const scrollLightsRight = () => {
     const el = lightsCarouselRef.current;
-    if (el) el.scrollBy({ left: 200, behavior: 'smooth' });
+    if (el) el.scrollBy({ left: getScrollDistance(el), behavior: 'smooth' });
   };
 
   // Setup scroll listeners
