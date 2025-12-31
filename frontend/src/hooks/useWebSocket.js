@@ -61,8 +61,9 @@ export const useWebSocket = (sessionToken, enabled = true) => {
               if (room.id !== change.roomId) return room;
               return {
                 ...room,
+                // Merge light data instead of replacing to preserve properties not in update
                 lights: room.lights.map((light) =>
-                  light.id === change.data.id ? change.data : light
+                  light.id === change.data.id ? { ...light, ...change.data } : light
                 ),
               };
             });
@@ -76,8 +77,9 @@ export const useWebSocket = (sessionToken, enabled = true) => {
             break;
           case 'zone':
             if (updated.zones) {
+              // Merge zone data instead of replacing
               updated.zones = updated.zones.map((zone) =>
-                zone.id === change.data.id ? change.data : zone
+                zone.id === change.data.id ? { ...zone, ...change.data } : zone
               );
             }
             break;

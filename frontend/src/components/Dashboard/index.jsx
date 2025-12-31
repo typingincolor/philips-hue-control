@@ -295,6 +295,27 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
     }
   };
 
+  const handleColorTemperatureChange = async (lightUuid, colorTemperature) => {
+    try {
+      const light = getLightByUuid(lightUuid);
+      if (!light) throw new Error('Light not found');
+
+      const newState = { colorTemperature };
+      const response = await updateLight(lightUuid, newState, isDemoMode, light);
+
+      // Optimistic update
+      setLocalDashboard((prev) => ({
+        ...prev,
+        rooms: prev.rooms.map((room) => ({
+          ...room,
+          lights: room.lights.map((l) => (l.id === lightUuid ? response.light : l)),
+        })),
+      }));
+    } catch (err) {
+      logger.error('Failed to update color temperature:', err);
+    }
+  };
+
   const toggleRoom = async (roomId, turnOn) => {
     const room = dashboard?.rooms?.find((r) => r.id === roomId);
     if (!room) return;
@@ -662,6 +683,7 @@ export const Dashboard = ({ sessionToken, onLogout }) => {
             onToggleLight={toggleLight}
             onToggleRoom={toggleRoom}
             onActivateScene={handleSceneChange}
+            onColorTemperatureChange={handleColorTemperatureChange}
             togglingLights={togglingLights}
             isActivatingScene={!!activatingScene}
           />
